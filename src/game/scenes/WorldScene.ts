@@ -20,15 +20,17 @@ export class WorldScene extends Phaser.Scene {
     }
 
     create() {
-        // Map dimensions
+        // Map dimensions (for initial centering)
         const worldWidth = V1.defaultMapWidth * V1.tileSizePx;
         const worldHeight = V1.defaultMapHeight * V1.tileSizePx;
 
         // 1. Draw Background
-        this.createBackground(worldWidth, worldHeight);
+        this.createBackground();
 
         // 2. Setup Camera
-        this.cameras.main.setBounds(-500, -500, worldWidth + 1000, worldHeight + 1000);
+        // 2. Setup Camera
+        // V3: Infinite World - Remove bounds
+        // this.cameras.main.setBounds(-500, -500, worldWidth + 1000, worldHeight + 1000);
         this.cameras.main.centerOn(worldWidth / 2, worldHeight / 2);
         this.cameras.main.setZoom(1);
 
@@ -58,55 +60,81 @@ export class WorldScene extends Phaser.Scene {
         // this.scene.remove(this.key); // Not needed usually
     }
 
-    createBackground(width: number, height: number) {
-        // Dark Void
-        const bg = this.add.graphics();
-        bg.fillStyle(0x1a1a2e, 1);
-        bg.fillRect(-1000, -1000, width + 2000, height + 2000);
-        bg.setDepth(-1000);
+    private gridSprite!: Phaser.GameObjects.TileSprite;
+    private chunkGridSprite!: Phaser.GameObjects.TileSprite;
 
-        // Playable Area
-        const mapBg = this.add.graphics();
-        mapBg.fillStyle(0x232336, 1);
-        mapBg.fillRect(0, 0, width, height);
-        mapBg.setDepth(-999);
+    createBackground() {
+        // Generate Textures programmatically
+        this.createGridTexture('grid-texture', V1.tileSizePx, 0x232336, 0x2a2a3a);
+        // Chunk grid is larger, maybe just draw it or use another tile sprite? 
+        // Chunk size is 32x32 tiles = 1024px. Texture might be too big for some GPUs? 1024 is fine.
+        this.createGridTexture('chunk-texture', V1.chunkSize * V1.tileSizePx, 0x00000000, 0x3a3a4a, 2);
 
-        // Grid Lines
-        const grid = this.add.graphics();
-        grid.lineStyle(1, 0x2a2a3a, 0.5);
-        grid.setDepth(-998);
+        const width = this.scale.width;
+        const height = this.scale.height;
 
-        const gridSize = V1.tileSizePx; // 32
-        for (let x = 0; x <= width; x += gridSize) {
-            grid.moveTo(x, 0);
-            grid.lineTo(x, height);
+        // 1. Base TileSprite (The Main Grid)
+        // using setScrollFactor(0) to stick to camera, then we update tilePosition
+        this.gridSprite = this.add.tileSprite(0, 0, width, height, 'grid-texture')
+            .setOrigin(0, 0)
+            .setScrollFactor(0)
+            .setDepth(-1000);
+
+        // 2. Chunk Grid Overlay
+        this.chunkGridSprite = this.add.tileSprite(0, 0, width, height, 'chunk-texture')
+            .setOrigin(0, 0)
+            .setScrollFactor(0)
+            .setDepth(-999)
+            .setAlpha(0.6);
+
+        // Resize handler to keep background filling screen
+        this.scale.on('resize', this.resizeBackground, this);
+
+        // Force initial resize to ensure full coverage
+        this.resizeBackground(this.scale.gameSize);
+    }
+
+    createGridTexture(key: string, size: number, color: number, lineColor: number, thickness: number = 1) {
+        if (this.textures.exists(key)) return;
+
+        const graphics = this.add.graphics();
+        graphics.setVisible(false);
+
+        // Fill
+        if (color !== 0x00000000) {
+            graphics.fillStyle(color, 1);
+            graphics.fillRect(0, 0, size, size);
         }
-        for (let y = 0; y <= height; y += gridSize) {
-            grid.moveTo(0, y);
-            grid.lineTo(width, y);
-        }
-        grid.strokePath();
 
-        // Chunk Grid (Thicker lines)
-        const chunkGrid = this.add.graphics();
-        chunkGrid.lineStyle(2, 0x3a3a4a, 0.8);
-        chunkGrid.setDepth(-997);
-        const chunkSize = V1.chunkSize * V1.tileSizePx;
-        for (let x = 0; x <= width; x += chunkSize) {
-            chunkGrid.moveTo(x, 0);
-            chunkGrid.lineTo(x, height);
-        }
-        for (let y = 0; y <= height; y += chunkSize) {
-            chunkGrid.moveTo(0, y);
-            chunkGrid.lineTo(width, y);
-        }
-        chunkGrid.strokePath();
+        // Border (Bottom and Right to tile correctly)
+        graphics.lineStyle(thickness, lineColor);
+        graphics.moveTo(0, size);
+        graphics.lineTo(size, size);
+        graphics.lineTo(size, 0);
 
-        // World Border
-        const border = this.add.graphics();
-        border.lineStyle(4, 0x6366f1, 1);
-        border.strokeRect(0, 0, width, height);
-        border.setDepth(-996);
+        graphics.generateTexture(key, size, size);
+        graphics.destroy();
+    }
+
+    resizeBackground(gameSize: Phaser.Structs.Size) {
+        if (this.gridSprite) {
+            this.gridSprite.setSize(gameSize.width, gameSize.height);
+        }
+        if (this.chunkGridSprite) {
+            this.chunkGridSprite.setSize(gameSize.width, gameSize.height);
+        }
+    }
+
+    update() {
+        // Sync TileSprite position with Camera
+        if (this.gridSprite) {
+            this.gridSprite.tilePositionX = this.cameras.main.scrollX;
+            this.gridSprite.tilePositionY = this.cameras.main.scrollY;
+        }
+        if (this.chunkGridSprite) {
+            this.chunkGridSprite.tilePositionX = this.cameras.main.scrollX;
+            this.chunkGridSprite.tilePositionY = this.cameras.main.scrollY;
+        }
     }
 
     setupCameraControls() {

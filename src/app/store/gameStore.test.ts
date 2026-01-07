@@ -1,7 +1,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore } from './gameStore';
-import { DEFAULT_WORLD_RULES } from '@shared/types';
+import { DEFAULT_WORLD_RULES, SimEvent } from '@shared/types';
 
 describe('gameStore', () => {
     beforeEach(() => {
@@ -25,7 +25,7 @@ describe('gameStore', () => {
     it('should add new events from snapshot', () => {
         const { updateFromSnapshot } = useGameStore.getState();
 
-        const snapshotEvents: any = [
+        const snapshotEvents: SimEvent[] = [
             { type: 'DEATH', tick: 10, entityId: 'e1', reason: 'killed' }
         ];
 
@@ -46,7 +46,7 @@ describe('gameStore', () => {
         const { updateFromSnapshot } = useGameStore.getState();
 
         // 1. Add 30 events
-        const batch1: any[] = Array(30).fill(null).map((_, i) => ({
+        const batch1: SimEvent[] = Array(30).fill(null).map((_, i) => ({
             type: 'DRINK', tick: i, entityId: `e${i}`, waterId: 'w1'
         }));
 
@@ -61,7 +61,7 @@ describe('gameStore', () => {
         expect(useGameStore.getState().events).toHaveLength(30);
 
         // 2. Add 30 more events (Total 60, should cap at 50)
-        const batch2: any[] = Array(30).fill(null).map((_, i) => ({
+        const batch2: SimEvent[] = Array(30).fill(null).map((_, i) => ({
             type: 'EAT', tick: 30 + i, entityId: `e${30 + i}`, source: 'trash'
         }));
 

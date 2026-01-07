@@ -4,6 +4,7 @@
 
 import { useGameStore } from '../store/gameStore';
 import { V1 } from '@shared/constants';
+import { SimEvent } from '@shared/types';
 import './GraveyardPanel.css';
 
 export function GraveyardPanel() {
@@ -93,7 +94,7 @@ export function GraveyardPanel() {
                                                 </button>
                                             )}
                                         </div>
-                                        {entry.history.slice().reverse().slice(0, 5).map((evt: any, j: number) => (
+                                        {entry.history.slice().reverse().slice(0, 5).map((evt: SimEvent, j: number) => (
                                             <div key={j} className="history-row">
                                                 <span className="tick">T{evt.tick}</span>
                                                 <span className="type">{evt.type}</span>

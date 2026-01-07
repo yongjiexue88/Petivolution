@@ -14,6 +14,7 @@ export type TimeScale = 0 | 1 | 2 | 4;
 
 export type EntityId = string;
 export type ObjectId = string;
+export type ChunkId = string; // "x,y" e.g. "0,0", "-1,2"
 
 export type Personality = 'curious' | 'cautious' | 'brave';
 
@@ -235,6 +236,30 @@ export type WorldSaveData = {
     objects: WorldObject[];
     entities: EntityRuntime[];
     graveyard: GraveyardEntry[];
+    chunks: Record<ChunkId, ChunkData>; // V3
+};
+
+// ============================================
+// V3 Chunk System
+// ============================================
+
+export type ChunkState = 'active' | 'semi_active' | 'far';
+
+export type ChunkStats = {
+    ratCount: number;
+    catCount: number;
+    resourceLevel: number; // 0..1 generic resource index
+    dangerLevel: number;   // 0..1 generic danger index
+    lastTick: number;      // Last time this chunk was updated
+};
+
+export type ChunkData = {
+    id: ChunkId;
+    x: number;
+    y: number;
+    stats: ChunkStats;
+    // When virtualized, we might store partial state here if needed
+    // For now, entities are either in 'sim.entities' (Active/Semi) or just 'stats' (Far)
 };
 
 // ============================================

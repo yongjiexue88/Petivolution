@@ -7,10 +7,9 @@ import {
     simulateTick,
     getSnapshot,
     getSelectedEntityDetail,
-    spawnEntity,
-    canSpawn,
     type SimulationState
 } from '../sim/core/tick';
+import { spawnEntity, canSpawn } from '../sim/core/spawner';
 import type {
     WorkerCommand,
     WorkerUpdate,
@@ -23,7 +22,6 @@ import type {
 } from '../shared/types';
 import { DEFAULT_WORLD_RULES } from '../shared/types';
 import { V1 } from '../shared/constants';
-import { OBJECT_CONFIGS } from '../shared/species.config';
 import { v4 as uuid } from 'uuid';
 
 let sim: SimulationState | null = null;
@@ -91,7 +89,8 @@ function handleInitWorld(payload: {
             sim.objects.set(obj.id, obj);
         }
     } else {
-        placeInitialResources();
+        // V3: Initial generation via LOD
+        sim.chunkManager.updateLOD(sim);
     }
 
     startTickLoop();
@@ -214,6 +213,7 @@ function handleRequestSave(payload: { saveName: string }) {
         objects: Array.from(sim.objects.values()),
         entities: Array.from(sim.entities.values()),
         graveyard: sim.graveyard,
+        chunks: Object.fromEntries(sim.chunkManager.chunks), // V3
     };
 
     sendMessage({ type: 'SAVE_READY', payload: { save } });
@@ -227,7 +227,9 @@ function handleResetWorld(payload: { seed?: number }) {
 
     const seed = payload.seed ?? Date.now();
     sim = createSimulation(seed, 'garden_v1', DEFAULT_WORLD_RULES);
-    placeInitialResources();
+    // V3: Initial generation via LOD
+    sim.chunkManager.updateLOD(sim);
+
     startTickLoop();
     sendSnapshot();
 }
@@ -280,61 +282,4 @@ function sendMessage(msg: WorkerUpdate) {
 // 初始资源放置
 // ============================================
 
-function placeInitialResources() {
-    if (!sim) return;
 
-    // const mapPixelWidth = V1.defaultMapWidth * V1.tileSizePx;
-    // const mapPixelHeight = V1.defaultMapHeight * V1.tileSizePx;
-
-    // 放置水源 (5个)
-    for (let i = 0; i < 5; i++) {
-        const tx = Math.floor(10 + sim.rng() * (V1.defaultMapWidth - 20));
-        const ty = Math.floor(10 + sim.rng() * (V1.defaultMapHeight - 20));
-
-        const obj: WorldObject = {
-            id: uuid(),
-            type: 'water',
-            pos: { tx, ty },
-            data: {
-                resources: OBJECT_CONFIGS.water.maxResources,
-                maxResources: OBJECT_CONFIGS.water.maxResources,
-                regenRate: OBJECT_CONFIGS.water.regenRate,
-            },
-        };
-        sim.objects.set(obj.id, obj);
-    }
-
-    // 放置灌木 (8个)
-    for (let i = 0; i < 8; i++) {
-        const tx = Math.floor(5 + sim.rng() * (V1.defaultMapWidth - 10));
-        const ty = Math.floor(5 + sim.rng() * (V1.defaultMapHeight - 10));
-
-        const obj: WorldObject = {
-            id: uuid(),
-            type: 'bush',
-            pos: { tx, ty },
-            data: {
-                strength01: OBJECT_CONFIGS.bush.strengthDefault,
-            },
-        };
-        sim.objects.set(obj.id, obj);
-    }
-
-    // 放置垃圾堆 (6个)
-    for (let i = 0; i < 6; i++) {
-        const tx = Math.floor(8 + sim.rng() * (V1.defaultMapWidth - 16));
-        const ty = Math.floor(8 + sim.rng() * (V1.defaultMapHeight - 16));
-
-        const obj: WorldObject = {
-            id: uuid(),
-            type: 'trash',
-            pos: { tx, ty },
-            data: {
-                resources: OBJECT_CONFIGS.trash.maxResources,
-                maxResources: OBJECT_CONFIGS.trash.maxResources,
-                regenRate: OBJECT_CONFIGS.trash.regenRate,
-            },
-        };
-        sim.objects.set(obj.id, obj);
-    }
-}

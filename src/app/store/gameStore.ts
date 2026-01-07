@@ -15,6 +15,8 @@ import type {
     WorldRule,
     GraveyardEntry,
     WorldSaveData, // V1.2
+    ChunkId, // V3
+    ChunkData, // V3
 } from '@shared/types';
 import { DEFAULT_WORLD_RULES } from '@shared/types';
 
@@ -34,6 +36,7 @@ export interface GameState {
     events: SimEvent[];
     stats: SimStats;
     graveyard: GraveyardEntry[];
+    chunks: Record<ChunkId, ChunkData>; // V3
 
     // 选中实体详情
     selectedEntityId: string | null;
@@ -112,6 +115,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     events: [],
     stats: { rat: 0, cat: 0, deathsLastMin: 0, birthsLastMin: 0 },
     graveyard: [],
+    chunks: {}, // V3
+
 
     selectedEntityId: null,
     selectedEntityDetail: null,
@@ -213,8 +218,9 @@ export const useGameStore = create<GameState>((set, get) => ({
             // Note: SnapshotEntity[] is not fully compatible with EntityRuntime[], but for visual replay/export it might suffice
             // or we need to request full save from worker.
             // Casting to any to fix build for now.
-            entities: state.entities as any,
+            entities: state.entities as unknown as EntityRuntime[],
             graveyard: state.graveyard,
+            chunks: {}, // V3 TODO: Serialize from worker
         };
     },
 
@@ -222,10 +228,11 @@ export const useGameStore = create<GameState>((set, get) => ({
         set({
             tick: data.world.tick,
             rules: data.world.rules,
-            entities: data.entities as any, // SnapshotEntity mismatch
+            entities: data.entities as unknown as SnapshotEntity[], // SnapshotEntity mismatch
             objects: data.objects,
             stats: { rat: 0, cat: 0, deathsLastMin: 0, birthsLastMin: 0, currentSeed: data.world.seed }, // Reset stats but keep seed
             graveyard: data.graveyard,
+            chunks: data.chunks || {}, // V3
             events: [], // Clear events on load
             selectedEntityId: null,
             selectedEntityDetail: null,

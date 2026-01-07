@@ -5,6 +5,7 @@
 import type {
     EntityRuntime,
     Vec2,
+    SimEvent,
 } from '@shared/types';
 import type { SimulationState } from '../core/tick';
 import { SPECIES_CONFIGS, OBJECT_CONFIGS, clamp01 } from '@shared/species.config';
@@ -173,7 +174,7 @@ function executeDrink(entity: EntityRuntime, sim: SimulationState): void {
     // 记录事件
     // 记录事件
     if (entity.targetObjectId) {
-        const event: any = {
+        const event: SimEvent = {
             type: 'DRINK',
             tick: sim.tick,
             entityId: entity.id,
@@ -204,7 +205,7 @@ function executeEat(entity: EntityRuntime, sim: SimulationState): void {
 
     // 记录事件
     // 记录事件
-    const event: any = {
+    const event: SimEvent = {
         type: 'EAT',
         tick: sim.tick,
         entityId: entity.id,
@@ -259,7 +260,7 @@ function executeChase(entity: EntityRuntime, sim: SimulationState): void {
 
         // 记录追捕事件
         // 记录追捕事件
-        const event: any = {
+        const event: SimEvent = {
             type: 'HUNT',
             tick: sim.tick,
             predatorId: entity.id,
