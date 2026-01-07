@@ -30,3 +30,9 @@ coverage/
 # Cache
 .eslintcache
 .cache/
+
+# Firebase Hosting
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+.firebaserc
