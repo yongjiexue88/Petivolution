@@ -81,6 +81,22 @@ export function AnimalDetailPanel({ entity }: Props) {
                 <span className="panel-icon">{species === 'cat' ? '🐱' : '🐭'}</span>
                 <h3>{name}</h3>
                 <span className="entity-state">{getStateEmoji(state)} {state}</span>
+                <button
+                    className={`follow-btn ${useGameStore.getState().followingEntityId === entity.id ? 'active' : ''}`}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        // Stop following if clicking active, otherwise follow this
+                        const current = useGameStore.getState().followingEntityId;
+                        if (current === entity.id) {
+                            useGameStore.getState().setFollowingEntityId(null);
+                        } else {
+                            useGameStore.getState().setFollowingEntityId(entity.id);
+                        }
+                    }}
+                    title="Camera Follow"
+                >
+                    {useGameStore.getState().followingEntityId === entity.id ? '📹 Following' : '📹 Follow'}
+                </button>
             </div>
 
             <div className="panel-body">

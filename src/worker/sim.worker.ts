@@ -89,8 +89,8 @@ function handleInitWorld(payload: {
             sim.objects.set(obj.id, obj);
         }
     } else {
-        // V3: Initial generation via LOD
-        sim.chunkManager.updateLOD(sim);
+        // V1 Fishbowl: Initialize finite world with objects and animals
+        sim.chunkManager.initializeWorld(sim);
     }
 
     startTickLoop();
@@ -190,6 +190,9 @@ function handleUpdateCamera(payload: { centerX: number; centerY: number; zoom: n
     if (!sim) return;
     sim.cameraCenter = { x: payload.centerX, y: payload.centerY };
     sim.cameraZoom = payload.zoom;
+
+    // V3: Update LOD when camera changes (recalculate visible chunks)
+    sim.chunkManager.updateLOD(sim);
 }
 
 function handleRequestSave(payload: { saveName: string }) {
@@ -227,8 +230,8 @@ function handleResetWorld(payload: { seed?: number }) {
 
     const seed = payload.seed ?? Date.now();
     sim = createSimulation(seed, 'garden_v1', DEFAULT_WORLD_RULES);
-    // V3: Initial generation via LOD
-    sim.chunkManager.updateLOD(sim);
+    // V1 Fishbowl: Initialize finite world
+    sim.chunkManager.initializeWorld(sim);
 
     startTickLoop();
     sendSnapshot();

@@ -1,8 +1,7 @@
 .event-log-panel {
-    /* Fixed position at bottom left, above toolbar? Or just a regular panel? */
-    /* Let's make it a regular panel for now, but maybe positioned differently if needed */
-    width: 320px;
-    max-height: 350px;
+    /* Positioned top right or flexible */
+    width: 340px;
+    max-height: 400px;
     display: flex;
     flex-direction: column;
 }
@@ -16,21 +15,23 @@
 
 .log-filters {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     padding: 8px 12px;
     border-bottom: 1px solid var(--color-border);
     background: rgba(0, 0, 0, 0.2);
+    overflow-x: auto;
 }
 
 .filter-btn {
     background: transparent;
     border: 1px solid var(--color-border);
     color: var(--color-text-secondary);
-    padding: 2px 8px;
+    padding: 2px 10px;
     border-radius: 12px;
     font-size: 11px;
     cursor: pointer;
     transition: all 0.2s;
+    white-space: nowrap;
 }
 
 .filter-btn:hover {
@@ -49,7 +50,7 @@
     padding: 8px 12px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     scroll-behavior: smooth;
 }
 
@@ -63,6 +64,20 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+    position: relative;
+}
+
+.log-item:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.log-item:hover::after {
+    content: "🔭";
+    position: absolute;
+    right: 8px;
+    font-size: 10px;
 }
 
 @keyframes fadeIn {
@@ -77,43 +92,69 @@
     }
 }
 
-/* Event Types */
-.log-item.type-DEATH {
+/* Importance Styles */
+.log-item.imp-S {
+    border: 1px solid #ef4444;
+    border-left-width: 4px;
     border-left-color: #ef4444;
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(239, 68, 68, 0.15);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.2);
+    font-weight: 500;
 }
 
-.log-item.type-HUNT {
+.log-item.imp-A {
     border-left-color: #f97316;
+    background: rgba(249, 115, 22, 0.1);
 }
 
-.log-item.type-DRINK {
+.log-item.imp-B {
+    /* Standard blue/greenish */
     border-left-color: #3b82f6;
 }
 
-.log-item.type-EAT {
+.log-item.type-EAT.imp-B,
+.log-item.type-DRINK.imp-B,
+.log-item.type-BIRTH.imp-B {
     border-left-color: #22c55e;
+}
+
+.log-item.imp-C {
+    border-left-color: #64748b;
+    opacity: 0.8;
+    font-size: 11px;
+    padding-top: 4px;
+    padding-bottom: 4px;
 }
 
 .log-time {
     font-family: monospace;
     opacity: 0.5;
     font-size: 10px;
-    min-width: 30px;
+    min-width: 28px;
 }
 
 .log-icon {
     font-size: 14px;
+    min-width: 16px;
+    text-align: center;
 }
 
 .log-content {
     flex: 1;
     line-height: 1.3;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
-.log-highlight {
-    color: white;
-    font-weight: 500;
+.log-subject {
+    color: #f1f5f9;
+    font-weight: 600;
+}
+
+.log-target {
+    color: #cbd5e1;
+    font-style: italic;
 }
 
 .empty-log {

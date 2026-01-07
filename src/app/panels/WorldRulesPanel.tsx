@@ -19,6 +19,7 @@ export function WorldRulesPanel() {
         seed, // V1.2
         exportWorld, // V1.2
         importWorld, // V1.2
+        stats, // V1.1
     } = useGameStore();
 
     // V1.2 Export
@@ -65,7 +66,39 @@ export function WorldRulesPanel() {
         setCurrentTool('place');
     };
 
+    // V1.1 Costs
+    const COSTS: Record<ObjectType, number> = { water: 10, bush: 4, trash: 6 };
+    const EMERGENCY_AID_COST = 15;
+    const EMERGENCY_AID_CD = 120; // seconds
+
+    const { godPower, spendGodPower, setCooldown, isCooldownReady } = useGameStore();
+
+    const handleEmergencyAid = () => {
+        if (!isCooldownReady('emergency_aid')) return;
+        if (godPower < EMERGENCY_AID_COST) return;
+
+        spendGodPower(EMERGENCY_AID_COST);
+        setCooldown('emergency_aid', EMERGENCY_AID_CD);
+
+        const worker = getSimWorker();
+        // Simple "Rain" effect: Add 5 small waters randomly
+        for (let i = 0; i < 5; i++) {
+            const pos = { tx: Math.floor(20 + Math.random() * 160), ty: Math.floor(20 + Math.random() * 160) };
+            const obj: WorldObject = {
+                id: uuid(),
+                type: 'water',
+                pos,
+                data: { resources: 50, maxResources: 50, regenRate: 0.1 }
+            };
+            worker?.postMessage({ type: 'PLACE_OBJECT', payload: { object: obj } });
+        }
+    };
+
     const handleQuickPlace = (type: ObjectType) => {
+        const cost = COSTS[type];
+        if (godPower < cost) return;
+        spendGodPower(cost);
+
         const worker = getSimWorker();
         if (!worker) return;
 
@@ -117,9 +150,9 @@ export function WorldRulesPanel() {
     };
 
     const objects: Array<{ type: ObjectType; icon: string; label: string; desc: string }> = [
-        { type: 'water', icon: '💧', label: '水源', desc: '动物来此喝水补充渴值' },
-        { type: 'bush', icon: '🌿', label: '灌木', desc: '鼠的庇护点，猫难以捕捉' },
-        { type: 'trash', icon: '🗑️', label: '垃圾堆', desc: '鼠的食物来源，可刷新鼠' },
+        { type: 'water', icon: '💧', label: '水源 (10GP)', desc: '动物来此喝水补充渴值' },
+        { type: 'bush', icon: '🌿', label: '灌木 (4GP)', desc: '鼠的庇护点，猫难以捕捉' },
+        { type: 'trash', icon: '🗑️', label: '垃圾堆 (6GP)', desc: '鼠的食物来源，可刷新鼠' },
     ];
 
     return (
@@ -130,6 +163,53 @@ export function WorldRulesPanel() {
             </div>
 
             <div className="panel-body">
+                {/* V1.1 Eco Stress */}
+                <div className="form-group" style={{ marginBottom: '16px', background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <label style={{ margin: 0 }}>Eco Stress</label>
+                        <span style={{ fontSize: '12px', fontWeight: 'bold', color: (stats?.ecoStress || 0) > 80 ? '#ef4444' : (stats?.ecoStress || 0) > 50 ? '#f97316' : '#22c55e' }}>
+                            {stats?.ecoStress || 0}%
+                        </span>
+                    </div>
+                    <div style={{ height: '8px', background: '#334155', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{
+                            width: `${Math.min(100, stats?.ecoStress || 0)}%`,
+                            height: '100%',
+                            background: (stats?.ecoStress || 0) > 80 ? '#ef4444' : (stats?.ecoStress || 0) > 50 ? '#f97316' : '#22c55e',
+                            transition: 'width 0.5s ease-out'
+                        }} />
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px' }}>
+                        {(stats?.ecoStress || 0) > 80 ? 'CRITICAL: Collapse Imminent!' : (stats?.ecoStress || 0) > 50 ? 'Warning: High Pressure' : 'Stable'}
+                    </div>
+                </div>
+
+                {/* 紧急救援 */}
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                    <label>神力干预</label>
+                    <button
+                        className="btn-primary emergency-btn"
+                        onClick={handleEmergencyAid}
+                        disabled={!isCooldownReady('emergency_aid') || godPower < EMERGENCY_AID_COST}
+                        style={{
+                            background: isCooldownReady('emergency_aid') ? 'linear-gradient(45deg, #3b82f6, #06b6d4)' : '#334155',
+                            opacity: (isCooldownReady('emergency_aid') && godPower >= EMERGENCY_AID_COST) ? 1 : 0.5,
+                            width: '100%',
+                            padding: '10px'
+                        }}
+                    >
+                        <span>🌧️ 紧急降雨 (15GP)</span>
+                        {!isCooldownReady('emergency_aid') && (
+                            <span style={{ fontSize: '10px', marginLeft: '5px' }}>
+                                (冷却 {Math.ceil((useGameStore.getState().cooldowns['emergency_aid'] - Date.now()) / 1000)}s)
+                            </span>
+                        )}
+                    </button>
+                    <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px' }}>
+                        立即生成5个小型水源，冷却120秒
+                    </div>
+                </div>
+
                 {/* 放置工具 */}
                 <div className="form-group">
                     <label>放置物品</label>

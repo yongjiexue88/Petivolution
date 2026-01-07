@@ -204,3 +204,62 @@
     border-color: #6b7280;
     color: #6b7280;
 }
+
+/* ============================ */
+/* 响应式适配 (UI Scaling) */
+/* ============================ */
+
+/* 平板/小屏幕 (宽度 < 1024px) */
+@media (max-width: 1024px) {
+
+    .panels-left,
+    .panels-right {
+        top: 60px;
+        gap: 8px;
+        max-height: calc(100% - 120px);
+    }
+
+    .panel {
+        padding: 12px;
+        min-width: 220px;
+        /* 收窄面板 */
+    }
+
+    .panel-title {
+        font-size: 1rem;
+    }
+
+    .status-bar {
+        font-size: 0.8rem;
+        gap: 16px;
+    }
+}
+
+/* 手机/极小屏幕 (宽度 < 768px) */
+@media (max-width: 768px) {
+    .panels-left {
+        left: 8px;
+        right: 8px;
+        /* 全宽 */
+        min-width: unset;
+        max-height: 40%;
+    }
+
+    .panels-right {
+        top: auto;
+        bottom: 50px;
+        /* 在状态栏上方 */
+        left: 8px;
+        right: 8px;
+        max-height: 40%;
+    }
+
+    .status-bar {
+        font-size: 0.75rem;
+        gap: 8px;
+        flex-wrap: wrap;
+        /* 允许换行 */
+        height: auto;
+        padding: 4px 0;
+    }
+}

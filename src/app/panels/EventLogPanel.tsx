@@ -8,7 +8,7 @@ import './EventLogPanel.css';
 type FilterType = 'ALL' | 'DEATH' | 'HUNT' | 'LIFE';
 
 export function EventLogPanel() {
-    const { events, togglePanel } = useGameStore();
+    const { events, togglePanel, setCameraFlyTo } = useGameStore();
     const [filter, setFilter] = useState<FilterType>('ALL');
     const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -23,7 +23,7 @@ export function EventLogPanel() {
         if (filter === 'ALL') return true;
         if (filter === 'DEATH') return e.type === 'DEATH';
         if (filter === 'HUNT') return e.type === 'HUNT';
-        if (filter === 'LIFE') return e.type === 'DRINK' || e.type === 'EAT';
+        if (filter === 'LIFE') return e.type === 'DRINK' || e.type === 'EAT' || e.type === 'BIRTH';
         return true;
     });
 
@@ -34,49 +34,63 @@ export function EventLogPanel() {
         return `${m}:${s.toString().padStart(2, '0')}`;
     };
 
-    const getEventIcon = (type: string) => {
+    const getEventIcon = (type: string, importance: string = 'C') => {
+        if (importance === 'S') return '‼️';
+
         switch (type) {
             case 'DEATH': return '💀';
+            case 'BIRTH': return '🐣';
             case 'HUNT': return '⚔️';
             case 'DRINK': return '💧';
-            case 'EAT': return '🍽️';
+            case 'EAT': return '🍴';
             default: return '📝';
         }
     };
 
-    const renderEventContent = (e: SimEvent) => {
-        // We need names eventually, but SimEvent currently only has IDs mainly.
-        // Wait, SimEvent in types.ts:
-        // DEATH: has reason, killedBy (ID)
-        // HUNT: predatorId, preyId
-        // DRINK: entityId, waterId
-        // EAT: entityId, source
+    const handleJump = (e: SimEvent) => {
+        if (e.location) {
+            setCameraFlyTo(e.location);
+        }
+    };
 
-        // We should update SimEvent to include names at generation time to avoid looking up dead entities?
-        // Or we just show IDs/Species for now?
-        // Let's use generic descriptions for V1.1 if names are missing.
-        // Actually, for better UX, we should look up names in the store entities list?
-        // But dead entities might be gone from entities list.
-        // Best approach: Add names to SimEvent payload in Worker.
-        // For now, let's implement MVP with just types/reasons.
+    const renderEventContent = (e: SimEvent) => {
+        const subject = e.subjectName || 'Creature';
+        const target = e.targetName || 'Target';
 
         switch (e.type) {
             case 'DEATH':
                 return (
                     <span>
-                        <span className="log-highlight">Creature</span> died from {e.reason}
+                        <span className="log-subject">{subject}</span> died ({e.reason})
+                        {e.killedBy && <span> by <span className="log-target">{target}</span></span>}
+                    </span>
+                );
+            case 'BIRTH':
+                return (
+                    <span>
+                        <span className="log-subject">{subject}</span> was born
                     </span>
                 );
             case 'HUNT':
                 return (
                     <span>
-                        <span className="log-highlight">Cat</span> is chasing <span className="log-highlight">Rat</span>
+                        <span className="log-subject">{subject}</span> chases <span className="log-target">{target}</span>
                     </span>
                 );
             case 'DRINK':
-                return <span>Drinking water</span>;
+                return (
+                    <span>
+                        <span className="log-subject">{subject}</span> drinks
+                    </span>
+                );
             case 'EAT':
-                return <span>Eating {e.source}</span>;
+                return (
+                    <span>
+                        <span className="log-subject">{subject}</span> eats <span className="log-target">{e.source === 'prey' ? target : e.source}</span>
+                    </span>
+                );
+            case 'GENERIC':
+                return <span>{e.message}</span>;
             default:
                 return <span>Unknown event</span>;
         }
@@ -85,7 +99,7 @@ export function EventLogPanel() {
     return (
         <div className="panel event-log-panel">
             <div className="panel-header">
-                <h3>📜 Event Log</h3>
+                <h3>📜 Live Feed</h3>
                 <button className="close-btn" onClick={() => togglePanel('eventLog')}>×</button>
             </div>
 
@@ -97,7 +111,7 @@ export function EventLogPanel() {
                             className={`filter-btn ${filter === f ? 'active' : ''}`}
                             onClick={() => setFilter(f)}
                         >
-                            {f === 'LIFE' ? 'EAT/DRINK' : f}
+                            {f === 'LIFE' ? 'BIO' : f}
                         </button>
                     ))}
                 </div>
@@ -107,9 +121,14 @@ export function EventLogPanel() {
                         <div className="empty-log">No events yet...</div>
                     ) : (
                         filteredEvents.map((e, i) => (
-                            <div key={`${e.tick}-${i}`} className={`log-item type-${e.type}`}>
+                            <div
+                                key={`${e.tick}-${i}`}
+                                className={`log-item type-${e.type} imp-${e.importance || 'C'}`}
+                                onClick={() => handleJump(e)}
+                                title={e.location ? "Click to jump" : ""}
+                            >
                                 <span className="log-time">{formatTime(e.tick)}</span>
-                                <span className="log-icon">{getEventIcon(e.type)}</span>
+                                <span className="log-icon">{getEventIcon(e.type, e.importance)}</span>
                                 <div className="log-content">
                                     {renderEventContent(e)}
                                 </div>

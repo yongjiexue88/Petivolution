@@ -56,4 +56,29 @@ Successfully implemented and integrated the new V1 AI system for Petivolution. T
 *   **Optimization**: Address remaining uncovered branches in `tick.ts` and `actions.ts` to reach 90%+ global simulation coverage.
 *   **V2 Planning**: Finalize requirements for Genetics and Evolution modules.
 
+## V1.3 Single World Multiplayer Layer (Completed)
+**Date:** 2026-01-07
+**Status:** Completed
+
+### 1. Backend Infrastructure
+*   **Decoupled Server**: Created a standalone Node.js/Express server (`server/src/index.ts`) that runs the authoritative simulation.
+*   **Shared Simulation**: Ported existing simulation logic (`world/WorldServer.ts`) to run headless on the backend, sharing core logic with the frontend client.
+*   **API Endpoints**: Implemented essential endpoints:
+    *   `GET /health`: Server status tick.
+    *   `GET /api/world/snapshot`: Full world state for client rendering.
+    *   `POST /api/actions/spawn`: Validated entity spawning.
+    *   `GET /api/world/entity/:id`: Detailed entity inspection.
+
+### 2. Frontend Client Migration
+*   **ServerClient**: Implemented a typesafe API wrapper (`ServerClient.ts`) to handle communication.
+*   **Hybrid Mode**: Updated `gameStore.ts` with a `useServer` flag to toggle between Local Worker (legacy) and Server Mode (V1.3).
+*   **Polling Loop**: Implemented a 10Hz/20Hz polling mechanism in `App.tsx` to sync state.
+*   **UI Integration**:
+    *   Added Connection Status indicator in the Toolbar.
+    *   Successfully wired Selection and Spawn actions to backend endpoints.
+
+### Next Steps
+*   **Player Identity**: Implement anonymous login and session management.
+*   **Multiplayer**: Allow multiple clients to connect and see each other's actions (implicitly handled by shared world, need to verify).
+
 

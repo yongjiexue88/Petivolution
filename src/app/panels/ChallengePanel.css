@@ -1,0 +1,188 @@
+.challenge-panel {
+    /* reuse panel styles */
+}
+
+.challenge-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.challenge-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 10px;
+    transition: all 0.2s;
+}
+
+.challenge-card:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--color-primary);
+}
+
+.challenge-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.challenge-header strong {
+    color: var(--color-text-primary);
+    font-size: 13px;
+}
+
+.duration {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.challenge-card p {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin: 4px 0 8px 0;
+    line-height: 1.4;
+}
+
+.start-btn {
+    width: 100%;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    padding: 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.start-btn:hover {
+    background: #7c3aed;
+    /* Slightly lighter shade */
+}
+
+/* Active State */
+.active-challenge {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.active-challenge h4 {
+    margin: 0;
+    font-size: 16px;
+    text-align: center;
+    color: var(--color-primary);
+}
+
+.challenge-desc {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    text-align: center;
+    margin: 0;
+}
+
+.challenge-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.timer {
+    font-family: monospace;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.status-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-badge.active {
+    background: #3b82f6;
+    color: white;
+}
+
+.status-badge.won {
+    background: #22c55e;
+    color: white;
+}
+
+.status-badge.lost {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-danger {
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid #ef4444;
+    color: #ef4444;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-danger:hover {
+    background: rgba(239, 68, 68, 0.3);
+}
+
+.result-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+}
+
+.win-msg {
+    color: #22c55e;
+    font-size: 18px;
+    font-weight: bold;
+    animation: popIn 0.5s;
+}
+
+.lose-msg {
+    color: #ef4444;
+    font-size: 18px;
+    font-weight: bold;
+    animation: shake 0.5s;
+}
+
+@keyframes popIn {
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-5px);
+    }
+
+    75% {
+        transform: translateX(5px);
+    }
+}

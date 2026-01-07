@@ -3,22 +3,10 @@
 // ============================================
 
 import { create } from 'zustand';
-import type {
-    SnapshotEntity,
-    WorldObject,
-    SimStats,
-    SimEvent,
-    EntityRuntime,
-    SpeciesId,
-    Personality,
-    ObjectType,
-    WorldRule,
-    GraveyardEntry,
-    WorldSaveData, // V1.2
-    ChunkId, // V3
-    ChunkData, // V3
-} from '@shared/types';
+import type { EntityRuntime, SnapshotEntity, SimEvent, GraveyardEntry, SimStats, WorldSaveData, EntityId, SpeciesId, Personality, ObjectType } from '@shared/types';
+import { WorldObject, WorldRule } from '@shared/types';
 import { DEFAULT_WORLD_RULES } from '@shared/types';
+import { ServerClient } from '../api/ServerClient';
 
 // ============================================
 // 状态类型
@@ -36,7 +24,6 @@ export interface GameState {
     events: SimEvent[];
     stats: SimStats;
     graveyard: GraveyardEntry[];
-    chunks: Record<ChunkId, ChunkData>; // V3
 
     // 选中实体详情
     selectedEntityId: string | null;
@@ -44,6 +31,26 @@ export interface GameState {
 
     // V1.1 Path Trace
     viewingGravePathId: string | null;
+    cameraFlyTo: { x: number; y: number } | null; // V1.1
+    followingEntityId: string | null; // V1.1 Follow Mode
+
+    // V1.1 God Mode State
+    godPower: number;
+    maxGodPower: number;
+    lastRestoredTick: number;
+    cooldowns: Record<string, number>;
+
+    // V1.1 Challenges
+    activeChallengeId: string | null;
+    challengeStartTime: number | null;
+    challengeState: 'active' | 'won' | 'lost' | null;
+
+    // V1.3 Server Mode
+    useServer: boolean;
+    setUseServer: (enabled: boolean) => void;
+    connected: boolean;
+    latency: number;
+    setConnectionStatus: (connected: boolean, latency: number) => void;
 
     // UI 状态
     currentTool: 'select' | 'spawn' | 'place' | 'delete';
@@ -74,6 +81,8 @@ export interface GameState {
     setSelectedEntityId: (id: string | null) => void;
     setSelectedEntityDetail: (entity: EntityRuntime | null) => void;
     setViewGravePath: (id: string | null) => void;
+    setCameraFlyTo: (pos: { x: number; y: number } | null) => void;
+    setFollowingEntityId: (id: string | null) => void;
     setCurrentTool: (tool: 'select' | 'spawn' | 'place' | 'delete') => void;
     setSpawnSpecies: (species: SpeciesId) => void;
     setSpawnPersonality: (personality: Personality) => void;
@@ -85,6 +94,16 @@ export interface GameState {
     // V1.2 Save & Share
     exportWorld: () => WorldSaveData;
     importWorld: (data: WorldSaveData) => void;
+
+    // V1.1 God Mode Actions
+    spendGodPower: (amount: number) => boolean;
+    setCooldown: (key: string, durationSec: number) => void;
+    isCooldownReady: (key: string) => boolean;
+
+    // V1.1 Challenges
+    startChallenge: (id: string) => void;
+    stopChallenge: () => void;
+    setChallengeState: (state: 'active' | 'won' | 'lost') => void;
 }
 
 // ============================================
@@ -121,6 +140,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     selectedEntityId: null,
     selectedEntityDetail: null,
     viewingGravePathId: null,
+    cameraFlyTo: null,
+    followingEntityId: null,
 
     currentTool: 'select',
     spawnSpecies: 'rat',
@@ -133,7 +154,59 @@ export const useGameStore = create<GameState>((set, get) => ({
     showDebugPanel: false,
     showEventLog: true,
 
+    // V1.1 God Mode Init
+    godPower: 60, // Start with 60
+    maxGodPower: 100,
+    lastRestoredTick: 0,
+    cooldowns: {},
+
+    activeChallengeId: null,
+    challengeStartTime: null,
+    challengeState: null,
+
+    // V1.3 Server Init
+    useServer: true, // Default to Server Mode for V1.3
+    connected: false,
+    latency: 0,
+
     rules: DEFAULT_WORLD_RULES,
+
+    // V1.1 God Mode Actions
+    spendGodPower: (amount) => {
+        const state = get();
+        if (state.godPower >= amount) {
+            set({ godPower: state.godPower - amount });
+            return true;
+        }
+        return false;
+    },
+
+    setCooldown: (key, durationSec) => set((state) => ({
+        cooldowns: { ...state.cooldowns, [key]: Date.now() + durationSec * 1000 }
+    })),
+
+    isCooldownReady: (key) => {
+        const state = get();
+        const readyAt = state.cooldowns[key] || 0;
+        return Date.now() >= readyAt;
+    },
+
+    // V1.1 Challenge Actions
+    startChallenge: (id) => set({
+        activeChallengeId: id,
+        challengeStartTime: Date.now(),
+        challengeState: 'active'
+    }),
+    stopChallenge: () => set({
+        activeChallengeId: null,
+        challengeStartTime: null,
+        challengeState: null
+    }),
+    setChallengeState: (state) => set({ challengeState: state }),
+
+    // V1.3 Server Actions
+    setUseServer: (enabled) => set({ useServer: enabled }),
+    setConnectionStatus: (connected, latency) => set({ connected, latency }),
 
     // Actions
     setInitialized: (initialized) => set({ initialized }),
@@ -142,6 +215,15 @@ export const useGameStore = create<GameState>((set, get) => ({
         // 合并新事件，只保留最近 50 条
         const newEvents = [...state.events, ...data.events].slice(-50);
 
+        // V1.1 God Power Regen: 1 per 3 seconds.
+        // Snapshot is ~100ms (10Hz). 30 snapshots = 3s.
+        // Regen 0.0333 per snapshot.
+        let newGp = state.godPower;
+        if (newGp < state.maxGodPower) {
+            newGp = Math.min(state.maxGodPower, newGp + 0.0333);
+        }
+
+
         return {
             tick: data.tick,
             seed: data.stats.currentSeed || 0, // Sync seed
@@ -149,6 +231,8 @@ export const useGameStore = create<GameState>((set, get) => ({
             objects: data.objects,
             stats: data.stats,
             events: newEvents,
+            godPower: newGp,
+
         };
     }),
 
@@ -161,6 +245,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     setSelectedEntityDetail: (entity) => set({ selectedEntityDetail: entity }),
 
     setViewGravePath: (id) => set({ viewingGravePathId: id }),
+
+    setCameraFlyTo: (pos) => set({ cameraFlyTo: pos }),
+
+    setFollowingEntityId: (id) => set({ followingEntityId: id }),
 
     setCurrentTool: (tool) => set({ currentTool: tool }),
 

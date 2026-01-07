@@ -41,6 +41,16 @@ export function SpawnPanel() {
             ty: Math.floor(50 + Math.random() * 100),
         };
 
+        const cost = COSTS[spawnSpecies];
+        const { godPower, spendGodPower } = useGameStore.getState();
+
+        if (godPower < cost) {
+            // Visual feedback handled by disabled button, but double check
+            return;
+        }
+
+        spendGodPower(cost);
+
         worker.postMessage({
             type: 'SPAWN_ENTITY',
             payload: { species: spawnSpecies, name, personality: spawnPersonality, pos },
@@ -53,7 +63,14 @@ export function SpawnPanel() {
         setCurrentTool('spawn');
     };
 
-    const getCap = (species: SpeciesId) => V1.capGlobal[species];
+    // V1.1 Costs
+    const COSTS = { rat: 2, cat: 8 };
+
+    const canAfford = (species: SpeciesId) => useGameStore.getState().godPower >= COSTS[species];
+
+
+    // V1 Fishbowl: Show density target max as "cap" for UI
+    const getCap = (species: SpeciesId) => V1.densityTargets[species].max;
 
     return (
         <div className="panel spawn-panel">
@@ -70,17 +87,21 @@ export function SpawnPanel() {
                         <button
                             className={`species-btn ${spawnSpecies === 'rat' ? 'active' : ''}`}
                             onClick={() => setSpawnSpecies('rat')}
+                            disabled={!canAfford('rat')}
+                            style={{ opacity: canAfford('rat') ? 1 : 0.5 }}
                         >
                             <span className="species-icon">🐭</span>
-                            <span>鼠</span>
+                            <span>鼠 (2GP)</span>
                             <span className="count">{stats.rat}/{getCap('rat')}</span>
                         </button>
                         <button
                             className={`species-btn ${spawnSpecies === 'cat' ? 'active' : ''}`}
                             onClick={() => setSpawnSpecies('cat')}
+                            disabled={!canAfford('cat')}
+                            style={{ opacity: canAfford('cat') ? 1 : 0.5 }}
                         >
                             <span className="species-icon">🐱</span>
-                            <span>猫</span>
+                            <span>猫 (8GP)</span>
                             <span className="count">{stats.cat}/{getCap('cat')}</span>
                         </button>
                     </div>

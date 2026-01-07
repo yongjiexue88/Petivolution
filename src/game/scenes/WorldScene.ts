@@ -6,6 +6,7 @@ import Phaser from 'phaser';
 import type { SnapshotEntity, WorldObject } from '@shared/types';
 import { useGameStore, getSimWorker } from '@app/store/gameStore';
 import { V1 } from '@shared/constants';
+import { ServerClient } from '../../app/api/ServerClient';
 
 export class WorldScene extends Phaser.Scene {
     private entitySprites: Map<string, Phaser.GameObjects.Container> = new Map();
@@ -28,9 +29,9 @@ export class WorldScene extends Phaser.Scene {
         this.createBackground();
 
         // 2. Setup Camera
-        // 2. Setup Camera
-        // V3: Infinite World - Remove bounds
-        // this.cameras.main.setBounds(-500, -500, worldWidth + 1000, worldHeight + 1000);
+        // V1 Fishbowl: Finite world with camera bounds
+        const margin = 200; // Small margin for visual comfort
+        this.cameras.main.setBounds(-margin, -margin, worldWidth + margin * 2, worldHeight + margin * 2);
         this.cameras.main.centerOn(worldWidth / 2, worldHeight / 2);
         this.cameras.main.setZoom(1);
 
@@ -126,14 +127,55 @@ export class WorldScene extends Phaser.Scene {
     }
 
     update() {
-        // Sync TileSprite position with Camera
+        // V1.1 Camera Fly Request
+        const store = useGameStore.getState();
+        if (store.cameraFlyTo) {
+            this.cameras.main.centerOn(store.cameraFlyTo.x, store.cameraFlyTo.y);
+            // Ensure visible zoom
+            if (this.cameras.main.zoom < 0.8) {
+                this.cameras.main.setZoom(1);
+            }
+            store.setCameraFlyTo(null);
+            this.updateWorkerCamera();
+        }
+
+        // V1.1 Follow Mode
+        if (store.followingEntityId && !store.cameraFlyTo) {
+            // Find entity position
+            const entitySprite = this.entitySprites.get(store.followingEntityId);
+            if (entitySprite && entitySprite.visible) {
+                // Smooth follow
+                this.cameras.main.startFollow(entitySprite, true, 0.1, 0.1);
+            } else {
+                // Lost tracking or dead
+                this.cameras.main.stopFollow();
+                store.setFollowingEntityId(null);
+            }
+        } else if (!store.followingEntityId) {
+            if (this.cameras.main.dirty) {
+                // If we were following, stop
+                // this.cameras.main.stopFollow(); 
+                // Don't call stopFollow every frame, but we need to ensure we stop if we were following
+            }
+        }
+
+        // Sync TileSprite position and scale with Camera
+        const cam = this.cameras.main;
+        const zoom = cam.zoom;
+
         if (this.gridSprite) {
-            this.gridSprite.tilePositionX = this.cameras.main.scrollX;
-            this.gridSprite.tilePositionY = this.cameras.main.scrollY;
+            // Scale the tile sprite to match zoom
+            this.gridSprite.setScale(zoom);
+            // Adjust tile position to account for zoom
+            this.gridSprite.tilePositionX = cam.scrollX / zoom;
+            this.gridSprite.tilePositionY = cam.scrollY / zoom;
         }
         if (this.chunkGridSprite) {
-            this.chunkGridSprite.tilePositionX = this.cameras.main.scrollX;
-            this.chunkGridSprite.tilePositionY = this.cameras.main.scrollY;
+            // Scale the tile sprite to match zoom
+            this.chunkGridSprite.setScale(zoom);
+            // Adjust tile position to account for zoom
+            this.chunkGridSprite.tilePositionX = cam.scrollX / zoom;
+            this.chunkGridSprite.tilePositionY = cam.scrollY / zoom;
         }
     }
 
@@ -187,20 +229,35 @@ export class WorldScene extends Phaser.Scene {
             if (clickedId) {
                 // Select entity
                 store.setSelectedEntityId(clickedId);
-                const worker = getSimWorker();
-                worker?.postMessage({
-                    type: 'SELECT_ENTITY',
-                    payload: { entityId: clickedId }
-                });
+
+                if (store.useServer) {
+                    // Fetch detail immediately
+                    ServerClient.getInstance().getEntityDetail(clickedId).then(detail => {
+                        if (detail) {
+                            store.setSelectedEntityDetail(detail);
+                        }
+                    });
+                } else {
+                    const worker = getSimWorker();
+                    worker?.postMessage({
+                        type: 'SELECT_ENTITY',
+                        payload: { entityId: clickedId }
+                    });
+                }
+
                 // Don't drag camera if clicked entity? (Optional, kept drag enabled for now)
             } else {
                 // Deselect
                 store.setSelectedEntityId(null);
-                const worker = getSimWorker();
-                worker?.postMessage({
-                    type: 'SELECT_ENTITY',
-                    payload: { entityId: null }
-                });
+                store.setSelectedEntityDetail(null);
+
+                if (!store.useServer) {
+                    const worker = getSimWorker();
+                    worker?.postMessage({
+                        type: 'SELECT_ENTITY',
+                        payload: { entityId: null }
+                    });
+                }
             }
 
             // Always allow drag for navigation
@@ -246,8 +303,26 @@ export class WorldScene extends Phaser.Scene {
         return null;
     }
 
-    spawnAnimal(pos: { x: number; y: number }) {
+    async spawnAnimal(pos: { x: number; y: number }) {
         const store = useGameStore.getState();
+
+        const costs = V1.godMode.costs.spawn as Record<string, number>;
+        const cost = costs[store.spawnSpecies] || 0;
+
+        if (store.godPower < cost) return;
+        store.spendGodPower(cost);
+
+        // Server Mode Support (V1.3)
+        if (store.useServer) {
+            const res = await ServerClient.getInstance().spawnAnimal(store.spawnSpecies, pos.x, pos.y);
+            if (!res.ok) {
+                console.warn('Server Spawn Failed:', res.error);
+                // Refund GP? Technically state update makes it tricky.
+                // ideally we only spend if valid.
+            }
+            return;
+        }
+
         const worker = getSimWorker();
 
         const names = {
@@ -276,37 +351,31 @@ export class WorldScene extends Phaser.Scene {
 
     placeObject(pos: { x: number; y: number }) {
         const store = useGameStore.getState();
-        const worker = getSimWorker();
+        const costs = V1.godMode.costs.place as Record<string, number>;
+        const cost = costs[store.placeObjectType] || 0;
 
+        if (store.godPower < cost) {
+            // TODO: Show floating warning
+            return;
+        }
+
+        store.spendGodPower(cost);
+
+        const worker = getSimWorker();
         const tilePos = {
             tx: Math.floor(pos.x / V1.tileSizePx),
             ty: Math.floor(pos.y / V1.tileSizePx)
         };
 
-        worker?.postMessage({
-            type: 'PLACE_OBJECT',
-            payload: {
-                type: store.placeObjectType,
-                pos: tilePos,
-            }, // Object payload might need full structure, check worker
-        });
-
-        // Note: The worker PLACE_OBJECT expects a full WorldObject payload?
-        // Let's check types.ts -> { type: 'PLACE_OBJECT'; payload: { object: WorldObject } }
-        // Ah, WorldScene needs to construct the object.
-        // Let's do a quick fix here.
-
-        // WORKAROUND: Send minimal data if worker supports it, or full obj
-        // Actually sim.worker.ts handler:
-        // case 'PLACE_OBJECT':
-        //    if (cmd.payload.object) ...
-        // So we need to construct it
+        // Construct object
         const objId = Math.random().toString(36).substring(7);
+        // Need to import basic configs or hardcode defaults
+        // For now, simple defaults
         const object: WorldObject = {
             id: objId,
             type: store.placeObjectType,
             pos: tilePos,
-            data: { resources: 100 } // Default
+            data: { resources: 100, maxResources: 100, regenRate: 1.0 }
         };
 
         worker?.postMessage({

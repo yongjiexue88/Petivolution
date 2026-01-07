@@ -30,9 +30,26 @@ export function Toolbar() {
         <div className="toolbar">
             {/* Logo */}
             <div className="toolbar-logo">
-                <span className="logo-icon">🦎</span>
-                <span className="logo-text">Petivolution</span>
+                <span className="logo-icon">⚡</span>
+                <span className="logo-text">God Mode</span>
             </div>
+
+            {/* V1.1 God Power Display */}
+            <div className="god-power-bar-container" title="God Power (Regens over time)">
+                {(() => {
+                    const { godPower, maxGodPower } = useGameStore();
+                    const pct = Math.min(100, Math.max(0, (godPower / maxGodPower) * 100));
+                    return (
+                        <>
+                            <div className="gp-text">GP: {Math.floor(godPower)}/{maxGodPower}</div>
+                            <div className="gp-track">
+                                <div className="gp-fill" style={{ width: `${pct}%` }}></div>
+                            </div>
+                        </>
+                    );
+                })()}
+            </div>
+
 
             {/* 工具选择 */}
             <div className="toolbar-section">
