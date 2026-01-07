@@ -4,7 +4,6 @@
 
 import { useGameStore, getSimWorker } from '../store/gameStore';
 import type { ObjectType, WorldObject, TilePos } from '@shared/types';
-import { V1 } from '@shared/constants';
 import { OBJECT_CONFIGS } from '@shared/species.config';
 import { v4 as uuid } from 'uuid';
 import './WorldRulesPanel.css';
@@ -17,7 +16,49 @@ export function WorldRulesPanel() {
         setCurrentTool,
         rules,
         setRules,
+        seed, // V1.2
+        exportWorld, // V1.2
+        importWorld, // V1.2
     } = useGameStore();
+
+    // V1.2 Export
+    const handleExport = () => {
+        const data = exportWorld();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `petivolution-seed${data.world.seed}-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    // V1.2 Import
+    const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const data = JSON.parse(event.target?.result as string);
+                if (data.version && data.entities) {
+                    importWorld(data);
+                    alert('World loaded successfully!');
+                } else {
+                    alert('Invalid save file format.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Failed to parse save file.');
+            }
+        };
+        reader.readAsText(file);
+        // Reset input
+        e.target.value = '';
+    };
 
     const handlePlaceObject = (type: ObjectType) => {
         setPlaceObjectType(type);
@@ -46,6 +87,20 @@ export function WorldRulesPanel() {
         };
 
         worker.postMessage({ type: 'PLACE_OBJECT', payload: { object: obj } });
+    };
+
+    const handleQuickRemove = (type: ObjectType) => {
+        const { objects } = useGameStore.getState();
+        const targets = objects.filter(o => o.type === type);
+        if (targets.length === 0) return;
+
+        // Remove the last one added (LIFO) or random? Random feels more natural for "thinning"
+        const target = targets[Math.floor(Math.random() * targets.length)];
+
+        const worker = getSimWorker();
+        if (worker) {
+            worker.postMessage({ type: 'REMOVE_OBJECT', payload: { objectId: target.id } });
+        }
     };
 
     const handleToggleDebug = (key: keyof typeof rules.debug) => {
@@ -98,6 +153,16 @@ export function WorldRulesPanel() {
                                 >
                                     +
                                 </button>
+                                <button
+                                    className="quick-place-btn remove-btn"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleQuickRemove(obj.type);
+                                    }}
+                                    title="移除一个"
+                                >
+                                    -
+                                </button>
                             </div>
                         ))}
                     </div>
@@ -133,16 +198,36 @@ export function WorldRulesPanel() {
                         </label>
                     </div>
                 </div>
+            </div>
 
-                {/* 生态提示 */}
-                <div className="panel-tips">
-                    <p>🌱 生态平衡提示：</p>
-                    <ul>
-                        <li>多放灌木 → 鼠存活率提高</li>
-                        <li>多放垃圾堆 → 鼠繁殖更快</li>
-                        <li>水源不足 → 全体渴死风险</li>
-                    </ul>
+            {/* V1.2 World Management */}
+            <div className="form-group">
+                <label>世界管理 (V1.2)</label>
+                <div className="world-management">
+                    <div className="seed-display">
+                        <span>Seed:</span>
+                        <code style={{ background: '#333', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>{seed}</code>
+                    </div>
+                    <div className="manage-buttons" style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                        <button className="tool-btn" onClick={handleExport} style={{ flex: 1, fontSize: '12px' }}>
+                            📤 导出
+                        </button>
+                        <label className="tool-btn" style={{ flex: 1, fontSize: '12px', textAlign: 'center', cursor: 'pointer', margin: 0 }}>
+                            📥 导入
+                            <input type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
+                        </label>
+                    </div>
                 </div>
+            </div>
+
+            {/* 生态提示 */}
+            <div className="panel-tips">
+                <p>🌱 生态平衡提示：</p>
+                <ul>
+                    <li>多放灌木 → 鼠存活率提高</li>
+                    <li>多放垃圾堆 → 鼠繁殖更快</li>
+                    <li>水源不足 → 全体渴死风险</li>
+                </ul>
             </div>
         </div>
     );

@@ -3,7 +3,7 @@
 // ============================================
 
 import { openDB, type IDBPDatabase } from 'idb';
-import type { SaveFileV1 } from '@shared/types';
+import type { WorldSaveData } from '@shared/types';
 
 const DB_NAME = 'petivolution';
 const DB_VERSION = 1;
@@ -27,7 +27,7 @@ async function getDB(): Promise<IDBPDatabase> {
 export interface SaveEntry {
     id: string;
     name: string;
-    data: SaveFileV1;
+    data: WorldSaveData;
     createdAt: number;
     updatedAt: number;
 }
@@ -35,7 +35,7 @@ export interface SaveEntry {
 /**
  * 保存游戏状态
  */
-export async function saveGame(id: string, name: string, data: SaveFileV1): Promise<void> {
+export async function saveGame(id: string, name: string, data: WorldSaveData): Promise<void> {
     const db = await getDB();
     const entry: SaveEntry = {
         id,
@@ -56,7 +56,7 @@ export async function saveGame(id: string, name: string, data: SaveFileV1): Prom
 /**
  * 加载存档
  */
-export async function loadGame(id: string): Promise<SaveFileV1 | null> {
+export async function loadGame(id: string): Promise<WorldSaveData | null> {
     const db = await getDB();
     const entry = await db.get(STORE_NAME, id);
     return entry?.data ?? null;
@@ -91,13 +91,13 @@ export const AUTO_SAVE_ID = 'autosave';
 /**
  * 获取自动存档
  */
-export async function getAutoSave(): Promise<SaveFileV1 | null> {
+export async function getAutoSave(): Promise<WorldSaveData | null> {
     return loadGame(AUTO_SAVE_ID);
 }
 
 /**
  * 保存自动存档
  */
-export async function saveAutoSave(data: SaveFileV1): Promise<void> {
+export async function saveAutoSave(data: WorldSaveData): Promise<void> {
     await saveGame(AUTO_SAVE_ID, '自动存档', data);
 }

@@ -20,7 +20,7 @@ export const V1 = {
     chaseTimeoutTicks: 15 * 10, // 最多追逐 10 秒 (tick=15 -> 150 ticks)
 
     // 生态稳定器（全局上限）
-    chunkSizeTiles: 32,
+    chunkSize: 32,
     capGlobal: {
         rat: 50,
         cat: 10,

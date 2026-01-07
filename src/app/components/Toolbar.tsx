@@ -96,24 +96,34 @@ export function Toolbar() {
             </div>
 
             {/* 面板切换 */}
-            <div className="toolbar-section panel-toggles">
+            <div className="toolbar-group">
                 <button
-                    className={`panel-btn ${showSpawnPanel ? 'active' : ''}`}
+                    className={`tool-btn ${showSpawnPanel ? 'active' : ''}`}
                     onClick={() => togglePanel('spawn')}
+                    title="投放面板"
                 >
-                    🐾 投放
+                    📦
                 </button>
                 <button
-                    className={`panel-btn ${showRulesPanel ? 'active' : ''}`}
+                    className={`tool-btn ${showRulesPanel ? 'active' : ''}`}
                     onClick={() => togglePanel('rules')}
+                    title="世界规则"
                 >
-                    ⚙️ 规则
+                    ⚙️
                 </button>
                 <button
-                    className={`panel-btn ${showGraveyardPanel ? 'active' : ''}`}
+                    className={`tool-btn ${showGraveyardPanel ? 'active' : ''}`}
                     onClick={() => togglePanel('graveyard')}
+                    title="墓碑"
                 >
-                    ⚰️ 墓地
+                    🪦
+                </button>
+                <button
+                    className={`tool-btn ${useGameStore(s => s.showEventLog) ? 'active' : ''}`}
+                    onClick={() => togglePanel('eventLog')}
+                    title="事件日志"
+                >
+                    📜
                 </button>
                 <button
                     className={`panel-btn ${showDebugPanel ? 'active' : ''}`}

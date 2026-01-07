@@ -15,6 +15,7 @@ import type {
     TilePos,
     SimState,
     Goal,
+    GraveyardEntry, // Added import
 } from '@shared/types';
 import { V1 } from '@shared/constants';
 import { DEFAULT_WORLD_RULES } from '@shared/types';
@@ -23,6 +24,17 @@ import { perceive, type PerceptionResult } from '../ai/perception';
 import { calculateUtility, selectGoal } from '../ai/utility';
 import { executeAction } from '../ai/actions';
 import { v4 as uuid } from 'uuid';
+
+// V1.1 Helper to record event globally and locally
+export function recordEvent(sim: SimulationState, entity: EntityRuntime, event: SimEvent) {
+    sim.pendingEvents.push(event);
+
+    // Maintain local history (cap at 20)
+    entity.history.push(event);
+    if (entity.history.length > 20) {
+        entity.history.shift();
+    }
+}
 
 // ============================================
 // 模拟状态
@@ -35,16 +47,7 @@ export interface SimulationState {
 
     entities: Map<string, EntityRuntime>;
     objects: Map<string, WorldObject>;
-    graveyard: Array<{
-        entityId: string;
-        species: SpeciesId;
-        name: string;
-        personality: Personality;
-        bornTick: number;
-        deadTick: number;
-        reason: 'starvation' | 'dehydration' | 'killed' | 'unknown';
-        killedByName?: string;
-    }>;
+    graveyard: GraveyardEntry[];
 
     rules: WorldRule;
 
@@ -63,6 +66,7 @@ export interface SimulationState {
         birthsThisMinute: number;
         deathsThisMinute: number;
         lastMinuteTick: number;
+        warning?: boolean; // V1.1
     };
 
     // 选中实体 (用于发送详情)
@@ -195,6 +199,22 @@ export function simulateTick(sim: SimulationState): void {
             executeAction(entity, sim);
 
             entity.ageTicks++;
+
+            // Record Path (Every 60 ticks = 1s)
+            if (sim.tick % 60 === 0) {
+                entity.path.push({ x: entity.pos.x, y: entity.pos.y });
+                // Keep last 10 points (10 seconds)
+                if (entity.path.length > 10) {
+                    entity.path.shift();
+                }
+            }
+
+            // ========================================
+            // 8. V2 Check Reproduction (Every 60 ticks)
+            // ========================================
+            if (sim.tick % 60 === 0) {
+                checkReproduction(entity, sim);
+            }
         }
 
         // 移除死亡实体
@@ -220,7 +240,7 @@ export function simulateTick(sim: SimulationState): void {
 // Vitals 更新
 // ============================================
 
-function updateVitals(entity: EntityRuntime, sim: SimulationState): void {
+function updateVitals(entity: EntityRuntime, _sim: SimulationState): void {
     const config = SPECIES_CONFIGS[entity.species];
     const v = entity.vitals;
 
@@ -283,16 +303,22 @@ function handleDeath(entity: EntityRuntime, sim: SimulationState): void {
         killedByName: entity.dead?.killedBy
             ? sim.entities.get(entity.dead.killedBy)?.name
             : undefined,
+        history: [...entity.history], // V1.1 保存生平
+        path: [...entity.path],       // V1.1 保存路径
     });
 
     // 发送事件
-    sim.pendingEvents.push({
+    const deathEvent: SimEvent = {
         type: 'DEATH',
         tick: sim.tick,
         entityId: entity.id,
         reason,
         killedBy: entity.dead?.killedBy,
-    });
+    };
+
+    sim.pendingEvents.push(deathEvent);
+    // 同时记录在个人历史
+    entity.history.push(deathEvent);
 
     sim.stats.deathsThisMinute++;
 }
@@ -354,6 +380,73 @@ function checkChaseTimeout(entity: EntityRuntime, sim: SimulationState): void {
 }
 
 // ============================================
+// V2 Reproduction
+// ============================================
+
+function checkReproduction(entity: EntityRuntime, sim: SimulationState): void {
+    const config = SPECIES_CONFIGS[entity.species];
+    if (!config.reproduction?.enabled) return;
+
+    const rep = config.reproduction;
+
+    // 1. Check Age
+    if (entity.ageTicks < rep.minAgeTicks) return;
+
+    // 2. Check Cooldown
+    if (entity.lastReproductionTick && (sim.tick - entity.lastReproductionTick) < rep.cooldownTicks) return;
+
+    // 3. Check Hunger
+    if (entity.vitals.hunger01 < rep.minHunger) return;
+
+    // 4. Check Chance (prob per second)
+    if (sim.rng() > rep.probabilityPerSecond) return;
+
+    // 5. Check Global Cap (Quick check)
+    // Detailed check is in spawnEntity, but we can quick fail here
+    if (!canSpawn(entity.species, sim)) return;
+
+    // Apply Cost
+    entity.vitals.hunger01 = Math.max(0, entity.vitals.hunger01 - rep.energyCost);
+    entity.lastReproductionTick = sim.tick;
+
+    spawnOffspring(entity, sim);
+}
+
+function spawnOffspring(parent: EntityRuntime, sim: SimulationState) {
+    // Random position near parent
+    const offset = (sim.rng() - 0.5) * V1.tileSizePx * 2;
+    const spawnPos: TilePos = {
+        tx: (parent.pos.x + offset) / V1.tileSizePx,
+        ty: (parent.pos.y + offset) / V1.tileSizePx
+    };
+
+    // Inherit Personality (50% parent, 50% random)
+    const personalities: Personality[] = ['curious', 'cautious', 'brave'];
+    const pRand = sim.rng();
+    const childPersonality = pRand > 0.5 ? parent.personality : personalities[Math.floor(sim.rng() * personalities.length)];
+
+    const child = spawnEntity(sim, parent.species, `${parent.name} Jr.`, childPersonality, spawnPos);
+
+    if (child) {
+        // Link Family
+        child.parents = [parent.id];
+        child.generation = parent.generation + 1;
+
+        parent.children.push(child.id);
+
+        // Record Event
+        const birthEvent: SimEvent = {
+            type: 'BIRTH',
+            tick: sim.tick,
+            entityId: child.id,
+            parentId: parent.id
+        };
+        sim.pendingEvents.push(birthEvent);
+        parent.history.push(birthEvent);
+    }
+}
+
+// ============================================
 // 刺激更新
 // ============================================
 
@@ -365,7 +458,7 @@ function updateStimuli(entity: EntityRuntime, perception: PerceptionResult): voi
 // Goal 转换
 // ============================================
 
-function transitionToGoal(entity: EntityRuntime, goal: Goal, sim: SimulationState): void {
+function transitionToGoal(entity: EntityRuntime, goal: Goal, _sim: SimulationState): void {
     // 重置追逐状态
     if (goal !== 'hunt') {
         entity.chaseTicks = undefined;
@@ -401,7 +494,7 @@ export function spawnEntity(
         return null;
     }
 
-    const config = SPECIES_CONFIGS[species];
+    // const config = SPECIES_CONFIGS[species];
 
     const entity: EntityRuntime = {
         id: uuid(),
@@ -426,6 +519,11 @@ export function spawnEntity(
             lastUtilityScores: {},
             recentStimuli: [],
         },
+        parents: [], // V2
+        children: [], // V2
+        generation: 1, // V2 Default
+        history: [], // V1.1
+        path: [],    // V1.1
     };
 
     sim.entities.set(entity.id, entity);
@@ -486,6 +584,20 @@ export function getSnapshot(sim: SimulationState): {
 
     const events = sim.pendingEvents.splice(0);
 
+    // V1.1 Calculate Warning
+    let criticalCount = 0;
+    const totalCount = sim.entities.size;
+    if (totalCount > 0) {
+        for (const e of sim.entities.values()) {
+            if (e.vitals.hunger01 < 0.2 || e.vitals.thirst01 < 0.2) {
+                criticalCount++;
+            }
+        }
+        sim.stats.warning = (criticalCount / totalCount) > 0.5;
+    } else {
+        sim.stats.warning = false;
+    }
+
     return {
         tick: sim.tick,
         entities,
@@ -495,6 +607,8 @@ export function getSnapshot(sim: SimulationState): {
             cat: catCount,
             deathsLastMin: sim.stats.deathsThisMinute,
             birthsLastMin: sim.stats.birthsThisMinute,
+            warning: sim.stats.warning,
+            currentSeed: sim.seed // V1.2
         },
         events,
     };

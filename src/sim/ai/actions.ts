@@ -5,7 +5,6 @@
 import type {
     EntityRuntime,
     Vec2,
-    Vec2,
 } from '@shared/types';
 import type { SimulationState } from '../core/tick';
 import { SPECIES_CONFIGS, OBJECT_CONFIGS, clamp01 } from '@shared/species.config';
@@ -75,6 +74,9 @@ function executeWander(entity: EntityRuntime, sim: SimulationState): void {
 
     // 移向目标
     moveToward(entity, entity.targetPos, speed * (0.5 + sim.rng() * 0.3));
+
+    // Clear context
+    entity.ai.decisionContext = undefined;
 }
 
 // ============================================
@@ -169,20 +171,24 @@ function executeDrink(entity: EntityRuntime, sim: SimulationState): void {
     entity.vitals.thirst01 = clamp01(entity.vitals.thirst01 + config.vitals.drinkGainPerTick);
 
     // 记录事件
+    // 记录事件
     if (entity.targetObjectId) {
-        sim.pendingEvents.push({
+        const event: any = {
             type: 'DRINK',
             tick: sim.tick,
             entityId: entity.id,
             waterId: entity.targetObjectId,
-        });
-    }
+        };
+        sim.pendingEvents.push(event);
+        entity.history.push(event);
+        if (entity.history.length > 20) entity.history.shift();
 
-    // 喝饱了就停止
-    if (entity.vitals.thirst01 >= 0.95) {
-        entity.state = 'idle';
-        entity.ai.currentGoal = 'wander';
-        entity.targetObjectId = undefined;
+        // 喝饱了就停止
+        if (entity.vitals.thirst01 >= 0.95) {
+            entity.state = 'idle';
+            entity.ai.currentGoal = 'wander';
+            entity.targetObjectId = undefined;
+        }
     }
 }
 
@@ -197,12 +203,16 @@ function executeEat(entity: EntityRuntime, sim: SimulationState): void {
     entity.vitals.hunger01 = clamp01(entity.vitals.hunger01 + config.vitals.eatGainPerTick);
 
     // 记录事件
-    sim.pendingEvents.push({
+    // 记录事件
+    const event: any = {
         type: 'EAT',
         tick: sim.tick,
         entityId: entity.id,
         source: 'trash',
-    });
+    };
+    sim.pendingEvents.push(event);
+    entity.history.push(event);
+    if (entity.history.length > 20) entity.history.shift();
 
     // 吃饱了就停止
     if (entity.vitals.hunger01 >= 0.95) {
@@ -248,14 +258,31 @@ function executeChase(entity: EntityRuntime, sim: SimulationState): void {
         entity.state = 'attack';
 
         // 记录追捕事件
-        sim.pendingEvents.push({
+        // 记录追捕事件
+        const event: any = {
             type: 'HUNT',
             tick: sim.tick,
             predatorId: entity.id,
             preyId: prey.id,
-        });
+        };
+        sim.pendingEvents.push(event);
+        entity.history.push(event);
+        if (entity.history.length > 20) entity.history.shift();
+
+        // Update context
+        entity.ai.decisionContext = {
+            goal: 'hunt',
+            targetId: prey.id,
+            distance: dist / V1.tileSizePx
+        };
     } else {
         moveToward(entity, prey.pos, speed);
+        // Update context
+        entity.ai.decisionContext = {
+            goal: 'chase',
+            targetId: prey.id,
+            distance: dist / V1.tileSizePx
+        };
     }
 }
 
@@ -384,6 +411,14 @@ function executeFlee(entity: EntityRuntime, sim: SimulationState): void {
         targetPos.y = Math.max(50, Math.min(maxY, targetPos.y));
 
         moveToward(entity, targetPos, speed);
+
+        // Update context
+        entity.ai.decisionContext = {
+            goal: 'flee',
+            threatId: threat.id,
+            distance: distance(entity.pos, threat.pos) / V1.tileSizePx,
+            reason: 'predator_nearby'
+        };
     }
 }
 

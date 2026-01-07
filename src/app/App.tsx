@@ -1,12 +1,13 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { useGameStore, setSimWorker, getSimWorker } from './store/gameStore';
+import { useEffect, useRef } from 'react';
+import { useGameStore, setSimWorker } from './store/gameStore';
 import { GameCanvas } from './components/GameCanvas';
 import { SpawnPanel } from './panels/SpawnPanel';
 import { AnimalDetailPanel } from './panels/AnimalDetailPanel';
 import { WorldRulesPanel } from './panels/WorldRulesPanel';
 import { GraveyardPanel } from './panels/GraveyardPanel';
+import { EventLogPanel } from './panels/EventLogPanel';
 import { Toolbar } from './components/Toolbar';
-import type { WorkerUpdate, GraveyardEntry } from '@shared/types';
+import type { WorkerUpdate } from '@shared/types';
 import { DEFAULT_WORLD_RULES } from '@shared/types';
 import './App.css';
 
@@ -20,9 +21,10 @@ function App() {
         showSpawnPanel,
         showRulesPanel,
         showGraveyardPanel,
-        selectedEntityId,
+        showEventLog,
+        // selectedEntityId,
         selectedEntityDetail,
-        entities,
+        // entities,
         stats,
         tick,
     } = useGameStore();
@@ -83,9 +85,9 @@ function App() {
     }, [setInitialized, updateFromSnapshot, setSelectedEntityDetail, addToGraveyard]);
 
     // 获取选中实体
-    const selectedEntity = selectedEntityId
-        ? entities.find(e => e.id === selectedEntityId)
-        : null;
+    // const selectedEntity = selectedEntityId
+    //     ? entities.find(e => e.id === selectedEntityId)
+    //     : null;
 
     return (
         <div className="app">
@@ -99,6 +101,7 @@ function App() {
             <div className="panels-left">
                 {showSpawnPanel && <SpawnPanel />}
                 {showRulesPanel && <WorldRulesPanel />}
+                {showEventLog && <EventLogPanel />}
             </div>
 
             {/* 右侧面板 */}

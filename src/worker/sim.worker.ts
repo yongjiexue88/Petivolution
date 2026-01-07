@@ -19,7 +19,7 @@ import type {
     TilePos,
     WorldObject,
     WorldRule,
-    SaveFileV1,
+    WorldSaveData,
 } from '../shared/types';
 import { DEFAULT_WORLD_RULES } from '../shared/types';
 import { V1 } from '../shared/constants';
@@ -98,7 +98,7 @@ function handleInitWorld(payload: {
     sendSnapshot();
 }
 
-function handleLoadSave(payload: { save: SaveFileV1 }) {
+function handleLoadSave(payload: { save: WorldSaveData }) {
     const save = payload.save;
 
     sim = createSimulation(save.world.seed, save.world.mapId, save.world.rules);
@@ -196,7 +196,7 @@ function handleUpdateCamera(payload: { centerX: number; centerY: number; zoom: n
 function handleRequestSave(payload: { saveName: string }) {
     if (!sim) return;
 
-    const save: SaveFileV1 = {
+    const save: WorldSaveData = {
         schemaVersion: 1,
         meta: {
             saveId: uuid(),
@@ -283,8 +283,8 @@ function sendMessage(msg: WorkerUpdate) {
 function placeInitialResources() {
     if (!sim) return;
 
-    const mapPixelWidth = V1.defaultMapWidth * V1.tileSizePx;
-    const mapPixelHeight = V1.defaultMapHeight * V1.tileSizePx;
+    // const mapPixelWidth = V1.defaultMapWidth * V1.tileSizePx;
+    // const mapPixelHeight = V1.defaultMapHeight * V1.tileSizePx;
 
     // 放置水源 (5个)
     for (let i = 0; i < 5; i++) {

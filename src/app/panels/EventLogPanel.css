@@ -1,0 +1,125 @@
+.event-log-panel {
+    /* Fixed position at bottom left, above toolbar? Or just a regular panel? */
+    /* Let's make it a regular panel for now, but maybe positioned differently if needed */
+    width: 320px;
+    max-height: 350px;
+    display: flex;
+    flex-direction: column;
+}
+
+.event-log-panel .panel-body {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.log-filters {
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.filter-btn {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.filter-btn.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+}
+
+.log-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    scroll-behavior: smooth;
+}
+
+.log-item {
+    font-size: 12px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 3px solid transparent;
+    animation: fadeIn 0.3s ease-out;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Event Types */
+.log-item.type-DEATH {
+    border-left-color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.log-item.type-HUNT {
+    border-left-color: #f97316;
+}
+
+.log-item.type-DRINK {
+    border-left-color: #3b82f6;
+}
+
+.log-item.type-EAT {
+    border-left-color: #22c55e;
+}
+
+.log-time {
+    font-family: monospace;
+    opacity: 0.5;
+    font-size: 10px;
+    min-width: 30px;
+}
+
+.log-icon {
+    font-size: 14px;
+}
+
+.log-content {
+    flex: 1;
+    line-height: 1.3;
+}
+
+.log-highlight {
+    color: white;
+    font-weight: 500;
+}
+
+.empty-log {
+    text-align: center;
+    padding: 20px;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    font-style: italic;
+}

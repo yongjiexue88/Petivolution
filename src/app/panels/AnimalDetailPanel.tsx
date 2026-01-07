@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function AnimalDetailPanel({ entity }: Props) {
-    const { vitals, ai, personality, species, name, ageTicks, state } = entity;
+    const { vitals, ai, personality, species, name, ageTicks, state, generation, children } = entity;
 
     const formatAge = (ticks: number): string => {
         const seconds = Math.floor(ticks / V1.simTickHz);
@@ -93,6 +93,14 @@ export function AnimalDetailPanel({ entity }: Props) {
                     <span className="info-label">性格</span>
                     <span className="info-value">{getPersonalityLabel(personality)}</span>
                 </div>
+                <div className="info-row">
+                    <span className="info-label">代数</span>
+                    <span className="info-value">Gen {generation || 1}</span>
+                </div>
+                <div className="info-row">
+                    <span className="info-label">后代</span>
+                    <span className="info-value">{children?.length || 0}</span>
+                </div>
 
                 {/* Vitals 条 */}
                 <div className="vitals-section">
@@ -111,6 +119,20 @@ export function AnimalDetailPanel({ entity }: Props) {
                         <span className="info-label">当前目标</span>
                         <span className="info-value goal-badge">{getGoalLabel(ai.currentGoal)}</span>
                     </div>
+
+                    {/* Decision Reasoning */}
+                    {ai.decisionContext && (
+                        <div className="info-row">
+                            <span className="info-label">Action Details</span>
+                            <span className="info-value context-value">
+                                {ai.decisionContext.reason
+                                    ? ai.decisionContext.reason
+                                    : ai.decisionContext.targetId
+                                        ? `${ai.decisionContext.goal} #${ai.decisionContext.targetId.slice(0, 4)} (${ai.decisionContext.distance?.toFixed(1)}t)`
+                                        : ai.decisionContext.goal}
+                            </span>
+                        </div>
+                    )}
 
                     {/* 评分表 */}
                     {topScores.length > 0 && (

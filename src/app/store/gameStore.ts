@@ -7,15 +7,16 @@ import type {
     SnapshotEntity,
     WorldObject,
     SimStats,
+    SimEvent,
     EntityRuntime,
     SpeciesId,
     Personality,
     ObjectType,
     WorldRule,
     GraveyardEntry,
+    WorldSaveData, // V1.2
 } from '@shared/types';
 import { DEFAULT_WORLD_RULES } from '@shared/types';
-import { V1 } from '@shared/constants';
 
 // ============================================
 // 状态类型
@@ -27,14 +28,19 @@ export interface GameState {
 
     // 世界状态 (从 Worker 接收)
     tick: number;
+    seed: number; // V1.2
     entities: SnapshotEntity[];
     objects: WorldObject[];
+    events: SimEvent[];
     stats: SimStats;
     graveyard: GraveyardEntry[];
 
     // 选中实体详情
     selectedEntityId: string | null;
     selectedEntityDetail: EntityRuntime | null;
+
+    // V1.1 Path Trace
+    viewingGravePathId: string | null;
 
     // UI 状态
     currentTool: 'select' | 'spawn' | 'place' | 'delete';
@@ -47,6 +53,7 @@ export interface GameState {
     showRulesPanel: boolean;
     showGraveyardPanel: boolean;
     showDebugPanel: boolean;
+    showEventLog: boolean;
 
     // 世界规则
     rules: WorldRule;
@@ -58,17 +65,23 @@ export interface GameState {
         entities: SnapshotEntity[];
         objects: WorldObject[];
         stats: SimStats;
+        events: SimEvent[];
     }) => void;
     addToGraveyard: (entry: GraveyardEntry) => void;
     setSelectedEntityId: (id: string | null) => void;
     setSelectedEntityDetail: (entity: EntityRuntime | null) => void;
+    setViewGravePath: (id: string | null) => void;
     setCurrentTool: (tool: 'select' | 'spawn' | 'place' | 'delete') => void;
     setSpawnSpecies: (species: SpeciesId) => void;
     setSpawnPersonality: (personality: Personality) => void;
     setPlaceObjectType: (type: ObjectType) => void;
-    togglePanel: (panel: 'spawn' | 'rules' | 'graveyard' | 'debug') => void;
+    togglePanel: (panel: 'spawn' | 'rules' | 'graveyard' | 'debug' | 'eventLog') => void;
     setRules: (rules: Partial<WorldRule>) => void;
     setTimeScale: (scale: 0 | 1 | 2 | 4) => void;
+
+    // V1.2 Save & Share
+    exportWorld: () => WorldSaveData;
+    importWorld: (data: WorldSaveData) => void;
 }
 
 // ============================================
@@ -93,13 +106,16 @@ export const useGameStore = create<GameState>((set, get) => ({
     // 初始状态
     initialized: false,
     tick: 0,
+    seed: 0,
     entities: [],
     objects: [],
+    events: [],
     stats: { rat: 0, cat: 0, deathsLastMin: 0, birthsLastMin: 0 },
     graveyard: [],
 
     selectedEntityId: null,
     selectedEntityDetail: null,
+    viewingGravePathId: null,
 
     currentTool: 'select',
     spawnSpecies: 'rat',
@@ -110,17 +126,25 @@ export const useGameStore = create<GameState>((set, get) => ({
     showRulesPanel: false,
     showGraveyardPanel: false,
     showDebugPanel: false,
+    showEventLog: true,
 
     rules: DEFAULT_WORLD_RULES,
 
     // Actions
     setInitialized: (initialized) => set({ initialized }),
 
-    updateFromSnapshot: (data) => set({
-        tick: data.tick,
-        entities: data.entities,
-        objects: data.objects,
-        stats: data.stats,
+    updateFromSnapshot: (data) => set((state) => {
+        // 合并新事件，只保留最近 50 条
+        const newEvents = [...state.events, ...data.events].slice(-50);
+
+        return {
+            tick: data.tick,
+            seed: data.stats.currentSeed || 0, // Sync seed
+            entities: data.entities,
+            objects: data.objects,
+            stats: data.stats,
+            events: newEvents,
+        };
     }),
 
     addToGraveyard: (entry) => set((state) => ({
@@ -130,6 +154,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     setSelectedEntityId: (id) => set({ selectedEntityId: id }),
 
     setSelectedEntityDetail: (entity) => set({ selectedEntityDetail: entity }),
+
+    setViewGravePath: (id) => set({ viewingGravePathId: id }),
 
     setCurrentTool: (tool) => set({ currentTool: tool }),
 
@@ -149,6 +175,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                 return { showGraveyardPanel: !state.showGraveyardPanel };
             case 'debug':
                 return { showDebugPanel: !state.showDebugPanel };
+            case 'eventLog':
+                return { showEventLog: !state.showEventLog };
             default:
                 return {};
         }
@@ -161,4 +189,52 @@ export const useGameStore = create<GameState>((set, get) => ({
     setTimeScale: (scale) => set((state) => ({
         rules: { ...state.rules, timeScale: scale },
     })),
+
+    // V1.2 Save & Share
+    exportWorld: () => {
+        const state = get();
+        return {
+            schemaVersion: 1,
+            meta: {
+                saveId: 'export-' + Date.now(),
+                name: 'Exported World',
+                createdAtIso: new Date().toISOString(),
+                updatedAtIso: new Date().toISOString(),
+                playTicks: state.tick,
+            },
+            world: {
+                // V1.2 TODO: Get real seed from worker or store
+                seed: state.seed,
+                mapId: 'garden_v1',
+                tick: state.tick,
+                rules: state.rules,
+            },
+            objects: state.objects,
+            // Note: SnapshotEntity[] is not fully compatible with EntityRuntime[], but for visual replay/export it might suffice
+            // or we need to request full save from worker.
+            // Casting to any to fix build for now.
+            entities: state.entities as any,
+            graveyard: state.graveyard,
+        };
+    },
+
+    importWorld: (data) => {
+        set({
+            tick: data.world.tick,
+            rules: data.world.rules,
+            entities: data.entities as any, // SnapshotEntity mismatch
+            objects: data.objects,
+            stats: { rat: 0, cat: 0, deathsLastMin: 0, birthsLastMin: 0, currentSeed: data.world.seed }, // Reset stats but keep seed
+            graveyard: data.graveyard,
+            events: [], // Clear events on load
+            selectedEntityId: null,
+            selectedEntityDetail: null,
+            viewingGravePathId: null,
+        });
+
+        const worker = getSimWorker();
+        if (worker) {
+            worker.postMessage({ type: 'LOAD_WORLD', payload: data });
+        }
+    },
 }));

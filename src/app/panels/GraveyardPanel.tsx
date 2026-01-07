@@ -7,7 +7,7 @@ import { V1 } from '@shared/constants';
 import './GraveyardPanel.css';
 
 export function GraveyardPanel() {
-    const { graveyard } = useGameStore();
+    const { graveyard, viewingGravePathId, setViewGravePath } = useGameStore();
 
     const formatLifespan = (bornTick: number, deadTick: number): string => {
         const ticks = deadTick - bornTick;
@@ -69,6 +69,39 @@ export function GraveyardPanel() {
                                 {entry.killedByName && (
                                     <div className="grave-killer">
                                         被 {entry.killedByName} 捕杀
+                                    </div>
+                                )}
+
+                                {/* History (V1.1) */}
+                                {entry.history && entry.history.length > 0 && (
+                                    <div className="grave-history">
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                            <div className="history-title" style={{ marginBottom: 0 }}>生平回放</div>
+                                            {entry.path && entry.path.length > 0 && (
+                                                <button
+                                                    className={`path-btn ${viewingGravePathId === entry.entityId ? 'active' : ''}`}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (viewingGravePathId === entry.entityId) {
+                                                            setViewGravePath(null);
+                                                        } else {
+                                                            setViewGravePath(entry.entityId);
+                                                        }
+                                                    }}
+                                                >
+                                                    {viewingGravePathId === entry.entityId ? 'Hide Path' : 'Show Path'}
+                                                </button>
+                                            )}
+                                        </div>
+                                        {entry.history.slice().reverse().slice(0, 5).map((evt: any, j: number) => (
+                                            <div key={j} className="history-row">
+                                                <span className="tick">T{evt.tick}</span>
+                                                <span className="type">{evt.type}</span>
+                                                {evt.type === 'HUNT' && <span className="desc">捕猎</span>}
+                                                {evt.type === 'DRINK' && <span className="desc">饮水</span>}
+                                                {evt.type === 'EAT' && <span className="desc">进食</span>}
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
                             </div>

@@ -4,9 +4,8 @@
 
 import { useState } from 'react';
 import { useGameStore, getSimWorker } from '../store/gameStore';
-import type { SpeciesId, Personality, TilePos, WorldObject } from '@shared/types';
+import type { SpeciesId, TilePos } from '@shared/types';
 import { V1 } from '@shared/constants';
-import { v4 as uuid } from 'uuid';
 import './SpawnPanel.css';
 
 // 随机名字库
@@ -55,7 +54,6 @@ export function SpawnPanel() {
     };
 
     const getCap = (species: SpeciesId) => V1.capGlobal[species];
-    const getCurrentCount = (species: SpeciesId) => species === 'rat' ? stats.rat : stats.cat;
 
     return (
         <div className="panel spawn-panel">

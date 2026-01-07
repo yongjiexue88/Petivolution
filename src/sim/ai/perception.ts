@@ -5,7 +5,6 @@
 import type {
     EntityRuntime,
     Stimulus,
-    SpeciesId,
     Vec2,
 } from '@shared/types';
 import type { SimulationState } from '../core/tick';

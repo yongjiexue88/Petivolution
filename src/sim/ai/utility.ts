@@ -18,7 +18,7 @@ import { V1 } from '@shared/constants';
 
 export function calculateUtility(
     entity: EntityRuntime,
-    sim: SimulationState
+    _sim: SimulationState
 ): Partial<Record<Goal, number>> {
     const config = SPECIES_CONFIGS[entity.species];
     const uw = config.utility;

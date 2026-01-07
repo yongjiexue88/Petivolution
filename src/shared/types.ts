@@ -74,6 +74,15 @@ export type EntityAI = {
 
     // 当前动作失败原因（调试&UI）
     lastFailReason?: string;
+
+    // 决策上下文（UI展示"为什么"）
+    decisionContext?: {
+        goal: string;
+        targetId?: string; // 追逐/互动目标
+        threatId?: string; // 逃跑来源
+        distance?: number; // 距离目标/威胁
+        reason?: string;   // 文字描述 (Optional)
+    };
 };
 
 // ============================================
@@ -102,6 +111,16 @@ export type EntityRuntime = {
 
     // AI 可解释性（UI显示"它为什么这么做"）
     ai: EntityAI;
+
+    // V2 Family
+    parents: EntityId[];
+    children: EntityId[];
+    generation: number;
+    lastReproductionTick?: number; // V2
+
+    // V1.1 History & Path
+    history: SimEvent[];
+    path: Vec2[];
 
     // 战斗（V1猫抓鼠可极简）
     combat?: {
@@ -191,9 +210,11 @@ export type GraveyardEntry = {
     deadTick: number;
     reason: 'starvation' | 'dehydration' | 'killed' | 'unknown';
     killedByName?: string;
+    history: SimEvent[]; // V1.1
+    path: Vec2[];        // V1.1
 };
 
-export type SaveFileV1 = {
+export type WorldSaveData = {
     schemaVersion: 1;
 
     meta: {
@@ -223,7 +244,7 @@ export type SaveFileV1 = {
 // Main -> Worker
 export type WorkerCommand =
     | { type: 'INIT_WORLD'; payload: { seed: number; mapId: string; rules: WorldRule; objects?: WorldObject[] } }
-    | { type: 'LOAD_SAVE'; payload: { save: SaveFileV1 } }
+    | { type: 'LOAD_SAVE'; payload: { save: WorldSaveData } }
     | { type: 'SET_RULES'; payload: { rules: Partial<WorldRule> } }
     | { type: 'SET_TIME_SCALE'; payload: { timeScale: TimeScale } }
     | { type: 'SPAWN_ENTITY'; payload: { species: SpeciesId; name: string; personality: Personality; pos: TilePos } }
@@ -251,6 +272,7 @@ export type SnapshotEntity = {
 // Simulation Events
 export type SimEvent =
     | { type: 'DEATH'; tick: number; entityId: EntityId; reason: string; killedBy?: EntityId }
+    | { type: 'BIRTH'; tick: number; entityId: EntityId; parentId: EntityId } // V2
     | { type: 'HUNT'; tick: number; predatorId: EntityId; preyId: EntityId }
     | { type: 'DRINK'; tick: number; entityId: EntityId; waterId: ObjectId }
     | { type: 'EAT'; tick: number; entityId: EntityId; source: 'prey' | 'trash' };
@@ -261,6 +283,8 @@ export type SimStats = {
     cat: number;
     deathsLastMin: number;
     birthsLastMin: number;
+    warning?: boolean;     // V1.1 SOS
+    currentSeed?: number;  // V1.2
 };
 
 // Worker -> Main
@@ -268,7 +292,7 @@ export type WorkerUpdate =
     | { type: 'SNAPSHOT'; payload: { tick: number; entities: SnapshotEntity[]; objects: WorldObject[]; stats: SimStats; events: SimEvent[] } }
     | { type: 'ENTITY_DETAIL'; payload: { entity: EntityRuntime } }
     | { type: 'SPAWN_FAILED'; payload: { reason: string; species: SpeciesId } }
-    | { type: 'SAVE_READY'; payload: { save: SaveFileV1 } }
+    | { type: 'SAVE_READY'; payload: { save: WorldSaveData } }
     | { type: 'ERROR'; payload: { message: string } };
 
 // ============================================

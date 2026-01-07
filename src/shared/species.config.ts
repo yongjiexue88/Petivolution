@@ -72,6 +72,17 @@ export type SpeciesConfig = {
         damagePerHit: number;
     };
 
+    // V2 Reproduction
+    reproduction?: {
+        enabled: boolean;
+        minHunger: number; // 0..1, must be above to reproduce
+        minAgeTicks: number;
+        cooldownTicks: number;
+        energyCost: number; // Hunger penalty
+        maxPopulation: number; // Simple cap
+        probabilityPerSecond: number; // Random chance if conditions met
+    };
+
     utility: UtilityWeights;
 
     // 视觉
@@ -108,6 +119,16 @@ export const RAT_CONFIG: SpeciesConfig = {
         dangerThreshold01: 0.15,
         healthDamageWhenHungerBelow: 0.0008,
         healthDamageWhenThirstBelow: 0.0012,
+    },
+
+    reproduction: {
+        enabled: true,
+        minHunger: 0.7,
+        minAgeTicks: 300,  // ~5s (Fast enough for testing)
+        cooldownTicks: 600, // ~10s
+        energyCost: 0.25,
+        maxPopulation: 100,
+        probabilityPerSecond: 0.2, // Check every second, 20% chance
     },
 
     utility: {

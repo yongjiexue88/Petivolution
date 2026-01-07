@@ -5,7 +5,6 @@
 import { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { WorldScene } from '@game/scenes/WorldScene';
-import { useGameStore } from '../store/gameStore';
 
 export function GameCanvas() {
     const containerRef = useRef<HTMLDivElement>(null);

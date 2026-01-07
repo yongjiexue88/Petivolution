@@ -173,3 +173,11 @@
     font-size: 11px;
     color: #ef4444;
 }
+
+.context-value {
+    font-size: 11px;
+    color: var(--color-text-primary);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+}

@@ -19,9 +19,10 @@ Successfully implemented and integrated the new V1 AI system for Petivolution. T
 *   **World Rules (`worldRules.ts`)**: Created a flexible rules system for toggling simulation features.
 
 ### 3. Critical Bug Fixes
-*   **Invisible Animals**: Fixed a regression in `WorldScene.ts` where animals were spawning but not rendering due to a type mismatch between the store's `SnapshotEntity` and the renderer's expected `Animal` type.
+*   **Invisible Animals & Rendering**: Rewrote `WorldScene.ts` to perfectly sync with the Worker's `SnapshotEntity` data. Fixed TypeErrors that caused crashes during syncing.
+*   **Runtime Stability**: Fixed a syntax error in `utility.ts` (restored function signature) that was causing simulation startup failures.
 *   **Build System**: Resolved circular dependencies and invalid exports in `index.ts`.
-*   **Code Cleanup**: Removed unused variables and legacy code to ensure a clean build.
+*   **Debug & UX Tools**: Added "Minus" buttons for resource removal and visual debug overlays (Sense Radius, Target Lines, Chunk Bounds) to assist in AI verification.
 
 ## System Components
 
@@ -36,9 +37,11 @@ Successfully implemented and integrated the new V1 AI system for Petivolution. T
 | **Wander** | No urgent needs | `Wander` |
 
 ## Verification
-*   **Browser Testing**: Confirmed that animals spawn correctly via the "Quick Spawn" button and are visible on the canvas.
-*   **Behavior**: Observed species-specific behaviors (e.g., rats fleeing, cats hunting) in the simulation logic.
+*   **Interaction Enabled**: Users can click entities to select them. The "Animal Detail" panel correctly displays real-time AI data (vitals, current goal, top 3 utility scores).
+*   **Simulation Validated**: Verified predation loops (cats hunting rats) and population dynamics in a running browser session.
+*   **Debug Tools Verified**: Confirmed object removal works and debug overlays accurately reflect simulation state (grid, perception range).
 
 ## Next Steps
-*   **UI Implementation**: Update the "Animal Details" panel to visualize the new AI internal state (current goal, utility scores, active stimuli).
 *   **Tuning**: Refine utility weights and action costs in `species.ts` based on extended observation.
+*   **New Features**: Begin planning for V2 features (Genetics/Evolution).
+

@@ -126,7 +126,7 @@ export class WorldScene extends Phaser.Scene {
             }
         });
 
-        this.input.on('wheel', (pointer: Phaser.Input.Pointer, _: unknown, __: unknown, deltaY: number) => {
+        this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _: unknown, __: unknown, deltaY: number) => {
             const zoom = this.cameras.main.zoom;
             // Simple center zoom
             const newZoom = Phaser.Math.Clamp(zoom - deltaY * 0.001, 0.2, 5);
@@ -343,6 +343,12 @@ export class WorldScene extends Phaser.Scene {
                 stateText.setText(this.getStateEmoji(entity.state));
             }
         }
+
+        // 3. Debug Draw
+        this.drawDebug();
+
+        // 4. Heatmap Draw
+        // this.drawHeatmap();
     }
 
     createEntitySprite(entity: SnapshotEntity): Phaser.GameObjects.Container {
@@ -478,5 +484,131 @@ export class WorldScene extends Phaser.Scene {
         container.setDepth(-100);
 
         return container;
+    }
+
+    // ===============================================
+    // Debug Rendering
+    // ===============================================
+
+    private debugGraphics?: Phaser.GameObjects.Graphics;
+
+    drawDebug() {
+        if (!this.debugGraphics) {
+            this.debugGraphics = this.add.graphics();
+            this.debugGraphics.setDepth(9999);
+        }
+
+        this.debugGraphics.clear();
+        const store = useGameStore.getState();
+        const { showSenseRadius, showTargets, showChunkBounds } = store.rules.debug;
+
+
+        const selectedId = store.selectedEntityId;
+        if (selectedId) {
+            const entity = store.entities.find(e => e.id === selectedId);
+            if (entity) {
+                // Ensure graphics exists if we skipped init above
+                if (!this.debugGraphics) {
+                    this.debugGraphics = this.add.graphics();
+                    this.debugGraphics.setDepth(9999);
+                }
+                // this.drawOffscreenArrow(entity);
+            }
+        }
+
+        // V1.1 Path Trace
+        if (store.viewingGravePathId) {
+            const entry = store.graveyard.find(g => g.entityId === store.viewingGravePathId);
+            if (entry && entry.path && entry.path.length > 1) {
+                this.debugGraphics.lineStyle(3, 0xffd700, 0.8); // Gold line
+
+                const points = entry.path.map(p => ({ x: p.x, y: p.y }));
+                this.debugGraphics.strokePoints(points, false, false);
+
+                // Draw start/end dots
+                this.debugGraphics.fillStyle(0xffd700, 1);
+                const first = points[0];
+                const last = points[points.length - 1];
+                this.debugGraphics.fillCircle(first.x, first.y, 4);
+                this.debugGraphics.fillCircle(last.x, last.y, 6); // Dead spot larger
+            }
+        }
+
+        if (!showSenseRadius && !showTargets && !showChunkBounds && !store.viewingGravePathId) return;
+
+        // 1. Chunk Bounds
+        if (showChunkBounds) {
+            this.debugGraphics.lineStyle(2, 0xffff00, 0.3); // Yellow, faint
+            const worldWidth = V1.defaultMapWidth * V1.tileSizePx;
+            const worldHeight = V1.defaultMapHeight * V1.tileSizePx;
+            const chunkSizePx = V1.chunkSize * V1.tileSizePx; // 32 * 32 = 1024
+
+            for (let x = 0; x <= worldWidth; x += chunkSizePx) {
+                this.debugGraphics.moveTo(x, 0);
+                this.debugGraphics.lineTo(x, worldHeight);
+            }
+            for (let y = 0; y <= worldHeight; y += chunkSizePx) {
+                this.debugGraphics.moveTo(0, y);
+                this.debugGraphics.lineTo(worldWidth, y);
+            }
+            this.debugGraphics.strokePath();
+
+            // Label Chunks
+            // (Optional: Draw text, but graphics is cheaper)
+        }
+
+        // 2. Entity Debug Info (Radius, Targets)
+        if (showSenseRadius || showTargets) {
+            const entities = store.entities;
+
+            for (const entity of entities) {
+                // We need species config for radius. 
+                // Since we don't have full config here easily without importing, 
+                // we'll approximate or assume standard (Cats=20, Rats=15 tiles).
+                // Better: import SPECIES_CONFIGS? 
+                // Currently importing types, V1. Let's hardcode or import.
+                // Importing SPECIES_CONFIGS might be circular if not careful, but shared should be fine.
+                // Let's us rough values for now to avoid breaking imports: 
+                // Cat: 20 * 32 = 640, Rat: 15 * 32 = 480.
+                const radius = entity.species === 'cat' ? 640 : 480;
+
+                if (showSenseRadius) {
+                    this.debugGraphics.lineStyle(1, 0x00ff00, 0.2); // Green ring
+                    this.debugGraphics.strokeCircle(entity.x, entity.y, radius);
+                }
+
+                if (showTargets) {
+                    // We don't have targetPos in SnapshotEntity to save bandwidth?
+                    // Let's check shared/types.ts -> SnapshotEntity does NOT have targetPos.
+                    // It only has state.
+                    // To show targets, we need `EntityRuntime`.
+                    // BUT, `EntityRuntime` is only sending for `selectedEntityDetail`.
+                    // So we can only show target for the SELECTED entity?
+                    // OR we need to add targetPos to SnapshotEntity if we want global debug.
+                    // User request: "target line boundary is not showing".
+                    // If they want it for ALL, we need to add it to snapshot.
+                    // If just for selected, we use `selectedEntityDetail`.
+                    // Let's try drawing for selected entity if available.
+
+                    if (entity.selected && store.selectedEntityDetail && store.selectedEntityDetail.id === entity.id) {
+                        const detail = store.selectedEntityDetail;
+                        if (detail.targetPos) {
+                            const tx = detail.targetPos.x * V1.tileSizePx + V1.tileSizePx / 2;
+                            const ty = detail.targetPos.y * V1.tileSizePx + V1.tileSizePx / 2;
+
+                            this.debugGraphics.lineStyle(2, 0xff0000, 0.8); // Red line
+                            this.debugGraphics.moveTo(entity.x, entity.y);
+                            this.debugGraphics.lineTo(tx, ty);
+                            this.debugGraphics.strokePath();
+
+                            // Draw X at target
+                            this.debugGraphics.lineStyle(2, 0xff0000, 1);
+                            this.debugGraphics.lineBetween(tx - 5, ty - 5, tx + 5, ty + 5);
+                            this.debugGraphics.lineBetween(tx + 5, ty - 5, tx - 5, ty + 5);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
