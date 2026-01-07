@@ -1,0 +1,179 @@
+.panel {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    width: 260px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    color: white;
+}
+
+.panel-header h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.panel-icon {
+    font-size: 18px;
+}
+
+.panel-body {
+    padding: 16px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-bottom: 6px;
+}
+
+/* Species Buttons */
+.species-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.species-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 8px;
+    background: var(--color-surface-light);
+    border: 2px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.species-btn:hover {
+    background: var(--color-surface-hover);
+}
+
+.species-btn.active {
+    border-color: var(--color-primary);
+    background: rgba(139, 92, 246, 0.15);
+}
+
+.species-icon {
+    font-size: 28px;
+    margin-bottom: 4px;
+}
+
+.species-btn .count {
+    font-size: 10px;
+    color: var(--color-text-secondary);
+    margin-top: 4px;
+}
+
+/* Personality Buttons */
+.personality-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+.personality-btn {
+    flex: 1;
+    padding: 8px 4px;
+    font-size: 11px;
+    background: var(--color-surface-light);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.personality-btn:hover {
+    background: var(--color-surface-hover);
+}
+
+.personality-btn.active {
+    border-color: var(--color-secondary);
+    background: rgba(236, 72, 153, 0.15);
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.btn-secondary {
+    width: 100%;
+    padding: 10px;
+    font-size: 13px;
+    background: var(--color-surface-light);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background: var(--color-surface-hover);
+}
+
+.btn-secondary.active {
+    border-color: var(--color-primary);
+    background: rgba(139, 92, 246, 0.1);
+}
+
+/* Tips */
+.panel-tips {
+    margin-top: 16px;
+    padding: 10px;
+    background: rgba(139, 92, 246, 0.1);
+    border-radius: 8px;
+    font-size: 11px;
+}
+
+.panel-tips p {
+    margin: 0 0 6px 0;
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+.panel-tips ul {
+    margin: 0;
+    padding-left: 16px;
+    color: var(--color-text-secondary);
+}
+
+.panel-tips li {
+    margin-bottom: 4px;
+}

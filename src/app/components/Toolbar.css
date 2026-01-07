@@ -1,0 +1,86 @@
+.toolbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: rgba(18, 18, 26, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    z-index: 200;
+}
+
+.toolbar-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.toolbar-logo {
+    font-size: 1.2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.toolbar-tools {
+    gap: 4px;
+}
+
+.tool-btn {
+    padding: 8px 14px;
+    font-size: 0.9rem;
+    background: transparent;
+    border: 1px solid transparent;
+}
+
+.tool-btn:hover {
+    background: var(--color-surface-hover);
+}
+
+.tool-btn.active {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: var(--color-primary);
+    color: var(--color-primary-hover);
+}
+
+.toolbar-speed {
+    gap: 6px;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+}
+
+.speed-btn {
+    width: 40px;
+    height: 32px;
+    padding: 0;
+    font-size: 0.85rem;
+}
+
+.speed-btn.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+}
+
+.panel-toggle {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    background: transparent;
+    border: 1px solid transparent;
+}
+
+.panel-toggle:hover {
+    background: var(--color-surface-hover);
+}
+
+.panel-toggle.active {
+    background: var(--color-surface-hover);
+    border-color: var(--color-border);
+}

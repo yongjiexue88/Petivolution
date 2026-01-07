@@ -1,0 +1,302 @@
+// ============================================\n// V1 完整类型定义\n// ============================================
+
+// ============================================
+// 基础类型
+// ============================================
+
+export type SpeciesId = 'rat' | 'cat';
+export type ObjectType = 'water' | 'bush' | 'trash';
+
+export type Vec2 = { x: number; y: number };
+export type TilePos = { tx: number; ty: number };
+
+export type TimeScale = 0 | 1 | 2 | 4;
+
+export type EntityId = string;
+export type ObjectId = string;
+
+export type Personality = 'curious' | 'cautious' | 'brave';
+
+export type SimState =
+    | 'idle'
+    | 'wander'
+    | 'moveTo'
+    | 'drink'
+    | 'eat'
+    | 'chase'
+    | 'attack'
+    | 'flee'
+    | 'sleep'
+    | 'dead';
+
+export type Facing = 'n' | 's' | 'e' | 'w';
+
+export type Goal = 'drink' | 'eat' | 'hunt' | 'rest' | 'flee' | 'wander';
+
+// ============================================
+// Vitals (生命体征)
+// ============================================
+
+export type Vitals = {
+    hunger01: number;  // 0..1 (1=饱，0=饿死边缘)
+    thirst01: number;  // 0..1
+    fatigue01: number; // 0..1 (1=精力充足，0=困到崩)
+    health01: number;  // 0..1
+};
+
+// ============================================
+// Stimulus (刺激)
+// ============================================
+
+export type Stimulus =
+    | { type: 'prey'; entityId: EntityId; dist: number }
+    | { type: 'predator'; entityId: EntityId; dist: number }
+    | { type: 'water'; objectId: ObjectId; dist: number }
+    | { type: 'bush'; objectId: ObjectId; dist: number }
+    | { type: 'trash'; objectId: ObjectId; dist: number };
+
+// ============================================
+// Entity AI 状态 (可解释性)
+// ============================================
+
+export type EntityAI = {
+    lastPerceptionTick: number;
+    lastDecisionTick: number;
+
+    // 最近一次决策结果（UI展示）
+    currentGoal: Goal;
+
+    // 最近一次打分（UI展示）
+    lastUtilityScores: Partial<Record<Goal, number>>;
+
+    // 最近刺激（UI展示，限制长度）
+    recentStimuli: Stimulus[];
+
+    // 当前动作失败原因（调试&UI）
+    lastFailReason?: string;
+};
+
+// ============================================
+// Entity (动物实体)
+// ============================================
+
+export type EntityRuntime = {
+    id: EntityId;
+    species: SpeciesId;
+    name: string;
+    personality: Personality;
+
+    pos: Vec2;         // tile坐标
+    vel: Vec2;         // tile/tick
+    facing: Facing;
+
+    vitals: Vitals;
+    ageTicks: number;
+
+    state: SimState;
+
+    // 目标（当前动作执行对象）
+    targetEntityId?: EntityId;
+    targetObjectId?: ObjectId;
+    targetPos?: Vec2;
+
+    // AI 可解释性（UI显示"它为什么这么做"）
+    ai: EntityAI;
+
+    // 战斗（V1猫抓鼠可极简）
+    combat?: {
+        attackCooldownTicks: number;
+    };
+
+    // 追逐追踪
+    chaseTicks?: number;
+    chaseStartPos?: Vec2;
+
+    // 死亡记录
+    dead?: {
+        atTick: number;
+        reason: 'starvation' | 'dehydration' | 'killed' | 'unknown';
+        killedBy?: EntityId;
+    };
+};
+
+// ============================================
+// WorldObject (可放置对象)
+// ============================================
+
+export type WorldObject = {
+    id: ObjectId;
+    type: ObjectType;
+    pos: TilePos;
+
+    data?: {
+        strength01?: number;   // 0..1 (灌木庇护强度)
+        regenRate?: number;    // 每tick恢复量
+        resources?: number;    // 当前资源量
+        maxResources?: number; // 最大资源量
+    };
+};
+
+// ============================================
+// WorldRule (世界规则)
+// ============================================
+
+export type WorldRule = {
+    // 时间缩放
+    timeScale: TimeScale;
+
+    // 生态稳定器
+    capsEnabled: boolean;
+    capPerChunk: Record<SpeciesId, number>;
+
+    // 刷新/资源
+    trashSpawnsRats: boolean;
+    ratSpawn: {
+        enabled: boolean;
+        perTrashEveryTicks: number;
+        probability: number;
+        minRatsNearbyToStop: number;
+        maxRatsNearby: number;
+    };
+
+    // 死亡与难度
+    deathEnabled: boolean;
+
+    // AI 强度开关
+    ai: {
+        perceptionEnabled: boolean;
+        useCoverForRats: boolean;
+        chaseTimeoutTicks: number;
+    };
+
+    // 调试开关（UI）
+    debug: {
+        showSenseRadius: boolean;
+        showTargets: boolean;
+        showPaths: boolean;
+        showChunkBounds: boolean;
+    };
+};
+
+// ============================================
+// Save (存档格式)
+// ============================================
+
+export type GraveyardEntry = {
+    entityId: EntityId;
+    species: SpeciesId;
+    name: string;
+    personality: Personality;
+    bornTick: number;
+    deadTick: number;
+    reason: 'starvation' | 'dehydration' | 'killed' | 'unknown';
+    killedByName?: string;
+};
+
+export type SaveFileV1 = {
+    schemaVersion: 1;
+
+    meta: {
+        saveId: string;
+        name: string;
+        createdAtIso: string;
+        updatedAtIso: string;
+        playTicks: number;
+    };
+
+    world: {
+        seed: number;
+        mapId: string;
+        tick: number;
+        rules: WorldRule;
+    };
+
+    objects: WorldObject[];
+    entities: EntityRuntime[];
+    graveyard: GraveyardEntry[];
+};
+
+// ============================================
+// Worker 通信协议
+// ============================================
+
+// Main -> Worker
+export type WorkerCommand =
+    | { type: 'INIT_WORLD'; payload: { seed: number; mapId: string; rules: WorldRule; objects?: WorldObject[] } }
+    | { type: 'LOAD_SAVE'; payload: { save: SaveFileV1 } }
+    | { type: 'SET_RULES'; payload: { rules: Partial<WorldRule> } }
+    | { type: 'SET_TIME_SCALE'; payload: { timeScale: TimeScale } }
+    | { type: 'SPAWN_ENTITY'; payload: { species: SpeciesId; name: string; personality: Personality; pos: TilePos } }
+    | { type: 'PLACE_OBJECT'; payload: { object: WorldObject } }
+    | { type: 'REMOVE_OBJECT'; payload: { objectId: ObjectId } }
+    | { type: 'SELECT_ENTITY'; payload: { entityId?: EntityId } }
+    | { type: 'UPDATE_CAMERA'; payload: { centerX: number; centerY: number; zoom: number } }
+    | { type: 'REQUEST_SAVE'; payload: { saveName: string } }
+    | { type: 'RESET_WORLD'; payload: { seed?: number } };
+
+// Snapshot Entity (只发渲染需要的字段)
+export type SnapshotEntity = {
+    id: EntityId;
+    species: SpeciesId;
+    name: string;
+    x: number;
+    y: number;
+    facing: Facing;
+    anim: string;
+    state: SimState;
+    hp01: number;
+    selected?: boolean;
+};
+
+// Simulation Events
+export type SimEvent =
+    | { type: 'DEATH'; tick: number; entityId: EntityId; reason: string; killedBy?: EntityId }
+    | { type: 'HUNT'; tick: number; predatorId: EntityId; preyId: EntityId }
+    | { type: 'DRINK'; tick: number; entityId: EntityId; waterId: ObjectId }
+    | { type: 'EAT'; tick: number; entityId: EntityId; source: 'prey' | 'trash' };
+
+// Simulation Stats
+export type SimStats = {
+    rat: number;
+    cat: number;
+    deathsLastMin: number;
+    birthsLastMin: number;
+};
+
+// Worker -> Main
+export type WorkerUpdate =
+    | { type: 'SNAPSHOT'; payload: { tick: number; entities: SnapshotEntity[]; objects: WorldObject[]; stats: SimStats; events: SimEvent[] } }
+    | { type: 'ENTITY_DETAIL'; payload: { entity: EntityRuntime } }
+    | { type: 'SPAWN_FAILED'; payload: { reason: string; species: SpeciesId } }
+    | { type: 'SAVE_READY'; payload: { save: SaveFileV1 } }
+    | { type: 'ERROR'; payload: { message: string } };
+
+// ============================================
+// 默认世界规则
+// ============================================
+
+export const DEFAULT_WORLD_RULES: WorldRule = {
+    timeScale: 1,
+    capsEnabled: true,
+    capPerChunk: { rat: 20, cat: 6 },
+    trashSpawnsRats: true,
+    ratSpawn: {
+        enabled: true,
+        perTrashEveryTicks: 120,
+        probability: 0.35,
+        minRatsNearbyToStop: 8,
+        maxRatsNearby: 12,
+    },
+    deathEnabled: true,
+    ai: {
+        perceptionEnabled: true,
+        useCoverForRats: true,
+        chaseTimeoutTicks: 150,
+    },
+    debug: {
+        showSenseRadius: false,
+        showTargets: false,
+        showPaths: false,
+        showChunkBounds: false,
+    },
+};

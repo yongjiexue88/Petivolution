@@ -1,0 +1,107 @@
+.graveyard-panel {
+    width: 280px;
+    max-height: 400px;
+}
+
+.graveyard-panel .panel-header {
+    position: relative;
+}
+
+.death-count {
+    margin-left: auto;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+}
+
+.graveyard-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Empty State */
+.empty-message {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--color-text-secondary);
+}
+
+.empty-icon {
+    font-size: 40px;
+    display: block;
+    margin-bottom: 12px;
+}
+
+.empty-message p {
+    margin: 0;
+    font-size: 13px;
+}
+
+.empty-hint {
+    margin-top: 6px !important;
+    font-size: 11px !important;
+    opacity: 0.7;
+}
+
+/* Grave Items */
+.grave-item {
+    padding: 12px;
+    background: var(--color-surface-light);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border-left: 3px solid #666;
+}
+
+.grave-item:first-child {
+    border-left-color: #ef4444;
+}
+
+.grave-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.grave-icon {
+    font-size: 18px;
+    filter: grayscale(0.5);
+}
+
+.grave-name {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.grave-personality {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--color-text-secondary);
+    background: var(--color-surface);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.grave-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--color-text-secondary);
+}
+
+.grave-reason {
+    color: #ef4444;
+}
+
+.grave-lifespan {
+    opacity: 0.7;
+}
+
+.grave-killer {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--color-border);
+    font-size: 10px;
+    color: var(--color-text-secondary);
+}

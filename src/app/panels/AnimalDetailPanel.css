@@ -1,0 +1,175 @@
+.detail-panel {
+    width: 280px;
+}
+
+.detail-panel .panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.entity-state {
+    margin-left: auto;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+/* Info Rows */
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.info-label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+.info-value {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.goal-badge {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+}
+
+/* Vitals Section */
+.vitals-section {
+    margin-top: 16px;
+}
+
+.vitals-section h4,
+.ai-section h4 {
+    font-size: 12px;
+    font-weight: 600;
+    margin: 0 0 10px 0;
+    color: var(--color-text-secondary);
+}
+
+.vital-bar {
+    margin-bottom: 10px;
+}
+
+.vital-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    margin-bottom: 4px;
+}
+
+.vital-value {
+    font-weight: 600;
+}
+
+.vital-value.low {
+    color: #ef4444;
+}
+
+.vital-track {
+    height: 6px;
+    background: var(--color-surface-light);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.vital-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.vital-fill.low {
+    animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* AI Section */
+.ai-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border);
+}
+
+.subsection-label {
+    display: block;
+    font-size: 10px;
+    color: var(--color-text-secondary);
+    margin: 12px 0 6px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Scores */
+.scores-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.score-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 8px;
+    background: var(--color-surface-light);
+    border-radius: 4px;
+    font-size: 11px;
+}
+
+.score-item.top {
+    background: rgba(139, 92, 246, 0.2);
+    border-left: 3px solid var(--color-primary);
+}
+
+.score-label {
+    color: var(--color-text-secondary);
+}
+
+.score-value {
+    font-weight: 600;
+    font-family: monospace;
+}
+
+/* Stimuli */
+.stimuli-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.stimulus-item {
+    padding: 3px 6px;
+    background: var(--color-surface-light);
+    border-radius: 4px;
+    font-size: 10px;
+    color: var(--color-text-secondary);
+}
+
+/* Fail Reason */
+.fail-reason {
+    margin-top: 12px;
+    padding: 8px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 6px;
+    font-size: 11px;
+    color: #ef4444;
+}
