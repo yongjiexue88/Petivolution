@@ -49,24 +49,7 @@ export class ChunkManager {
     initializeWorld(sim: SimulationState) {
         if (this.initialized) return;
 
-        const chunksX = Math.ceil(V1.defaultMapWidth / CHUNK_SIZE_TILES);
-        const chunksY = Math.ceil(V1.defaultMapHeight / CHUNK_SIZE_TILES);
-
-        console.log(`🌍 Initializing ${chunksX}×${chunksY} = ${chunksX * chunksY} chunks`);
-
-        // Generate all chunks
-        for (let y = 0; y < chunksY; y++) {
-            for (let x = 0; x < chunksX; x++) {
-                const id = this.getChunkId(x, y);
-                this.generateChunk(id, sim);
-                this.activeChunks.add(id);
-            }
-        }
-
-        // Spawn objects in all chunks
-        for (const chunk of this.chunks.values()) {
-            this.generateObjects(chunk, sim);
-        }
+        console.log(`🌍 Initializing Infinite World`);
 
         // Spawn initial animals in center area
         this.spawnInitialAnimals(sim);
@@ -116,13 +99,165 @@ export class ChunkManager {
     }
 
     /**
-     * Update LOD based on camera position
-     * For finite world, this is mostly a no-op since all chunks are active
-     * Kept for compatibility
+     * Update LOD based on camera position and zoom
+     * Dynamically realize chunks as they come into view
      */
-    updateLOD(_sim: SimulationState) {
-        // For finite world, all chunks are always active
-        // No virtualization needed
+    updateLOD(sim: SimulationState) {
+        // Camera center in world pixels
+        const camX = sim.cameraCenter.x;
+        const camY = sim.cameraCenter.y;
+        const zoom = sim.cameraZoom || 1;
+
+        const centerChunk = this.getChunkCoords({ x: camX, y: camY });
+
+        // Base radius is 1 chunk around center
+        // At zoom=1, we see roughly a few chunks.
+        // At zoom=0.2 (zoomed out), we see 5x more area.
+        // Radius increases as zoom decreases.
+        const dynamicRadius = Math.ceil(2 / zoom);
+        const semiRadius = dynamicRadius + 1;
+
+        const newActive = new Set<ChunkId>();
+        const newSemi = new Set<ChunkId>();
+
+        // Identify new zones
+        for (let y = centerChunk.y - semiRadius; y <= centerChunk.y + semiRadius; y++) {
+            for (let x = centerChunk.x - semiRadius; x <= centerChunk.x + semiRadius; x++) {
+                const id = this.getChunkId(x, y);
+                const dist = Math.max(Math.abs(x - centerChunk.x), Math.abs(y - centerChunk.y));
+
+                if (dist <= dynamicRadius) {
+                    newActive.add(id);
+                } else {
+                    newSemi.add(id);
+                }
+            }
+        }
+
+        // Handle State Transitions
+        // 1. Virtualize chunks that are no longer in semi-active radius
+        const currentAll = new Set([...this.activeChunks, ...this.semiActiveChunks]);
+        for (const id of currentAll) {
+            if (!newActive.has(id) && !newSemi.has(id)) {
+                this.virtualizeChunk(id, sim);
+            }
+        }
+
+        // 2. Realize new active/semi chunks
+        for (const id of newActive) {
+            if (!this.activeChunks.has(id)) {
+                this.realizeChunk(id, sim);
+            }
+        }
+        for (const id of newSemi) {
+            if (!this.semiActiveChunks.has(id) && !this.activeChunks.has(id)) {
+                this.realizeChunk(id, sim);
+            }
+        }
+
+        this.activeChunks = newActive;
+        this.semiActiveChunks = newSemi;
+    }
+
+    /**
+     * Far -> Active/Semi (Generate or Restore)
+     */
+    realizeChunk(id: ChunkId, sim: SimulationState) {
+        if (this.activeChunks.has(id) || this.semiActiveChunks.has(id)) return;
+
+        let chunk = this.chunks.get(id);
+
+        if (!chunk) {
+            this.generateChunk(id, sim);
+            chunk = this.chunks.get(id)!;
+            this.generateObjects(chunk, sim);
+
+            // For infinite world generation, we might want to spawn some "wild" animals
+            // based on the chunk's resource/danger levels.
+            this.spawnWildAnimals(chunk, sim);
+        } else {
+            // Restore from stats (Ship of Theseus)
+            this.restoreFromStats(chunk, sim);
+        }
+    }
+
+    private spawnWildAnimals(chunk: ChunkData, sim: SimulationState) {
+        const [cx, cy] = chunk.id.split(',').map(Number);
+        const startTx = cx * CHUNK_SIZE_TILES;
+        const startTy = cy * CHUNK_SIZE_TILES;
+
+        // Spawn Rats based on resource level
+        const ratTarget = Math.floor(chunk.stats.resourceLevel * 3);
+        for (let i = 0; i < ratTarget; i++) {
+            if (sim.rng() > 0.7) {
+                spawnEntity(sim, 'rat', this.getRandomName('rat', sim), 'cautious', {
+                    tx: startTx + sim.rng() * CHUNK_SIZE_TILES,
+                    ty: startTy + sim.rng() * CHUNK_SIZE_TILES
+                });
+            }
+        }
+
+        // Spawn Cats based on danger level
+        const catTarget = Math.floor(chunk.stats.dangerLevel * 1);
+        for (let i = 0; i < catTarget; i++) {
+            if (sim.rng() > 0.9) {
+                spawnEntity(sim, 'cat', this.getRandomName('cat', sim), 'brave', {
+                    tx: startTx + sim.rng() * CHUNK_SIZE_TILES,
+                    ty: startTy + sim.rng() * CHUNK_SIZE_TILES
+                });
+            }
+        }
+    }
+
+    private restoreFromStats(chunk: ChunkData, sim: SimulationState) {
+        const [cx, cy] = chunk.id.split(',').map(Number);
+
+        // Simple statistical restoration
+        for (let i = 0; i < chunk.stats.ratCount; i++) {
+            spawnEntity(sim, 'rat', this.getRandomName('rat', sim), 'cautious', {
+                tx: cx * CHUNK_SIZE_TILES + sim.rng() * CHUNK_SIZE_TILES,
+                ty: cy * CHUNK_SIZE_TILES + sim.rng() * CHUNK_SIZE_TILES
+            });
+        }
+        for (let i = 0; i < chunk.stats.catCount; i++) {
+            spawnEntity(sim, 'cat', this.getRandomName('cat', sim), 'brave', {
+                tx: cx * CHUNK_SIZE_TILES + sim.rng() * CHUNK_SIZE_TILES,
+                ty: cy * CHUNK_SIZE_TILES + sim.rng() * CHUNK_SIZE_TILES
+            });
+        }
+
+        chunk.stats.ratCount = 0;
+        chunk.stats.catCount = 0;
+    }
+
+    /**
+     * Active/Semi -> Far (Virtualize)
+     */
+    virtualizeChunk(id: ChunkId, sim: SimulationState) {
+        const chunk = this.chunks.get(id);
+        if (!chunk) return;
+
+        const [cx, cy] = id.split(',').map(Number);
+        const toRemove: string[] = [];
+        let rats = 0;
+        let cats = 0;
+
+        for (const entity of sim.entities.values()) {
+            const coords = this.getChunkCoords(entity.pos);
+            if (coords.x === cx && coords.y === cy) {
+                if (entity.species === 'rat') rats++;
+                if (entity.species === 'cat') cats++;
+                toRemove.push(entity.id);
+            }
+        }
+
+        chunk.stats.ratCount = rats;
+        chunk.stats.catCount = cats;
+        chunk.stats.lastTick = sim.tick;
+
+        for (const sid of toRemove) {
+            sim.entities.delete(sid);
+        }
     }
 
     /**
@@ -133,11 +268,10 @@ export class ChunkManager {
         const startTx = cx * CHUNK_SIZE_TILES;
         const startTy = cy * CHUNK_SIZE_TILES;
 
-        // Only spawn resources in center chunks (core zone)
-        const chunksX = Math.ceil(V1.defaultMapWidth / CHUNK_SIZE_TILES);
-        const chunksY = Math.ceil(V1.defaultMapHeight / CHUNK_SIZE_TILES);
-        const centerChunkX = Math.floor(chunksX / 2);
-        const centerChunkY = Math.floor(chunksY / 2);
+        // For infinite world, we define a "prime center" for initial resources.
+        // Current center is based on (256, 256) tiles.
+        const centerChunkX = Math.floor((V1.defaultMapWidth / 2) / CHUNK_SIZE_TILES);
+        const centerChunkY = Math.floor((V1.defaultMapHeight / 2) / CHUNK_SIZE_TILES);
 
         const distFromCenter = Math.max(
             Math.abs(cx - centerChunkX),

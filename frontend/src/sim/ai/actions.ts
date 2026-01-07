@@ -66,11 +66,7 @@ function executeWander(entity: EntityRuntime, sim: SimulationState): void {
             y: entity.pos.y + (sim.rng() - 0.5) * 200,
         };
 
-        // 边界约束
-        const maxX = V1.defaultMapWidth * V1.tileSizePx - 50;
-        const maxY = V1.defaultMapHeight * V1.tileSizePx - 50;
-        entity.targetPos.x = Math.max(50, Math.min(maxX, entity.targetPos.x));
-        entity.targetPos.y = Math.max(50, Math.min(maxY, entity.targetPos.y));
+        // No hard boundary for infinite world wandering
     }
 
     // 移向目标
@@ -423,11 +419,7 @@ function executeFlee(entity: EntityRuntime, sim: SimulationState): void {
             y: entity.pos.y + dir.y * 100,
         };
 
-        // 边界约束
-        const maxX = V1.defaultMapWidth * V1.tileSizePx - 50;
-        const maxY = V1.defaultMapHeight * V1.tileSizePx - 50;
-        targetPos.x = Math.max(50, Math.min(maxX, targetPos.x));
-        targetPos.y = Math.max(50, Math.min(maxY, targetPos.y));
+        // No hard boundary for infinite world fleeing
 
         moveToward(entity, targetPos, speed);
 
@@ -477,11 +469,7 @@ function moveToward(entity: EntityRuntime, target: Vec2, speed: number): void {
     entity.pos.x += entity.vel.x;
     entity.pos.y += entity.vel.y;
 
-    // 边界约束
-    const maxX = V1.defaultMapWidth * V1.tileSizePx - 10;
-    const maxY = V1.defaultMapHeight * V1.tileSizePx - 10;
-    entity.pos.x = Math.max(10, Math.min(maxX, entity.pos.x));
-    entity.pos.y = Math.max(10, Math.min(maxY, entity.pos.y));
+    // No hard boundary for infinite world movement
 }
 
 function updateFacing(entity: EntityRuntime): void {

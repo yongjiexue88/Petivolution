@@ -100,12 +100,15 @@ describe('SimWorker', () => {
         // The worker logs to console on spawn success in current impl
         // Or we could trigger a snapshot and see if entity is there.
 
-        vi.advanceTimersByTime(100); // Process tick
+        vi.advanceTimersByTime(200); // Process a few ticks to ensure snapshot
 
         // Check snapshot contains the entity
-        const lastCall = mockPostMessage.mock.calls[mockPostMessage.mock.calls.length - 1];
-        const snapshot = lastCall[0].payload;
+        const snapshotCall = [...mockPostMessage.mock.calls].reverse().find((call: any) => call[0].type === 'SNAPSHOT');
+        expect(snapshotCall).toBeDefined();
+        const snapshot = snapshotCall![0].payload;
         expect(snapshot.entities).toBeDefined();
+        expect(snapshot.entities.length).toBeGreaterThan(0);
+        expect(snapshot.entities[0].id).toBeDefined();
     });
 
     it('should handle UPDATE_CAMERA', () => {

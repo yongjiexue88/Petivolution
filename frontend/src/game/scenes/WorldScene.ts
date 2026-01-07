@@ -29,9 +29,8 @@ export class WorldScene extends Phaser.Scene {
         this.createBackground();
 
         // 2. Setup Camera
-        // V1 Fishbowl: Finite world with camera bounds
-        const margin = 200; // Small margin for visual comfort
-        this.cameras.main.setBounds(-margin, -margin, worldWidth + margin * 2, worldHeight + margin * 2);
+        // Finite bounds removed for Infinite World
+        // this.cameras.main.setBounds(...) 
         this.cameras.main.centerOn(worldWidth / 2, worldHeight / 2);
         this.cameras.main.setZoom(1);
 
@@ -164,18 +163,16 @@ export class WorldScene extends Phaser.Scene {
         const zoom = cam.zoom;
 
         if (this.gridSprite) {
-            // Scale the tile sprite to match zoom
-            this.gridSprite.setScale(zoom);
-            // Adjust tile position to account for zoom
-            this.gridSprite.tilePositionX = cam.scrollX / zoom;
-            this.gridSprite.tilePositionY = cam.scrollY / zoom;
+            // Use setTileScale to scale the pattern, not the object itself
+            this.gridSprite.setTileScale(zoom);
+            // tilePosition should be world scroll 
+            this.gridSprite.tilePositionX = cam.scrollX;
+            this.gridSprite.tilePositionY = cam.scrollY;
         }
         if (this.chunkGridSprite) {
-            // Scale the tile sprite to match zoom
-            this.chunkGridSprite.setScale(zoom);
-            // Adjust tile position to account for zoom
-            this.chunkGridSprite.tilePositionX = cam.scrollX / zoom;
-            this.chunkGridSprite.tilePositionY = cam.scrollY / zoom;
+            this.chunkGridSprite.setTileScale(zoom);
+            this.chunkGridSprite.tilePositionX = cam.scrollX;
+            this.chunkGridSprite.tilePositionY = cam.scrollY;
         }
     }
 
@@ -349,7 +346,7 @@ export class WorldScene extends Phaser.Scene {
         });
     }
 
-    placeObject(pos: { x: number; y: number }) {
+    async placeObject(pos: { x: number; y: number }) {
         const store = useGameStore.getState();
         const costs = V1.godMode.costs.place as Record<string, number>;
         const cost = costs[store.placeObjectType] || 0;
@@ -360,6 +357,14 @@ export class WorldScene extends Phaser.Scene {
         }
 
         store.spendGodPower(cost);
+
+        if (store.useServer) {
+            const res = await ServerClient.getInstance().placeObject(store.placeObjectType, pos.x, pos.y);
+            if (!res.ok) {
+                console.warn('Server Object Placement Failed:', res.error);
+            }
+            return;
+        }
 
         const worker = getSimWorker();
         const tilePos = {

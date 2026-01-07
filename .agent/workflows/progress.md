@@ -65,15 +65,15 @@ When the user triggers /progress, you must own testing end-to-end and project me
 After `/progress` reaches a terminal state (PASS / FAIL / BLOCKED), you MUST update files under `memory/`.
 
 ### 1) Ensure files exist (create if missing)
-- `memory/progress-todo.md`
-- `memory/mistakes-learn.md`
+- `memory/progress.md`
+- `memory/mistake-learn.md`
 
 Rules:
 - Create files if missing.
 - Never delete or rewrite existing history.
 - Append only.
 
-### 2) Update memory/progress-todo.md (ALWAYS)
+### 2) Update memory/progress.md (ALWAYS)
 Append a dated entry including:
 - Timestamp
 - Final verdict (PASS / FAIL / BLOCKED)
@@ -84,7 +84,7 @@ Behavior:
 - If PASS → mark relevant work as completed.
 - If FAIL/BLOCKED → add or retain actionable TODO items.
 
-### 3) Update memory/mistakes-learn.md (CONDITIONAL, but checked EVERY run)
+### 3) Update memory/mistake-learn.md (CONDITIONAL, but checked EVERY run)
 Add a new entry only if:
 - Verdict is FAIL or BLOCKED, or
 - Non-trivial issues occurred (missing tooling, coverage provider issues, flaky tests, setup problems)
@@ -108,8 +108,8 @@ Use the final `verify-app` report and actions taken by `test-author` only.
 
 ## Minimal File Templates (used only if files are missing)
 
-### memory/progress-todo.md
-# progress-todo
+### memory/progress.md
+# progress
 
 ## ✅ Completed
 - (none)
@@ -119,7 +119,7 @@ Use the final `verify-app` report and actions taken by `test-author` only.
 
 ## 🗓️ Progress Log
 
-### memory/mistakes-learn.md
-# mistakes-learn
+### memory/mistake-learn.md
+# mistake-learn
 
 ## Entries

@@ -15,6 +15,7 @@
     "lint": "cd frontend && npm run lint"
   },
   "devDependencies": {
-    "concurrently": "^8.2.0"
+    "concurrently": "^8.2.0",
+    "jsdom": "^27.4.0"
   }
 }

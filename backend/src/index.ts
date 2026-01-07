@@ -46,6 +46,17 @@ app.post('/api/actions/spawn', (req, res) => {
     }
 });
 
+// API: Actions (Place Object)
+app.post('/api/actions/place-object', (req, res) => {
+    const { type, x, y } = req.body;
+    const result = world.placeObject(type, x, y);
+    if (result.success) {
+        res.json({ ok: true, objectId: result.objectId });
+    } else {
+        res.status(400).json({ ok: false, error: 'Failed to place object' });
+    }
+});
+
 // API: Entity Detail (Selection)
 app.get('/api/world/entity/:id', (req, res) => {
     const detail = world.getEntityDetail(req.params.id);

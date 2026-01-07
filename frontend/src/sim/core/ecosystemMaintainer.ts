@@ -132,10 +132,9 @@ function spawnAtEdge(sim: SimulationState, species: SpeciesId): boolean {
     const edgeX = zone.centerX + Math.cos(angle) * zone.radiusPx * 0.9;
     const edgeY = zone.centerY + Math.sin(angle) * zone.radiusPx * 0.9;
 
-    // Clamp to world bounds
-    const worldMaxPx = V1.defaultMapWidth * TILE_PX;
-    const tx = Math.floor(Math.max(0, Math.min(edgeX, worldMaxPx - TILE_PX)) / TILE_PX);
-    const ty = Math.floor(Math.max(0, Math.min(edgeY, worldMaxPx - TILE_PX)) / TILE_PX);
+    // For infinite world, we don't clamp to hard bounds.
+    const tx = Math.floor(edgeX / TILE_PX);
+    const ty = Math.floor(edgeY / TILE_PX);
 
     const entity = spawnEntity(sim, species, getRandomName(species, sim), 'brave', {
         tx,

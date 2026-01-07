@@ -16,6 +16,9 @@ export function Toolbar() {
         showRulesPanel,
         showGraveyardPanel,
         showDebugPanel,
+        godPower,
+        maxGodPower,
+        showEventLog,
     } = useGameStore();
 
     const handleTimeScale = (scale: 0 | 1 | 2 | 4) => {
@@ -25,6 +28,8 @@ export function Toolbar() {
             worker.postMessage({ type: 'SET_TIME_SCALE', payload: { timeScale: scale } });
         }
     };
+
+    const gpPct = Math.min(100, Math.max(0, (godPower / maxGodPower) * 100));
 
     return (
         <div className="toolbar">
@@ -36,18 +41,10 @@ export function Toolbar() {
 
             {/* V1.1 God Power Display */}
             <div className="god-power-bar-container" title="God Power (Regens over time)">
-                {(() => {
-                    const { godPower, maxGodPower } = useGameStore();
-                    const pct = Math.min(100, Math.max(0, (godPower / maxGodPower) * 100));
-                    return (
-                        <>
-                            <div className="gp-text">GP: {Math.floor(godPower)}/{maxGodPower}</div>
-                            <div className="gp-track">
-                                <div className="gp-fill" style={{ width: `${pct}%` }}></div>
-                            </div>
-                        </>
-                    );
-                })()}
+                <div className="gp-text">GP: {Math.floor(godPower)}/{maxGodPower}</div>
+                <div className="gp-track">
+                    <div className="gp-fill" style={{ width: `${gpPct}%` }}></div>
+                </div>
             </div>
 
 
@@ -136,7 +133,7 @@ export function Toolbar() {
                     🪦
                 </button>
                 <button
-                    className={`tool-btn ${useGameStore(s => s.showEventLog) ? 'active' : ''}`}
+                    className={`tool-btn ${showEventLog ? 'active' : ''}`}
                     onClick={() => togglePanel('eventLog')}
                     title="事件日志"
                 >

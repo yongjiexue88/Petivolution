@@ -26,6 +26,9 @@ describe('EcosystemMaintainer', () => {
         cameraCenter: { x: 256 * TILE_PX, y: 256 * TILE_PX }, // Center of 512x512 map
         cameraZoom: 1,
         rng: () => 0.5,
+        stats: {
+            ecoStress: 0
+        }
     });
 
     beforeEach(() => {

@@ -31,9 +31,8 @@ export function SpawnPanel() {
         return `${baseName}${Math.floor(Math.random() * 100)}`;
     };
 
-    const handleQuickSpawn = () => {
-        const worker = getSimWorker();
-        if (!worker) return;
+    const handleQuickSpawn = async () => {
+        const { godPower, spendGodPower, useServer } = useGameStore.getState();
 
         const name = customName || getRandomName(spawnSpecies);
         const pos: TilePos = {
@@ -42,19 +41,33 @@ export function SpawnPanel() {
         };
 
         const cost = COSTS[spawnSpecies];
-        const { godPower, spendGodPower } = useGameStore.getState();
 
         if (godPower < cost) {
-            // Visual feedback handled by disabled button, but double check
             return;
         }
 
         spendGodPower(cost);
 
-        worker.postMessage({
-            type: 'SPAWN_ENTITY',
-            payload: { species: spawnSpecies, name, personality: spawnPersonality, pos },
-        });
+        if (useServer) {
+            // Convert tile pos back to pixels or just send tile pos?
+            // The server API expects x, y in pixels (based on WorldServer.ts: Math.floor(x / V1.tileSizePx))
+            const res = await ServerClient.getInstance().spawnAnimal(
+                spawnSpecies,
+                pos.tx * V1.tileSizePx,
+                pos.ty * V1.tileSizePx
+            );
+            if (!res.ok) {
+                console.warn('Server Quick Spawn Failed:', res.error);
+            }
+        } else {
+            const worker = getSimWorker();
+            if (!worker) return;
+
+            worker.postMessage({
+                type: 'SPAWN_ENTITY',
+                payload: { species: spawnSpecies, name, personality: spawnPersonality, pos },
+            });
+        }
 
         setCustomName('');
     };

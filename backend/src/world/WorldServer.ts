@@ -1,7 +1,8 @@
 
 import { createSimulation, simulateTick, getSnapshot, SimulationState } from '../sim/core/tick';
-import { DEFAULT_WORLD_RULES, SpeciesId, WorldSaveData } from '../shared/types';
+import { DEFAULT_WORLD_RULES, SpeciesId, WorldSaveData, WorldObject, ObjectType } from '../shared/types';
 import { spawnEntity } from '../sim/core/spawner';
+import { V1 } from '../shared/constants';
 
 export class WorldServer {
     private sim: SimulationState;
@@ -11,6 +12,8 @@ export class WorldServer {
     constructor() {
         // Initialize simulation with default seed
         this.sim = createSimulation(Date.now(), 'server_world_v1', DEFAULT_WORLD_RULES);
+        // Initialize world with animals and resources (like the worker does)
+        this.sim.chunkManager.initializeWorld(this.sim);
     }
 
     public start() {
@@ -51,13 +54,13 @@ export class WorldServer {
     }
 
     public spawnEntity(species: SpeciesId, x: number, y: number) {
-        // Simple direct spawn for now
-        const spawnPos = { tx: Math.floor(x / 32), ty: Math.floor(y / 32) }; // Assuming 32px tiles
+        // Use V1 constant for tile size instead of hardcoded 32
+        const spawnPos = { tx: Math.floor(x / V1.tileSizePx), ty: Math.floor(y / V1.tileSizePx) };
         console.log(`[Spawn] Request: ${species} at ${x},${y} -> Tile ${spawnPos.tx},${spawnPos.ty}`);
         const id = spawnEntity(this.sim, species, 'Player Spawned', 'curious', spawnPos);
 
         if (id) {
-            console.log(`[Spawn] Success: ${id.id}`);
+            console.log(`[Spawn] Success: ${id.name} (${id.species}) at tile ${spawnPos.tx},${spawnPos.ty}`);
             return { success: true, entityId: id.id };
         }
         console.warn('[Spawn] Failed');
@@ -91,5 +94,21 @@ export class WorldServer {
             history: entity.history,
             path: entity.path,
         };
+    }
+
+    public placeObject(type: ObjectType, x: number, y: number) {
+        const tilePos = { tx: Math.floor(x / V1.tileSizePx), ty: Math.floor(y / V1.tileSizePx) };
+        const objId = Math.random().toString(36).substring(7);
+
+        const object: WorldObject = {
+            id: objId,
+            type,
+            pos: tilePos,
+            data: { resources: 100, maxResources: 100, regenRate: 1.0 }
+        };
+
+        this.sim.objects.set(objId, object);
+        console.log(`[Place] Object: ${type} at tile ${tilePos.tx},${tilePos.ty}`);
+        return { success: true, objectId: objId };
     }
 }

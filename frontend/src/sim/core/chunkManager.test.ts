@@ -40,13 +40,11 @@ describe('ChunkManager (Fishbowl)', () => {
     });
 
     describe('initializeWorld', () => {
-        it('should generate all chunks for finite world', () => {
+        it('should NOT generate all chunks upfront', () => {
             cm.initializeWorld(sim);
 
-            const expectedChunks = Math.ceil(V1.defaultMapWidth / V1.chunkSize) *
-                Math.ceil(V1.defaultMapHeight / V1.chunkSize);
-
-            expect(cm.chunks.size).toBe(expectedChunks);
+            // Infinite world starts with 0 chunks until updateLOD is called
+            expect(cm.chunks.size).toBe(0);
             expect(cm.initialized).toBe(true);
         });
 
@@ -60,36 +58,47 @@ describe('ChunkManager (Fishbowl)', () => {
 
         it('should only initialize once', () => {
             cm.initializeWorld(sim);
-            const firstObjectCount = sim.objects.size;
-
             cm.initializeWorld(sim);
-            // Should not add more objects on second call
-            expect(sim.objects.size).toBe(firstObjectCount);
-        });
-
-        it('should spawn objects in center chunks', () => {
-            cm.initializeWorld(sim);
-
-            // Should have water, trash, and bushes
-            const hasWater = Array.from(sim.objects.values()).some((o: any) => o.type === 'water');
-            const hasBush = Array.from(sim.objects.values()).some((o: any) => o.type === 'bush');
-
-            expect(hasWater).toBe(true);
-            expect(hasBush).toBe(true);
+            // Counter for spawnEntity should not double
+            const totalSpawns = V1.defaultSpawns.rat + V1.defaultSpawns.cat;
+            expect(SpawnerModule.spawnEntity).toHaveBeenCalledTimes(totalSpawns);
         });
     });
 
     describe('updateLOD', () => {
-        it('should be a no-op for finite world', () => {
+        it('should dynamically add chunks as camera moves', () => {
             cm.initializeWorld(sim);
-            const activeCount = cm.activeChunks.size;
 
-            // Move camera around
-            sim.cameraCenter = { x: 0, y: 0 };
+            // Initial call (camera at 8,8)
+            cm.updateLOD(sim);
+            const initialChunks = cm.chunks.size;
+            expect(initialChunks).toBeGreaterThan(0);
+            expect(cm.activeChunks.size).toBeGreaterThan(0);
+
+            const firstActiveId = Array.from(cm.activeChunks)[0];
+
+            // Move camera far away
+            sim.cameraCenter = { x: 50000, y: 50000 };
             cm.updateLOD(sim);
 
-            // Should not change anything
-            expect(cm.activeChunks.size).toBe(activeCount);
+            expect(cm.chunks.size).toBeGreaterThan(initialChunks);
+            expect(cm.activeChunks.has(firstActiveId)).toBe(false);
+        });
+
+        it('should increase active radius when zooming out', () => {
+            cm.initializeWorld(sim);
+
+            // Zoom 1
+            sim.cameraZoom = 1;
+            cm.updateLOD(sim);
+            const zoom1ActiveCount = cm.activeChunks.size;
+
+            // Zoom 0.2 (zoomed out)
+            sim.cameraZoom = 0.2;
+            cm.updateLOD(sim);
+            const zoomOutActiveCount = cm.activeChunks.size;
+
+            expect(zoomOutActiveCount).toBeGreaterThan(zoom1ActiveCount);
         });
     });
 

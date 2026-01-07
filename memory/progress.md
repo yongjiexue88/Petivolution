@@ -77,8 +77,22 @@ Successfully implemented and integrated the new V1 AI system for Petivolution. T
     *   Added Connection Status indicator in the Toolbar.
     *   Successfully wired Selection and Spawn actions to backend endpoints.
 
+### Workflow Stabilization & Quality Gates
+**Date:** 2026-01-07
+**Status:** Completed
+
+### 1. Workflow Restoration
+*   **Missing Tools**: Restored `.agent/workflows/` including `verify-app.md`, `test-author.md`, and `commit.md`.
+*   **Filenames**: Synchronized `/progress` workflow with `memory/progress.md` and `memory/mistake-learn.md`.
+
+### 2. Code Quality & Testing
+*   **Linting**: Fixed React Hook violations in `Toolbar.tsx`.
+*   **Test Suite**: Stabilized `SpawnPanel.test.tsx` and `sim.worker.test.ts`. 
+*   **Coverage**: Verified simulation core at ~90% and critical UI components (SpawnPanel) at 91%.
+*   **Result**: 85 tests passing end-to-end.
+
 ### Next Steps
-*   **Player Identity**: Implement anonymous login and session management.
-*   **Multiplayer**: Allow multiple clients to connect and see each other's actions (implicitly handled by shared world, need to verify).
+*   **Workflow Integration**: Use `/progress` regularly to maintain memory logs and coverage.
+*   **Backend Coverage**: Implement tests for `backend/src/index.ts`.
 
 

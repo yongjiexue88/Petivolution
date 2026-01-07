@@ -374,11 +374,7 @@ function simplifiedUpdate(entity: EntityRuntime, sim: SimulationState): void {
     entity.pos.x += (sim.rng() - 0.5) * speed * 2;
     entity.pos.y += (sim.rng() - 0.5) * speed * 2;
 
-    // 边界约束
-    const maxX = V1.defaultMapWidth * V1.tileSizePx - 20;
-    const maxY = V1.defaultMapHeight * V1.tileSizePx - 20;
-    entity.pos.x = Math.max(20, Math.min(maxX, entity.pos.x));
-    entity.pos.y = Math.max(20, Math.min(maxY, entity.pos.y));
+    // No hard boundary for infinite world simplified update
 }
 
 // ============================================

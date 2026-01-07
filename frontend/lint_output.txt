@@ -1,0 +1,106 @@
+
+/Users/yongjiexue/Documents/GitHub/Petivolution/frontend/src/app/App.tsx
+  42:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/yongjiexue/Documents/GitHub/Petivolution/frontend/src/app/api/ServerClient.ts
+  52:30  warning  'lastTick' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  64:18  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u         @typescript-eslint/no-unused-vars
+  70:55  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+  77:18  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u         @typescript-eslint/no-unused-vars
+  90:57  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+  98:21  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+
+/Users/yongjiexue/Documents/GitHub/Petivolution/frontend/src/app/components/Toolbar.tsx
+  40:55  error  React Hook "useGameStore" cannot be called inside a callback. React Hooks must be called in a React function component or a custom React Hook function  react-hooks/rules-of-hooks
+
+/Users/yongjiexue/Documents/GitHub/Petivolution/frontend/src/app/panels/ChallengePanel.tsx
+   4:10  warning  'V1' is defined but never used. Allowed unused vars must match /^_/u                                                  @typescript-eslint/no-unused-vars
+  67:8   warning  React Hook useEffect has a missing dependency: 'setChallengeState'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/yongjiexue/Documents/GitHub/Petivolution/frontend/src/app/store/gameStore.ts
+  6:97  warning  'EntityId' is defined but never used. Allowed unused vars must match /^_/u      @typescript-eslint/no-unused-vars
+  9:10  warning  'ServerClient' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/yongjiexue/Documents/GitHub/Petivolution/frontend/src/sim/ai/actions.test.ts
+   38:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   50:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   66:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   83:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  101:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  120:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  136:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  156:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  178:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  198:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  220:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  243:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  267:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  292:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  308:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  314:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  320:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  326:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/yongjiexue/Documents/GitHub/Petivolution/frontend/src/sim/ai/perception.test.ts
+  28:79  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  35:69  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  50:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  69:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  88:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/yongjiexue/Documents/GitHub/Petivolution/frontend/src/sim/ai/utility.test.ts
+   39:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  115:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/yongjiexue/Documents/GitHub/Petivolution/frontend/src/sim/core/chunkManager.test.ts
+  14:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/yongjiexue/Documents/GitHub/Petivolution/frontend/src/sim/core/ecosystemMaintainer.test.ts
+   19:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   41:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   62:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   77:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   88:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   92:57  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   93:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  112:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  115:57  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  116:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  141:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  170:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/yongjiexue/Documents/GitHub/Petivolution/frontend/src/sim/core/spawner.test.ts
+    7:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   14:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   23:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   41:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   59:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   75:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   82:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   90:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  114:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/yongjiexue/Documents/GitHub/Petivolution/frontend/src/sim/core/tick.test.ts
+   47:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   79:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  113:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  143:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  147:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  158:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  162:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  175:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  194:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  195:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  205:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/yongjiexue/Documents/GitHub/Petivolution/frontend/src/storage/save.test.ts
+  37:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  42:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/yongjiexue/Documents/GitHub/Petivolution/frontend/src/worker/sim.worker.test.ts
+  50:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  52:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  77:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 75 problems (1 error, 74 warnings)
+

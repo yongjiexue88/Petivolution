@@ -83,9 +83,9 @@ export class ServerClient {
         return this.postAction('/api/actions/spawn', { species, x, y });
     }
 
-    // public async placeObject(type: ObjectType, x: number, y: number): Promise<ActionResponse> {
-    //     return this.postAction('/api/actions/place-object', { type, x, y });
-    // }
+    public async placeObject(type: ObjectType, x: number, y: number): Promise<ActionResponse> {
+        return this.postAction('/api/actions/place-object', { type, x, y });
+    }
 
     private async postAction(endpoint: string, payload: any): Promise<ActionResponse> {
         try {
