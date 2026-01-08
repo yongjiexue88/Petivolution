@@ -19,4 +19,8 @@
 ### Store Mocking in Tests
 - **Mistake**: Mocked `useGameStore` in `SpawnPanel.test.tsx` lacked the `getState` method required for manual store access in handlers.
 - **Correction**: Added `getState` to the mock object using `Object.assign`.
-- **Lesson**: Always verify if components use `getState()` or `get()` when mocking Zustand stores.
+## 2026-01-08
+### Linting & Clean Code
+- **Mistake**: Left unused `updateZoom` function in `WorldScene.ts` after refactoring to fixed zoom.
+- **Correction**: Removed the unused function immediately upon lint warning.
+- **Lesson**: When simplifying logic (e.g. dynamic -> fixed), aggressively remove the old code rather than leaving it "just in case" to keep the codebase clean and lint-free.

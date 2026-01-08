@@ -33,18 +33,18 @@ Petivolution uses a **Hybrid Simulation Architecture** controlled by the `useSer
 
 ```mermaid
 flowchart TD
-    subgraph Frontend [Frontend (React + Phaser)]
-        UI[React UI] <--> Store[GameStore (Zustand)]
-        Store --> Phaser[WorldScene (Renderer)]
+    subgraph Frontend ["Frontend (React + Phaser)"]
+        UI[React UI] <--> Store["GameStore (Zustand)"]
+        Store --> Phaser["WorldScene (Renderer)"]
     end
 
-    subgraph Backend [Backend Service]
+    subgraph Backend ["Backend Service"]
         API[Express API]
-        Sim[WorldServer (Simulation Loop)]
+        Sim["WorldServer (Simulation Loop)"]
         API <--> Sim
     end
 
-    subgraph Worker [Web Worker]
+    subgraph Worker ["Web Worker"]
         LocalSim[Local Simulation]
     end
 

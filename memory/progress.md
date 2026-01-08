@@ -1,6 +1,11 @@
 # V1 AI System Implementation Progress Report
-**Date:** 2026-01-07
+**Date:** 2026-01-08
 **Status:** In Progress (Testing Phase Completed)
+...
+#### 🎨 Pixel Art Standards (NEW)
+- [x] Switch to **2x integer zoom** (40 tiles visible)
+- [x] Main actors: **32×32** | Small critters: **16×16**
+- [x] Enable `roundPixels: true` in Phaser
 
 ## Overview
 Successfully implemented and integrated the new V1 AI system for Petivolution. The system replaces the legacy logic with a robust Goal-Action architecture, compliant with the provided specifications.
@@ -549,6 +554,11 @@ Successfully implemented and integrated the new V1 AI system for Petivolution. T
 #### 📦 Content Pack 3: Guardian Mode（管理与驱赶）
 - [/] 🐕 狗 + 围栏 + 保护区 (Dog + Guardian Perception implemented)
 - [ ] 新模式：平衡挑战（预算限制投放/摆放）
+
+#### 🎨 Pixel Art Standards (NEW)
+- [x] Switch to **2x integer zoom** (40 tiles visible)
+- [x] Main actors: **32×32** | Small critters: **16×16**
+- [x] Enable `roundPixels: true` in Phaser
 
 
 ## 🎨 Pending Art Assets (Placeholders)
