@@ -290,7 +290,7 @@ app.delete('/api/chunks/:cx/:cy/objects/:objectId', async (req, res) => {
 // Cloud Storage + SSE Endpoints
 // ============================================
 
-import { initializeStorage } from './config/storageConfig';
+import { initializeStorage, ensureBucketExists } from './config/storageConfig';
 import { SnapshotService } from './services/SnapshotService';
 import { getSSEManager } from './services/SSEManager';
 import { v4 as uuidv4 } from 'uuid';
@@ -298,6 +298,8 @@ import { v4 as uuidv4 } from 'uuid';
 // Initialize Cloud Storage
 try {
     initializeStorage();
+    // Ensure bucket exists (create if missing)
+    ensureBucketExists().catch(err => console.error('⚠️  Failed to ensure bucket exists:', err.message));
     console.log('✅ Cloud Storage initialized successfully');
 } catch (error: any) {
     console.warn('⚠️  Cloud Storage not initialized:', error.message);

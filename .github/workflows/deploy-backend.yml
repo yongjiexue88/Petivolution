@@ -3,10 +3,7 @@ name: Deploy Backend to Cloud Run
 on:
   push:
     branches:
-      - main  # Triggers on push to main branch
-    paths:
-      - 'backend/**'  # Only trigger when backend files change
-      - '.github/workflows/deploy-backend.yml'  # Or when this workflow changes
+      - main  # Triggers on every push to main branch
   workflow_dispatch:  # Allow manual triggering from GitHub UI
 
 env:
