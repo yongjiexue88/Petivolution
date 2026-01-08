@@ -48,7 +48,12 @@ describe('SimWorker', () => {
                 rules: {
                     capsEnabled: true,
                     ai: {} as any,
-                    timeScale: 1
+                    timeScale: 1,
+                    debug: {
+                        showSenseRadius: false,
+                        showTargets: false,
+                        showChunkBounds: false
+                    }
                 } as any
             }
         });
