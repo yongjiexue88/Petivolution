@@ -1,7 +1,19 @@
 # V1 AI System Implementation Progress Report
 **Date:** 2026-01-08
-**Status:** In Progress (Testing Phase Completed)
-...
+**Status:** In Progress (City & Sprites Integrated)
+
+### 🚀 Latest Updates (2026-01-08)
+#### 🏙️ World Building
+- [x] **City Construction**: Built a central city with Town Hall, roads, fences, gardens, and localized attributes.
+- [x] **New Background**: Replaced dark grid with a tiling grass texture from `Tileset Spring.png`.
+
+#### 🎨 Integrated Art Assets
+- [x] Generated and sliced pixel art sprites for all 9 requested animals:
+  - Chicken, Small Bird, Raccoon, Crow, Fox, Dog, Hawk, Wolf, Snake.
+- [x] **High-Res Source**: Re-generated sprites at **64x64px** source resolution for crisp scaling.
+- [x] **Display Scaling**: Configured `WorldScene.ts` to render new sprites at **32x32px** (0.5 scale).
+- [x] **Animations**: Implemented Idle, Walk, Run, Attack, Eat, Sleep, Dead states for all new species.
+
 #### 🎨 Pixel Art Standards (NEW)
 - [x] Switch to **2x integer zoom** (40 tiles visible)
 - [x] Main actors: **32×32** | Small critters: **16×16**
@@ -561,21 +573,21 @@ Successfully implemented and integrated the new V1 AI system for Petivolution. T
 - [x] Enable `roundPixels: true` in Phaser
 
 
-## 🎨 Pending Art Assets (Placeholders)
-**Date Added:** 2026-01-08
-**Status:** Placeholder assets in use (Rat/Cat duplicates). Waiting for AI generation quota reset.
+## 🎨 Art Assets Status
+**Date Updated:** 2026-01-08
+**Status:** All initial requested assets generated and integrated.
 
-| Animal | Current Placeholder | Status |
+| Animal | Asset Status | Display Size |
 | :--- | :--- | :--- |
-| **Chicken** (🐔) | Rat | ⏳ Pending |
-| **Small Bird** (🐦) | Rat | ⏳ Pending |
-| **Raccoon** (🦝) | Rat | ⏳ Pending |
-| **Crow** (🐦‍⬛) | Rat | ⏳ Pending |
-| **Fox** (🦊) | Cat | ⏳ Pending |
-| **Dog** (🐕) | Cat | ⏳ Pending |
-| **Hawk** (🦅) | Rat | ⏳ Pending |
-| **Wolf** (🐺) | Cat | ⏳ Pending |
-| **Snake** (🐍) | Rat | ⏳ Pending |
+| **Chicken** (🐔) | ✅ Integrated | 32x32px |
+| **Small Bird** (🐦) | ✅ Integrated | ~22px |
+| **Raccoon** (🦝) | ✅ Integrated | 32x32px |
+| **Crow** (🐦‍⬛) | ✅ Integrated | ~25px |
+| **Fox** (🦊) | ✅ Integrated | 32x32px |
+| **Dog** (🐕) | ✅ Integrated | 32x32px |
+| **Hawk** (🦅) | ✅ Integrated | 32x32px |
+| **Wolf** (🐺) | ✅ Integrated | 32x32px |
+| **Snake** (🐍) | ✅ Integrated | 32x32px |
 
 **Resources Pending:**
-- `perch.png`, `trash_bin.png`, `carcass.png`, `food_bowl.png`, `fence.png`, `egg.png`, `seed.png`, `insect.png`
+- `perch.png`, `trash_bin.png`, `carcass.png`, `food_bowl.png` (using generic placeholders/sprites for now)
