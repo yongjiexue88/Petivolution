@@ -25,11 +25,120 @@ export class WorldScene extends Phaser.Scene {
             console.error('Asset load failed:', file.key, file.src);
         });
 
-        // Use relative path from root
-        this.load.spritesheet('sprites', '/assets/sprites.png', {
-            frameWidth: 32,
-            frameHeight: 32,
-        });
+        // Load individual sprite images
+        const spriteBase = '/assets/sprites';
+
+        // Rat sprites
+        this.load.image('rat_idle', `${spriteBase}/rat_idle.png`);
+        this.load.image('rat_walk1', `${spriteBase}/rat_walk1.png`);
+        this.load.image('rat_walk2', `${spriteBase}/rat_walk2.png`);
+        this.load.image('rat_run1', `${spriteBase}/rat_run1.png`);
+        this.load.image('rat_run2', `${spriteBase}/rat_run2.png`);
+        this.load.image('rat_eat', `${spriteBase}/rat_eat.png`);
+        this.load.image('rat_attack', `${spriteBase}/rat_attack.png`);
+        this.load.image('rat_sleep', `${spriteBase}/rat_sleep.png`);
+        this.load.image('rat_dead', `${spriteBase}/rat_dead.png`);
+
+        // Cat sprites
+        this.load.image('cat_idle', `${spriteBase}/cat_idle.png`);
+        this.load.image('cat_walk1', `${spriteBase}/cat_walk1.png`);
+        this.load.image('cat_walk2', `${spriteBase}/cat_walk2.png`);
+        this.load.image('cat_run1', `${spriteBase}/cat_run1.png`);
+        this.load.image('cat_run2', `${spriteBase}/cat_run2.png`);
+        this.load.image('cat_eat', `${spriteBase}/cat_eat.png`);
+        this.load.image('cat_attack', `${spriteBase}/cat_attack.png`);
+        this.load.image('cat_sleep', `${spriteBase}/cat_sleep.png`);
+        this.load.image('cat_dead', `${spriteBase}/cat_dead.png`);
+
+        // Object sprites
+        this.load.image('water', `${spriteBase}/water.png`);
+        this.load.image('bush', `${spriteBase}/bush.png`);
+        this.load.image('trash', `${spriteBase}/trash.png`);
+        this.load.image('skeleton', `${spriteBase}/skeleton.png`);
+
+        // Tier 1 Placeholders
+        this.load.image('chicken_idle', `${spriteBase}/chicken_idle.png`);
+        this.load.image('chicken_walk1', `${spriteBase}/chicken_walk1.png`);
+        this.load.image('chicken_walk2', `${spriteBase}/chicken_walk2.png`);
+        this.load.image('chicken_run1', `${spriteBase}/chicken_run1.png`);
+        this.load.image('chicken_run2', `${spriteBase}/chicken_run2.png`);
+        this.load.image('chicken_eat', `${spriteBase}/chicken_eat.png`);
+        this.load.image('chicken_sleep', `${spriteBase}/chicken_sleep.png`);
+        this.load.image('chicken_dead', `${spriteBase}/chicken_dead.png`);
+
+        this.load.image('bird_idle', `${spriteBase}/bird_idle.png`);
+        this.load.image('bird_hop1', `${spriteBase}/bird_hop1.png`);
+        this.load.image('bird_hop2', `${spriteBase}/bird_hop2.png`);
+        this.load.image('bird_fly1', `${spriteBase}/bird_fly1.png`);
+        this.load.image('bird_fly2', `${spriteBase}/bird_fly2.png`);
+        this.load.image('bird_perch', `${spriteBase}/bird_perch.png`);
+        this.load.image('bird_eat', `${spriteBase}/bird_eat.png`);
+        this.load.image('bird_dead', `${spriteBase}/bird_dead.png`);
+
+        this.load.image('seed', `${spriteBase}/seed.png`);
+        this.load.image('insect', `${spriteBase}/insect.png`);
+        this.load.image('egg', `${spriteBase}/egg.png`);
+        this.load.image('perch', `${spriteBase}/perch.png`);
+        this.load.image('food_bowl', `${spriteBase}/food_bowl.png`);
+        this.load.image('fence', `${spriteBase}/fence.png`);
+
+        // Tier 2 Placeholders
+        this.load.image('raccoon_idle', `${spriteBase}/raccoon_idle.png`);
+        this.load.image('raccoon_walk1', `${spriteBase}/raccoon_walk1.png`);
+        this.load.image('raccoon_walk2', `${spriteBase}/raccoon_walk2.png`);
+        this.load.image('raccoon_steal', `${spriteBase}/raccoon_steal.png`);
+        this.load.image('raccoon_eat', `${spriteBase}/raccoon_eat.png`);
+        this.load.image('raccoon_sleep', `${spriteBase}/raccoon_sleep.png`);
+        this.load.image('raccoon_dead', `${spriteBase}/raccoon_dead.png`);
+
+        this.load.image('crow_idle', `${spriteBase}/crow_idle.png`);
+        this.load.image('crow_hop', `${spriteBase}/crow_hop.png`);
+        this.load.image('crow_fly', `${spriteBase}/crow_fly.png`);
+        this.load.image('crow_eat', `${spriteBase}/crow_eat.png`);
+        this.load.image('crow_dead', `${spriteBase}/crow_dead.png`);
+
+        this.load.image('fox_idle', `${spriteBase}/fox_idle.png`);
+        this.load.image('fox_walk1', `${spriteBase}/fox_walk1.png`);
+        this.load.image('fox_walk2', `${spriteBase}/fox_walk2.png`);
+        this.load.image('fox_run1', `${spriteBase}/fox_run1.png`);
+        this.load.image('fox_run2', `${spriteBase}/fox_run2.png`);
+        this.load.image('fox_attack', `${spriteBase}/fox_attack.png`);
+        this.load.image('fox_eat', `${spriteBase}/fox_eat.png`);
+        this.load.image('fox_sleep', `${spriteBase}/fox_sleep.png`);
+        this.load.image('fox_dead', `${spriteBase}/fox_dead.png`);
+
+        // Tier 3 Placeholders
+        this.load.image('dog_idle', `${spriteBase}/dog_idle.png`);
+        this.load.image('dog_walk1', `${spriteBase}/dog_walk1.png`);
+        this.load.image('dog_walk2', `${spriteBase}/dog_walk2.png`);
+        this.load.image('dog_run1', `${spriteBase}/dog_run1.png`);
+        this.load.image('dog_run2', `${spriteBase}/dog_run2.png`);
+        this.load.image('dog_attack', `${spriteBase}/dog_attack.png`);
+        this.load.image('dog_bark', `${spriteBase}/dog_bark.png`);
+        this.load.image('dog_eat', `${spriteBase}/dog_eat.png`);
+        this.load.image('dog_sleep', `${spriteBase}/dog_sleep.png`);
+        this.load.image('dog_dead', `${spriteBase}/dog_dead.png`);
+
+        this.load.image('hawk_idle', `${spriteBase}/hawk_idle.png`);
+        this.load.image('hawk_fly', `${spriteBase}/hawk_fly.png`);
+        this.load.image('hawk_dive', `${spriteBase}/hawk_dive.png`);
+        this.load.image('hawk_eat', `${spriteBase}/hawk_eat.png`);
+        this.load.image('hawk_dead', `${spriteBase}/hawk_dead.png`);
+
+        this.load.image('wolf_idle', `${spriteBase}/wolf_idle.png`);
+        this.load.image('wolf_walk1', `${spriteBase}/wolf_walk1.png`);
+        this.load.image('wolf_walk2', `${spriteBase}/wolf_walk2.png`);
+        this.load.image('wolf_run1', `${spriteBase}/wolf_run1.png`);
+        this.load.image('wolf_run2', `${spriteBase}/wolf_run2.png`);
+        this.load.image('wolf_attack', `${spriteBase}/wolf_attack.png`);
+        this.load.image('wolf_howl', `${spriteBase}/wolf_howl.png`);
+        this.load.image('wolf_eat', `${spriteBase}/wolf_eat.png`);
+        this.load.image('wolf_sleep', `${spriteBase}/wolf_sleep.png`);
+        this.load.image('wolf_dead', `${spriteBase}/wolf_dead.png`);
+
+        // Other resources
+        this.load.image('trash_bin', `${spriteBase}/trash_bin.png`);
+        this.load.image('carcass', `${spriteBase}/carcass.png`);
     }
 
     create() {
@@ -42,6 +151,17 @@ export class WorldScene extends Phaser.Scene {
 
         // 2 Create Animations
         this.createAnimations();
+
+        // DEBUG: prove individual images loaded
+        // const dbg = this.add.image(200, 200, 'rat_idle');
+        // dbg.setScale(0.15);
+        // dbg.setDepth(99999);
+
+        // const t = this.add.text(200, 260, 'DEBUG RAT', { color: '#ffffff' }).setOrigin(0.5);
+        // t.setDepth(99999);
+
+        // console.log('[DEBUG] textures has rat_idle?', this.textures.exists('rat_idle'));
+        // console.log('[DEBUG] textures has cat_idle?', this.textures.exists('cat_idle'));
 
         // 3. Setup Camera
         // Finite bounds removed for Infinite World
@@ -70,29 +190,92 @@ export class WorldScene extends Phaser.Scene {
     }
 
     createAnimations() {
-        // --- RAT ANIMATIONS (Row 1 & 2) ---
-        // Row 1: Idle(0), Walk1(1), Walk2(2), Run1(3), Run2(4)
-        // Row 2: Eat(5), Attack(6), Sleep(7), Dead(8), Bones(9)
+        // --- RAT ANIMATIONS ---
+        this.anims.create({ key: 'rat-idle', frames: [{ key: 'rat_idle' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'rat-move', frames: [{ key: 'rat_walk1' }, { key: 'rat_walk2' }], frameRate: 6, repeat: -1 });
+        this.anims.create({ key: 'rat-run', frames: [{ key: 'rat_run1' }, { key: 'rat_run2' }], frameRate: 10, repeat: -1 });
+        this.anims.create({ key: 'rat-eat', frames: [{ key: 'rat_eat' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'rat-attack', frames: [{ key: 'rat_attack' }], frameRate: 8, repeat: -1 });
+        this.anims.create({ key: 'rat-sleep', frames: [{ key: 'rat_sleep' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'rat-dead', frames: [{ key: 'rat_dead' }], frameRate: 1, repeat: -1 });
 
-        this.anims.create({ key: 'rat-idle', frames: this.anims.generateFrameNumbers('sprites', { frames: [0] }), frameRate: 1, repeat: -1 });
-        this.anims.create({ key: 'rat-move', frames: this.anims.generateFrameNumbers('sprites', { frames: [1, 2] }), frameRate: 6, repeat: -1 });
-        this.anims.create({ key: 'rat-run', frames: this.anims.generateFrameNumbers('sprites', { frames: [3, 4] }), frameRate: 10, repeat: -1 });
-        this.anims.create({ key: 'rat-eat', frames: this.anims.generateFrameNumbers('sprites', { frames: [5] }), frameRate: 1, repeat: -1 });
-        this.anims.create({ key: 'rat-attack', frames: this.anims.generateFrameNumbers('sprites', { frames: [6] }), frameRate: 8, repeat: -1 });
-        this.anims.create({ key: 'rat-sleep', frames: this.anims.generateFrameNumbers('sprites', { frames: [7] }), frameRate: 1, repeat: -1 });
-        this.anims.create({ key: 'rat-dead', frames: this.anims.generateFrameNumbers('sprites', { frames: [8] }), frameRate: 1, repeat: -1 });
+        // --- CAT ANIMATIONS ---
+        this.anims.create({ key: 'cat-idle', frames: [{ key: 'cat_idle' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'cat-move', frames: [{ key: 'cat_walk1' }, { key: 'cat_walk2' }], frameRate: 6, repeat: -1 });
+        this.anims.create({ key: 'cat-run', frames: [{ key: 'cat_run1' }, { key: 'cat_run2' }], frameRate: 10, repeat: -1 });
+        this.anims.create({ key: 'cat-eat', frames: [{ key: 'cat_eat' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'cat-attack', frames: [{ key: 'cat_attack' }], frameRate: 8, repeat: -1 });
+        this.anims.create({ key: 'cat-sleep', frames: [{ key: 'cat_sleep' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'cat-dead', frames: [{ key: 'cat_dead' }], frameRate: 1, repeat: -1 });
 
-        // --- CAT ANIMATIONS (Row 3 & 4) ---
-        // Row 3: Idle(10), Walk1(11), Walk2(12), Run1(13), Run2(14)
-        // Row 4: Eat(15), Attack(16), Sleep(17), Dead(18), Bones(19)
-        const offset = 10;
-        this.anims.create({ key: 'cat-idle', frames: this.anims.generateFrameNumbers('sprites', { frames: [0 + offset] }), frameRate: 1, repeat: -1 });
-        this.anims.create({ key: 'cat-move', frames: this.anims.generateFrameNumbers('sprites', { frames: [1 + offset, 2 + offset] }), frameRate: 6, repeat: -1 });
-        this.anims.create({ key: 'cat-run', frames: this.anims.generateFrameNumbers('sprites', { frames: [3 + offset, 4 + offset] }), frameRate: 10, repeat: -1 });
-        this.anims.create({ key: 'cat-eat', frames: this.anims.generateFrameNumbers('sprites', { frames: [5 + offset] }), frameRate: 1, repeat: -1 });
-        this.anims.create({ key: 'cat-attack', frames: this.anims.generateFrameNumbers('sprites', { frames: [6 + offset] }), frameRate: 8, repeat: -1 });
-        this.anims.create({ key: 'cat-sleep', frames: this.anims.generateFrameNumbers('sprites', { frames: [7 + offset] }), frameRate: 1, repeat: -1 });
-        this.anims.create({ key: 'cat-dead', frames: this.anims.generateFrameNumbers('sprites', { frames: [8 + offset] }), frameRate: 1, repeat: -1 });
+        // --- CHICKEN ANIMATIONS ---
+        this.anims.create({ key: 'chicken-idle', frames: [{ key: 'chicken_idle' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'chicken-move', frames: [{ key: 'chicken_walk1' }, { key: 'chicken_walk2' }], frameRate: 6, repeat: -1 });
+        this.anims.create({ key: 'chicken-run', frames: [{ key: 'chicken_run1' }, { key: 'chicken_run2' }], frameRate: 10, repeat: -1 });
+        this.anims.create({ key: 'chicken-eat', frames: [{ key: 'chicken_eat' }], frameRate: 2, repeat: -1 });
+        this.anims.create({ key: 'chicken-sleep', frames: [{ key: 'chicken_sleep' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'chicken-dead', frames: [{ key: 'chicken_dead' }], frameRate: 1, repeat: -1 });
+
+        // --- BIRD ANIMATIONS ---
+        this.anims.create({ key: 'bird-idle', frames: [{ key: 'bird_idle' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'bird-move', frames: [{ key: 'bird_hop1' }, { key: 'bird_hop2' }], frameRate: 5, repeat: -1 });
+        this.anims.create({ key: 'bird-run', frames: [{ key: 'bird_fly1' }, { key: 'bird_fly2' }], frameRate: 12, repeat: -1 });
+        this.anims.create({ key: 'bird-eat', frames: [{ key: 'bird_eat' }], frameRate: 3, repeat: -1 });
+        this.anims.create({ key: 'bird-dead', frames: [{ key: 'bird_dead' }], frameRate: 1, repeat: -1 });
+
+        // --- RACCOON ANIMATIONS ---
+        this.anims.create({ key: 'raccoon-idle', frames: [{ key: 'raccoon_idle' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'raccoon-move', frames: [{ key: 'raccoon_walk1' }, { key: 'raccoon_walk2' }], frameRate: 6, repeat: -1 });
+        this.anims.create({ key: 'raccoon-run', frames: [{ key: 'raccoon_walk1' }, { key: 'raccoon_walk2' }], frameRate: 10, repeat: -1 }); // Reuse walk
+        this.anims.create({ key: 'raccoon-eat', frames: [{ key: 'raccoon_eat' }], frameRate: 2, repeat: -1 });
+        this.anims.create({ key: 'raccoon-attack', frames: [{ key: 'raccoon_steal' }], frameRate: 4, repeat: -1 }); // Steal as attack
+        this.anims.create({ key: 'raccoon-sleep', frames: [{ key: 'raccoon_sleep' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'raccoon-dead', frames: [{ key: 'raccoon_dead' }], frameRate: 1, repeat: -1 });
+
+        // --- CROW ANIMATIONS ---
+        this.anims.create({ key: 'crow-idle', frames: [{ key: 'crow_idle' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'crow-move', frames: [{ key: 'crow_hop' }], frameRate: 5, repeat: -1 });
+        this.anims.create({ key: 'crow-run', frames: [{ key: 'crow_fly' }], frameRate: 10, repeat: -1 });
+        this.anims.create({ key: 'crow-eat', frames: [{ key: 'crow_eat' }], frameRate: 2, repeat: -1 });
+        this.anims.create({ key: 'crow-attack', frames: [{ key: 'crow_fly' }], frameRate: 8, repeat: -1 }); // Fly as attack?
+        this.anims.create({ key: 'crow-sleep', frames: [{ key: 'crow_idle' }], frameRate: 1, repeat: -1 }); // No sleep sprite
+        this.anims.create({ key: 'crow-dead', frames: [{ key: 'crow_dead' }], frameRate: 1, repeat: -1 });
+
+        // --- FOX ANIMATIONS ---
+        this.anims.create({ key: 'fox-idle', frames: [{ key: 'fox_idle' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'fox-move', frames: [{ key: 'fox_walk1' }, { key: 'fox_walk2' }], frameRate: 6, repeat: -1 });
+        this.anims.create({ key: 'fox-run', frames: [{ key: 'fox_run1' }, { key: 'fox_run2' }], frameRate: 12, repeat: -1 });
+        this.anims.create({ key: 'fox-eat', frames: [{ key: 'fox_eat' }], frameRate: 2, repeat: -1 });
+        this.anims.create({ key: 'fox-attack', frames: [{ key: 'fox_attack' }], frameRate: 8, repeat: -1 });
+        this.anims.create({ key: 'fox-sleep', frames: [{ key: 'fox_sleep' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'fox-dead', frames: [{ key: 'fox_dead' }], frameRate: 1, repeat: -1 });
+
+        // --- DOG ANIMATIONS ---
+        this.anims.create({ key: 'dog-idle', frames: [{ key: 'dog_idle' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'dog-move', frames: [{ key: 'dog_walk1' }, { key: 'dog_walk2' }], frameRate: 6, repeat: -1 });
+        this.anims.create({ key: 'dog-run', frames: [{ key: 'dog_run1' }, { key: 'dog_run2' }], frameRate: 12, repeat: -1 });
+        this.anims.create({ key: 'dog-eat', frames: [{ key: 'dog_eat' }], frameRate: 2, repeat: -1 });
+        this.anims.create({ key: 'dog-attack', frames: [{ key: 'dog_attack' }], frameRate: 8, repeat: -1 });
+        this.anims.create({ key: 'dog-sleep', frames: [{ key: 'dog_sleep' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'dog-dead', frames: [{ key: 'dog_dead' }], frameRate: 1, repeat: -1 });
+
+        // --- HAWK ANIMATIONS ---
+        this.anims.create({ key: 'hawk-idle', frames: [{ key: 'hawk_idle' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'hawk-move', frames: [{ key: 'hawk_fly' }], frameRate: 8, repeat: -1 }); // Fly in place logic for walk?
+        this.anims.create({ key: 'hawk-run', frames: [{ key: 'hawk_fly' }], frameRate: 12, repeat: -1 });
+        this.anims.create({ key: 'hawk-eat', frames: [{ key: 'hawk_eat' }], frameRate: 2, repeat: -1 });
+        this.anims.create({ key: 'hawk-attack', frames: [{ key: 'hawk_dive' }], frameRate: 10, repeat: -1 });
+        this.anims.create({ key: 'hawk-sleep', frames: [{ key: 'hawk_idle' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'hawk-dead', frames: [{ key: 'hawk_dead' }], frameRate: 1, repeat: -1 });
+
+        // --- WOLF ANIMATIONS ---
+        this.anims.create({ key: 'wolf-idle', frames: [{ key: 'wolf_idle' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'wolf-move', frames: [{ key: 'wolf_walk1' }, { key: 'wolf_walk2' }], frameRate: 6, repeat: -1 });
+        this.anims.create({ key: 'wolf-run', frames: [{ key: 'wolf_run1' }, { key: 'wolf_run2' }], frameRate: 12, repeat: -1 });
+        this.anims.create({ key: 'wolf-eat', frames: [{ key: 'wolf_eat' }], frameRate: 2, repeat: -1 });
+        this.anims.create({ key: 'wolf-attack', frames: [{ key: 'wolf_attack' }], frameRate: 8, repeat: -1 });
+        this.anims.create({ key: 'wolf-sleep', frames: [{ key: 'wolf_sleep' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'wolf-dead', frames: [{ key: 'wolf_dead' }], frameRate: 1, repeat: -1 });
     }
 
     destroy() {
@@ -273,6 +456,11 @@ export class WorldScene extends Phaser.Scene {
                     ServerClient.getInstance().getEntityDetail(clickedId).then(detail => {
                         if (detail) {
                             store.setSelectedEntityDetail(detail);
+                        } else {
+                            // Entity no longer exists on server (died/despawned)
+                            console.log(`Entity ${clickedId} no longer exists on server`);
+                            store.setSelectedEntityId(null);
+                            store.setSelectedEntityDetail(null);
                         }
                     });
                 } else {
@@ -539,12 +727,13 @@ export class WorldScene extends Phaser.Scene {
         outline.setName('outline');
         container.add(outline);
 
-        // Sprite
-        const sprite = this.add.sprite(0, 0, 'sprites');
+        // Sprite - use species-specific initial texture
+        const initialTexture = isCat ? 'cat_idle' : 'rat_idle';
+        const sprite = this.add.sprite(0, 0, initialTexture);
         sprite.setName('sprite');
 
-        // 32px frame -> 16px tile => 0.5 baseline, cats slightly bigger
-        sprite.setScale(isCat ? 0.6 : 0.5);
+        // 204px frame -> 16px tile => ~0.08 scale, cats slightly bigger
+        sprite.setScale(isCat ? 0.1 : 0.08);
 
         // Initial animation
         sprite.play(isCat ? 'cat-idle' : 'rat-idle');
@@ -621,19 +810,17 @@ export class WorldScene extends Phaser.Scene {
     createObjectSprite(obj: WorldObject, x: number, y: number): Phaser.GameObjects.Container {
         const container = this.add.container(x, y);
 
-        // Row 5 starts at frame 20 (5 cols * 4 rows)
-        // 20: water, 21: bush, 22: trash, 23: skeleton, 24: (if present)
-        let frameIndex = 21;
-
+        // Use individual texture keys
+        let textureKey = 'bush';
         switch (obj.type) {
-            case 'water': frameIndex = 20; break;
-            case 'bush': frameIndex = 21; break;
-            case 'trash': frameIndex = 22; break;
-            default: frameIndex = 21; break;
+            case 'water': textureKey = 'water'; break;
+            case 'bush': textureKey = 'bush'; break;
+            case 'trash': textureKey = 'trash'; break;
+            default: textureKey = 'bush'; break;
         }
 
-        const sprite = this.add.sprite(0, 0, 'sprites', frameIndex);
-        sprite.setScale(0.6); // 32px frame -> ~19px fits tile nicely
+        const sprite = this.add.image(0, 0, textureKey);
+        sprite.setScale(0.1); // 204px frame -> ~20px fits tile nicely
         container.add(sprite);
 
         // Background layer
