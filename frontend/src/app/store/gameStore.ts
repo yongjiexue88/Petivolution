@@ -65,10 +65,7 @@ export interface GameState {
     showRulesPanel: boolean;
     showGraveyardPanel: boolean;
     showDebugPanel: boolean;
-    showSpawnPanel: boolean;
-    showRulesPanel: boolean;
-    showGraveyardPanel: boolean;
-    showDebugPanel: boolean;
+
     showEventLog: boolean;
     showChallengePanel: boolean;
 

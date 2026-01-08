@@ -20,6 +20,18 @@ export class WorldScene extends Phaser.Scene {
         super({ key: 'WorldScene' });
     }
 
+    preload() {
+        this.load.on('loaderror', (file: any) => {
+            console.error('Asset load failed:', file.key, file.src);
+        });
+
+        // Use relative path from root
+        this.load.spritesheet('sprites', '/assets/sprites.png', {
+            frameWidth: 32,
+            frameHeight: 32,
+        });
+    }
+
     create() {
         // Map dimensions (for initial centering)
         const worldWidth = V1.defaultMapWidth * V1.tileSizePx;
@@ -28,20 +40,23 @@ export class WorldScene extends Phaser.Scene {
         // 1. Draw Background
         this.createBackground();
 
-        // 2. Setup Camera
+        // 2 Create Animations
+        this.createAnimations();
+
+        // 3. Setup Camera
         // Finite bounds removed for Infinite World
         // this.cameras.main.setBounds(...) 
         this.cameras.main.centerOn(worldWidth / 2, worldHeight / 2);
         this.cameras.main.setZoom(1);
 
-        // 3. Setup Controls
+        // 4. Setup Controls
         this.setupCameraControls();
 
-        // 4. Input Events
+        // 5. Input Events
         this.input.on('pointerdown', this.handlePointerDown, this);
         this.input.on('pointerup', this.handlePointerUp, this);
 
-        // 5. Subscribe to Store State (Sync loop)
+        // 6. Subscribe to Store State (Sync loop)
         // Check for updates every frame or via subscription
         this.unsubscribeStore = useGameStore.subscribe((state) => {
             this.syncAnimals(state.entities);
@@ -52,6 +67,32 @@ export class WorldScene extends Phaser.Scene {
         const initialState = useGameStore.getState();
         this.syncAnimals(initialState.entities);
         this.syncObjects(initialState.objects);
+    }
+
+    createAnimations() {
+        // --- RAT ANIMATIONS (Row 1 & 2) ---
+        // Row 1: Idle(0), Walk1(1), Walk2(2), Run1(3), Run2(4)
+        // Row 2: Eat(5), Attack(6), Sleep(7), Dead(8), Bones(9)
+
+        this.anims.create({ key: 'rat-idle', frames: this.anims.generateFrameNumbers('sprites', { frames: [0] }), frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'rat-move', frames: this.anims.generateFrameNumbers('sprites', { frames: [1, 2] }), frameRate: 6, repeat: -1 });
+        this.anims.create({ key: 'rat-run', frames: this.anims.generateFrameNumbers('sprites', { frames: [3, 4] }), frameRate: 10, repeat: -1 });
+        this.anims.create({ key: 'rat-eat', frames: this.anims.generateFrameNumbers('sprites', { frames: [5] }), frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'rat-attack', frames: this.anims.generateFrameNumbers('sprites', { frames: [6, 0] }), frameRate: 4, repeat: -1 }); // Lunge loop
+        this.anims.create({ key: 'rat-sleep', frames: this.anims.generateFrameNumbers('sprites', { frames: [7] }), frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'rat-dead', frames: this.anims.generateFrameNumbers('sprites', { frames: [8] }), frameRate: 1, repeat: -1 });
+
+        // --- CAT ANIMATIONS (Row 3 & 4) ---
+        // Row 3: Idle(10), Walk1(11), Walk2(12), Run1(13), Run2(14)
+        // Row 4: Eat(15), Attack(16), Sleep(17), Dead(18), Bones(19)
+        const offset = 10;
+        this.anims.create({ key: 'cat-idle', frames: this.anims.generateFrameNumbers('sprites', { frames: [0 + offset] }), frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'cat-move', frames: this.anims.generateFrameNumbers('sprites', { frames: [1 + offset, 2 + offset] }), frameRate: 6, repeat: -1 });
+        this.anims.create({ key: 'cat-run', frames: this.anims.generateFrameNumbers('sprites', { frames: [3 + offset, 4 + offset] }), frameRate: 10, repeat: -1 });
+        this.anims.create({ key: 'cat-eat', frames: this.anims.generateFrameNumbers('sprites', { frames: [5 + offset] }), frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'cat-attack', frames: this.anims.generateFrameNumbers('sprites', { frames: [6 + offset, 0 + offset] }), frameRate: 4, repeat: -1 });
+        this.anims.create({ key: 'cat-sleep', frames: this.anims.generateFrameNumbers('sprites', { frames: [7 + offset] }), frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'cat-dead', frames: this.anims.generateFrameNumbers('sprites', { frames: [8 + offset] }), frameRate: 1, repeat: -1 });
     }
 
     destroy() {
@@ -429,20 +470,48 @@ export class WorldScene extends Phaser.Scene {
             // Update the visual container inside
             const visual = container.getByName('visual') as Phaser.GameObjects.Container;
             if (visual) {
+                // If facing WEST (left), scale X -1.
+                // Original sprites face RIGHT.
                 if (entity.facing === 'w') visual.setScale(-1, 1);
                 else visual.setScale(1, 1);
+
+                // Play Animation
+                const sprite = visual.getByName('sprite') as Phaser.GameObjects.Sprite;
+                if (sprite) {
+                    const speciesPrefix = entity.species; // 'rat' or 'cat'
+                    let animKey = `${speciesPrefix}-idle`;
+
+                    // basic mapping
+                    switch (entity.state) {
+                        case 'idle': animKey = `${speciesPrefix}-idle`; break;
+                        case 'wander':
+                        case 'moveTo':
+                            animKey = `${speciesPrefix}-move`;
+                            break;
+                        case 'chase':
+                        case 'flee':
+                            animKey = `${speciesPrefix}-run`;
+                            break;
+                        case 'eat':
+                        case 'drink':
+                            animKey = `${speciesPrefix}-eat`;
+                            break;
+                        case 'attack': animKey = `${speciesPrefix}-attack`; break;
+                        case 'sleep': animKey = `${speciesPrefix}-sleep`; break;
+                        case 'dead': animKey = `${speciesPrefix}-dead`; break;
+                    }
+
+                    // Only play if different to avoid restarting loop
+                    if (sprite.anims.currentAnim?.key !== animKey) {
+                        sprite.play(animKey);
+                    }
+                }
             }
 
             // Selection Highlight
             const outline = container.getByName('outline') as Phaser.GameObjects.Arc;
             if (outline) {
                 outline.setVisible(entity.id === selectedId);
-            }
-
-            // State Emoji
-            const stateText = container.getByName('stateText') as Phaser.GameObjects.Text;
-            if (stateText) {
-                stateText.setText(this.getStateEmoji(entity.state));
             }
         }
 
@@ -461,8 +530,7 @@ export class WorldScene extends Phaser.Scene {
         visual.setName('visual');
 
         const isCat = entity.species === 'cat';
-        const color = isCat ? 0xffa500 : 0x808080; // Orange or Gray
-        const size = isCat ? 12 : 8;
+        const size = isCat ? 16 : 12; // Adjusted size for outline
 
         // Selection Outline (Outer ring, not flipped)
         const outline = this.add.circle(0, 0, size + 4);
@@ -471,25 +539,22 @@ export class WorldScene extends Phaser.Scene {
         outline.setName('outline');
         container.add(outline);
 
-        // Body
-        const body = this.add.circle(0, 0, size, color);
-        body.setStrokeStyle(1, 0x4a4a6a);
-        visual.add(body);
+        // Sprite
+        const sprite = this.add.sprite(0, 0, 'sprites');
+        sprite.setName('sprite');
 
-        // Eyes (facing East by default)
-        const eyeOffsetX = size * 0.4;
-        const eyeOffsetY = -size * 0.2;
-        const eyeSize = size * 0.25;
+        // Scale down from 128x128 to ~32x32
+        const scale = isCat ? 0.3 : 0.25;
+        sprite.setScale(scale);
 
-        const eyes = this.add.container(0, 0);
-        eyes.add(this.add.circle(eyeOffsetX, eyeOffsetY, eyeSize, 0x000000));
-        eyes.add(this.add.circle(eyeOffsetX + (isCat ? 5 : 3), eyeOffsetY, eyeSize, 0x000000));
-        visual.add(eyes);
+        // Initial animation
+        sprite.play(isCat ? 'cat-idle' : 'rat-idle');
+        visual.add(sprite);
 
         container.add(visual);
 
         // Name Tag
-        const nameText = this.add.text(0, -size - 12, entity.name, {
+        const nameText = this.add.text(0, -18, entity.name, {
             fontSize: '10px',
             color: '#e4e4eb',
             backgroundColor: 'rgba(0,0,0,0.5)',
@@ -498,13 +563,16 @@ export class WorldScene extends Phaser.Scene {
         nameText.setOrigin(0.5);
         container.add(nameText);
 
-        // State Emoji
-        const stateText = this.add.text(0, size + 10, this.getStateEmoji(entity.state), {
+        // State Text (Debug/Clear info)
+        // Kept small below sprite
+        /*
+        const stateText = this.add.text(0, 18, this.getStateEmoji(entity.state), {
             fontSize: '14px',
         });
         stateText.setOrigin(0.5);
         stateText.setName('stateText');
         container.add(stateText);
+        */
 
         return container;
     }
@@ -554,33 +622,20 @@ export class WorldScene extends Phaser.Scene {
     createObjectSprite(obj: WorldObject, x: number, y: number): Phaser.GameObjects.Container {
         const container = this.add.container(x, y);
 
-        let shape: Phaser.GameObjects.Shape;
-        let emoji: string;
+        // Row 5 (Indices 32+)
+        // 32: Pond, 33: Bush, 34: Trash, 35: Bones
+        let frameIndex = 32;
 
         switch (obj.type) {
-            case 'water':
-                shape = this.add.circle(0, 0, 16, 0x3b82f6, 0.6);
-                emoji = '💧';
-                break;
-            case 'bush':
-                shape = this.add.circle(0, 0, 18, 0x22c55e, 0.5);
-                emoji = '🌿';
-                break;
-            case 'trash':
-                shape = this.add.rectangle(0, 0, 24, 24, 0x78716c, 0.6);
-                emoji = '🗑️';
-                break;
-            default:
-                shape = this.add.circle(0, 0, 10, 0x888888, 0.5);
-                emoji = '❓';
+            case 'water': frameIndex = 32; break;
+            case 'bush': frameIndex = 33; break;
+            case 'trash': frameIndex = 34; break;
+            default: frameIndex = 33;
         }
 
-        shape.setStrokeStyle(2, 0x4a4a6a);
-        container.add(shape);
-
-        const emojiText = this.add.text(0, 0, emoji, { fontSize: '16px' });
-        emojiText.setOrigin(0.5);
-        container.add(emojiText);
+        const sprite = this.add.sprite(0, 0, 'sprites', frameIndex);
+        sprite.setScale(0.25); // Scale down environment too
+        container.add(sprite);
 
         // Background layer
         container.setDepth(-100);
