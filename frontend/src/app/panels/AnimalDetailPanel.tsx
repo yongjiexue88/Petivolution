@@ -40,12 +40,14 @@ export function AnimalDetailPanel({ entity }: Props) {
 
     const getGoalLabel = (goal: Goal): string => {
         const map: Record<Goal, string> = {
-            drink: '喝水',
-            eat: '觅食',
-            hunt: '狩猎',
+            drink: '寻找水源',
+            eat: '寻找食物',
+            hunt: '捕猎',
             rest: '休息',
             flee: '逃跑',
             wander: '闲逛',
+            forage: '觅食',
+            rummage: '翻垃圾'
         };
         return map[goal];
     };

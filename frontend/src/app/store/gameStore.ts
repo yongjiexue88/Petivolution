@@ -136,7 +136,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     entities: [],
     objects: [],
     events: [],
-    stats: { rat: 0, cat: 0, deathsLastMin: 0, birthsLastMin: 0 },
+    stats: { timeOfDay: 0.25, rat: 0, cat: 0, chicken: 0, smallBird: 0, raccoon: 0, crow: 0, dog: 0, deathsLastMin: 0, birthsLastMin: 0 },
     graveyard: [],
     chunks: {}, // V3
 
@@ -325,7 +325,7 @@ export const useGameStore = create<GameState>((set, get) => ({
             rules: data.world.rules,
             entities: data.entities as unknown as SnapshotEntity[], // SnapshotEntity mismatch
             objects: data.objects,
-            stats: { rat: 0, cat: 0, deathsLastMin: 0, birthsLastMin: 0, currentSeed: data.world.seed }, // Reset stats but keep seed
+            stats: { timeOfDay: 0.25, rat: 0, cat: 0, chicken: 0, smallBird: 0, raccoon: 0, crow: 0, dog: 0, deathsLastMin: 0, birthsLastMin: 0, currentSeed: data.world.seed }, // Reset stats but keep seed
             graveyard: data.graveyard,
             chunks: data.chunks || {}, // V3
             events: [], // Clear events on load

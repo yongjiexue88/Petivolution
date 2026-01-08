@@ -39,6 +39,12 @@ export const PLACEABLE_TEMPLATES: Record<ObjectType, PlaceableTemplate> = {
         footprint: { w: 1, h: 1 },
         defaultData: { regenRate: 1 },
     },
+    perch: {
+        type: 'perch',
+        label: 'Perch Point (Bird Rest)',
+        footprint: { w: 1, h: 1 },
+        defaultData: { strength01: 1.0 },
+    },
 };
 
 // ============================================
@@ -114,6 +120,13 @@ export const OBJECT_CONFIGS: Record<ObjectType, ObjectInteractConfig> = {
         type: 'trash',
         maxResources: 80,
         regenRatePerTick: 0.2,
+        interactRangeTiles: 1.5,
+        strengthDefault: 1.0,
+    },
+    perch: {
+        type: 'perch',
+        maxResources: 0,
+        regenRatePerTick: 0,
         interactRangeTiles: 1.5,
         strengthDefault: 1.0,
     },

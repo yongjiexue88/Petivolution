@@ -44,6 +44,7 @@ export function recordEvent(sim: SimulationState, entity: EntityRuntime, event: 
 export interface SimulationState {
     tick: number;
     seed: number;
+    timeOfDay: number; // 0..1
     mapId: string;
 
     entities: Map<string, EntityRuntime>;
@@ -90,6 +91,7 @@ export function createSimulation(
     return {
         tick: 0,
         seed,
+        timeOfDay: 0.25, // Start at noon
         mapId,
         entities: new Map(),
         objects: new Map(),
@@ -247,6 +249,11 @@ export function simulateTick(sim: SimulationState): void {
                     );
                 }
             }
+        }
+
+        // Challenge Check (Every 60 ticks = 1s)
+        if (sim.tick % 60 === 0) {
+            checkChallengeStatus(sim);
         }
     }
 }
@@ -497,6 +504,8 @@ function transitionToGoal(entity: EntityRuntime, goal: Goal, _sim: SimulationSta
         rest: 'sleep',
         flee: 'flee',
         wander: 'wander',
+        forage: 'peck',
+        rummage: 'rummage'
     };
 
     entity.state = goalToState[goal];
@@ -570,13 +579,19 @@ export function getSnapshot(sim: SimulationState): {
         entities,
         objects: Array.from(sim.objects.values()),
         stats: {
+            timeOfDay: sim.timeOfDay,
             rat: ratCount,
             cat: catCount,
+            chicken: Array.from(sim.entities.values()).filter(e => e.species === 'chicken').length,
+            smallBird: Array.from(sim.entities.values()).filter(e => e.species === 'smallBird').length,
+            raccoon: Array.from(sim.entities.values()).filter(e => e.species === 'raccoon').length,
+            crow: Array.from(sim.entities.values()).filter(e => e.species === 'crow').length,
+            dog: Array.from(sim.entities.values()).filter(e => e.species === 'dog').length,
             deathsLastMin: sim.stats.deathsThisMinute,
             birthsLastMin: sim.stats.birthsThisMinute,
             warning: sim.stats.warning,
-            currentSeed: sim.seed, // V1.2
-            ecoStress: sim.stats.ecoStress,
+            currentSeed: sim.seed,
+            ecoStress: sim.stats.ecoStress
         },
         events,
     };
@@ -617,4 +632,87 @@ function getEntityTargetPos(entity: EntityRuntime, sim: SimulationState): Vec2 |
     }
 
     return undefined;
+}
+
+// ============================================
+// Challenge Logic
+// ============================================
+
+function checkChallengeStatus(sim: SimulationState): void {
+    const config = sim.rules.challenge;
+    if (!config || !config.enabled) return;
+
+    // Check Duration (Win Condition)
+    if (sim.tick >= config.targetDurationTicks) {
+        // Victory!
+        // Emit 'CHALLENGE_WIN' event
+        const event: SimEvent = {
+            type: 'CHALLENGE_WIN', // Note: Might need to add to SimEvent type union if strict
+            tick: sim.tick,
+            entityId: 'SYSTEM',
+            importance: 'S',
+            location: { x: 0, y: 0 },
+            tags: ['challenge', 'win'],
+            subjectName: 'System',
+            data: { message: `Challenge Complete! You survived ${config.targetDurationTicks / V1.simTickHz}s.` }
+        } as any; // Cast to avoid strict union check for now if needed, or add to types.ts
+
+        // Prevent spam
+        if (!sim.pendingEvents.some(e => e.type === 'CHALLENGE_WIN')) {
+            sim.pendingEvents.push(event);
+        }
+        return;
+    }
+
+    // Check Population (Fail Condition)
+    const counts: Record<string, number> = {};
+    for (const e of sim.entities.values()) {
+        if (e.state !== 'dead') {
+            counts[e.species] = (counts[e.species] || 0) + 1;
+        }
+    }
+
+    let failed = false;
+    let failReason = '';
+
+    // Min Pop
+    if (config.minPopulation) {
+        for (const [species, min] of Object.entries(config.minPopulation)) {
+            if ((counts[species] || 0) < min) {
+                failed = true;
+                failReason = `${species} population too low (<${min})`;
+                break;
+            }
+        }
+    }
+
+    // Max Pop
+    if (!failed && config.maxPopulation) {
+        for (const [species, max] of Object.entries(config.maxPopulation)) {
+            if ((counts[species] || 0) > max) {
+                failed = true;
+                failReason = `${species} population too high (>${max})`;
+                break;
+            }
+        }
+    }
+
+    if (failed) {
+        const event: SimEvent = {
+            type: 'CHALLENGE_FAIL',
+            tick: sim.tick,
+            entityId: 'SYSTEM',
+            importance: 'S',
+            location: { x: 0, y: 0 },
+            tags: ['challenge', 'fail'],
+            subjectName: 'System',
+            data: { message: `Challenge Failed: ${failReason}` }
+        } as any;
+
+        // Prevent spam - only send if we haven't failed recently? 
+        // Or just send once.
+        if (!sim.pendingEvents.some(e => e.type === 'CHALLENGE_FAIL')) {
+            sim.pendingEvents.push(event);
+        }
+    }
 }

@@ -321,13 +321,13 @@ export class ChunkManager {
         if (type === 'water') {
             obj.data!.resources = OBJECT_CONFIGS.water.maxResources;
             obj.data!.maxResources = OBJECT_CONFIGS.water.maxResources;
-            obj.data!.regenRate = OBJECT_CONFIGS.water.regenRate;
+            obj.data!.regenRate = OBJECT_CONFIGS.water.regenRatePerTick;
         } else if (type === 'trash') {
             obj.data!.resources = OBJECT_CONFIGS.trash.maxResources;
             obj.data!.maxResources = OBJECT_CONFIGS.trash.maxResources;
-            obj.data!.regenRate = OBJECT_CONFIGS.trash.regenRate;
+            obj.data!.regenRate = OBJECT_CONFIGS.trash.regenRatePerTick;
         } else if (type === 'bush') {
-            obj.data!.strength01 = OBJECT_CONFIGS.bush.strengthDefault;
+            obj.data!.strength01 = OBJECT_CONFIGS.bush.strengthDefault || 1;
         }
 
         sim.objects.set(obj.id, obj);

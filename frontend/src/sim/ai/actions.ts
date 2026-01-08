@@ -12,6 +12,29 @@ import { SPECIES_CONFIGS, OBJECT_CONFIGS, clamp01 } from '@shared/species.config
 import { V1 } from '@shared/constants';
 import { distance, normalize } from './perception';
 
+// Helper to get logic specific movement speed
+function getMoveSpeed(entity: EntityRuntime, baseSpeed: number, sim: SimulationState): number {
+    const config = SPECIES_CONFIGS[entity.species];
+    const style = config.move.moveStyle || 'run';
+
+    if (style === 'hop') {
+        // Hop logic: move fast then stop
+        // Use tick count to toggle
+        const cycle = 20; // 20 ticks hop cycle
+        const phase = (sim.tick + entity.id.charCodeAt(0)) % cycle; // offset by id
+        if (phase < 5) {
+            // Hop! (Fast burst)
+            return baseSpeed * 3;
+        } else {
+            // Stop
+            return 0;
+        }
+    }
+
+    // Normal run
+    return baseSpeed;
+}
+
 // ============================================
 // 动作执行
 // ============================================
@@ -45,6 +68,16 @@ export function executeAction(entity: EntityRuntime, sim: SimulationState): void
         case 'idle':
             // 空闲状态，等待下次决策
             break;
+        case 'peck':
+            executePeck(entity, sim);
+            break;
+        case 'perch':
+            executePerch(entity, sim);
+            break;
+        case 'rummage':
+            executeRummage(entity, sim);
+            break;
+        // 'hop' is transient movement, handled in update loop or treated as move
     }
 
     // 更新朝向
@@ -57,16 +90,22 @@ export function executeAction(entity: EntityRuntime, sim: SimulationState): void
 
 function executeWander(entity: EntityRuntime, sim: SimulationState): void {
     const config = SPECIES_CONFIGS[entity.species];
-    const speed = config.move.speedTilesPerTick * V1.tileSizePx;
+    const baseSpeed = config.move.speedTilesPerTick * V1.tileSizePx;
+    let speed = getMoveSpeed(entity, baseSpeed, sim);
+
+    // Flocking Logic
+    if (config.flock && config.flock.enabled) {
+        // Placeholder for future flocking logic
+        // Requires 'friendly' perception or spatial query
+    }
 
     // 生成或更新目标点
-    if (!entity.targetPos || distance(entity.pos, entity.targetPos) < 10) {
+    if (!entity.targetPos || distance(entity.pos, entity.targetPos) < 10 || speed === 0) {
+        // If stopped (hopping), maybe pick new target?
         entity.targetPos = {
             x: entity.pos.x + (sim.rng() - 0.5) * 200,
             y: entity.pos.y + (sim.rng() - 0.5) * 200,
         };
-
-        // No hard boundary for infinite world wandering
     }
 
     // 移向目标
@@ -102,7 +141,7 @@ function executeMoveTo(entity: EntityRuntime, sim: SimulationState): void {
             if (dist < interactRange) {
                 entity.state = 'drink';
             } else {
-                moveToward(entity, targetPos, speed);
+                moveToward(entity, targetPos, getMoveSpeed(entity, speed, sim));
             }
         } else {
             entity.ai.lastFailReason = 'no_water_found';
@@ -124,7 +163,7 @@ function executeMoveTo(entity: EntityRuntime, sim: SimulationState): void {
             if (dist < interactRange) {
                 entity.state = 'eat';
             } else {
-                moveToward(entity, targetPos, speed);
+                moveToward(entity, targetPos, getMoveSpeed(entity, speed, sim));
             }
         } else {
             entity.ai.lastFailReason = 'no_trash_found';
@@ -152,8 +191,96 @@ function executeMoveTo(entity: EntityRuntime, sim: SimulationState): void {
             // 原地睡觉
             entity.state = 'sleep';
         }
+    } else if (goal === 'forage') {
+        // 觅食逻辑 (Chicken)
+        // 寻找附近的灌木或空地
+        const bushObj = findNearestObjectOfType(entity, sim, 'bush');
+        if (bushObj) {
+            const targetPos = {
+                x: bushObj.pos.tx * V1.tileSizePx + (sim.rng() - 0.5) * 20, // Near bush
+                y: bushObj.pos.ty * V1.tileSizePx + (sim.rng() - 0.5) * 20
+            };
+            entity.targetObjectId = bushObj.id;
+
+            const dist = distance(entity.pos, targetPos);
+            // Peck range is small
+            if (dist < 10) {
+                entity.state = 'peck';
+            } else {
+                moveToward(entity, targetPos, speed);
+            }
+        } else {
+            // 没有灌木，随机游荡并尝试啄食
+            entity.state = 'peck'; // Just peck where we are
+        }
     } else {
         entity.state = 'wander';
+    }
+}
+
+// ============================================
+// Rummage - 浣熊翻垃圾
+// ============================================
+
+function executeRummage(entity: EntityRuntime, sim: SimulationState): void {
+    if (!entity.targetObjectId) {
+        entity.state = 'idle';
+        entity.ai.lastFailReason = 'No trash to rummage';
+        return;
+    }
+
+    const trash = sim.objects.get(entity.targetObjectId);
+    if (!trash) {
+        entity.state = 'idle'; // Trash gone
+        return;
+    }
+
+    // Move to trash
+    // Object pos is in tiles, entity pos is in pixels/world units?
+    // Wait, entity pos is also tiles in this codebase? 
+    // Checking types.ts: entity.pos: Vec2 (pixel or tile? Usually tile in V1, but let's be safe).
+    // V1.tileSizePx = 16. Usually entity.pos is float tiles? Or pixels?
+    // In utility.ts: distancePenalty * (dist / V1.tileSizePx) implies dist is pixels.
+    // In tick.ts: cameraCenter is pixels.
+    // Let's assume WorldObject.pos is TilePos (integers). We need to convert to pixels for distance check.
+
+    const trashPx = { x: trash.pos.tx * V1.tileSizePx + V1.tileSizePx / 2, y: trash.pos.ty * V1.tileSizePx + V1.tileSizePx / 2 };
+
+    // Move to trash
+    const dist = distance(entity.pos, trashPx);
+    const config = SPECIES_CONFIGS[entity.species];
+
+    // Raccoon rummage range
+    if (dist > 10) { // Close enough
+        // Move closer
+        const speed = config.move.speedTilesPerTick * V1.tileSizePx;
+        const dir = normalize({ x: trashPx.x - entity.pos.x, y: trashPx.y - entity.pos.y });
+        entity.pos.x += dir.x * speed;
+        entity.pos.y += dir.y * speed;
+        return;
+    }
+
+    // At trash, rummage!
+    // Restore hunger
+    const eatRate = 0.05; // Fast eat
+    entity.vitals.hunger01 = Math.min(1, entity.vitals.hunger01 + eatRate);
+
+    // Event
+    if (sim.tick % 60 === 0) {
+        sim.pendingEvents.push({
+            type: 'EAT',
+            tick: sim.tick,
+            entityId: entity.id,
+            source: 'trash',
+            importance: 'B',
+            subjectName: entity.name,
+            location: { x: entity.pos.x, y: entity.pos.y },
+            tags: ['rummage', entity.species]
+        });
+    }
+
+    if (entity.vitals.hunger01 >= 0.95) {
+        entity.state = 'idle'; // Full
     }
 }
 
@@ -450,6 +577,43 @@ function executeSleep(entity: EntityRuntime, _sim: SimulationState): void {
     if (entity.vitals.hunger01 < 0.3 || entity.vitals.thirst01 < 0.3) {
         entity.state = 'idle';
         // 下次决策会重新选择目标
+    }
+}
+
+// ============================================
+// Peck - 啄食 (Chicken)
+// ============================================
+
+function executePeck(entity: EntityRuntime, sim: SimulationState): void {
+    const config = SPECIES_CONFIGS[entity.species];
+
+    // 随机获得少量食物
+    if (sim.rng() < 0.3) {
+        entity.vitals.hunger01 = clamp01(entity.vitals.hunger01 + config.vitals.eatGainPerTick);
+    }
+
+    // 啄食也是一种休息，回复少量疲劳
+    entity.vitals.fatigue01 = clamp01(entity.vitals.fatigue01 + 0.001);
+
+    // 持续一段时间后结束
+    if (sim.rng() < 0.05 || entity.vitals.hunger01 > 0.9) {
+        entity.state = 'idle';
+        entity.ai.currentGoal = 'wander';
+    }
+}
+
+// ============================================
+// Perch - 栖息 (Bird)
+// ============================================
+
+function executePerch(entity: EntityRuntime, sim: SimulationState): void {
+    // 快速恢复疲劳
+    entity.vitals.fatigue01 = clamp01(entity.vitals.fatigue01 + 0.02);
+
+    // 如果休息好了，或者饿了/渴了
+    if (entity.vitals.fatigue01 >= 0.95 || (entity.vitals.hunger01 < 0.3 && sim.rng() < 0.05)) {
+        entity.state = 'idle';
+        entity.ai.currentGoal = 'wander';
     }
 }
 

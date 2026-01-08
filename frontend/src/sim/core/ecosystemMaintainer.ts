@@ -148,9 +148,11 @@ function spawnAtEdge(sim: SimulationState, species: SpeciesId): boolean {
  * Generate a random name for an entity
  */
 function getRandomName(species: SpeciesId, sim: SimulationState): string {
-    const names = {
-        cat: ['Tiger', 'Shadow', 'Luna', 'Simba', 'Oreo', 'Whiskers', 'Felix', 'Mittens'],
-        rat: ['Squeaky', 'Pip', 'Cheese', 'Scurry', 'Nibbles', 'Dusty', 'Scout', 'Rustle'],
+    const names: Record<string, string[]> = {
+        rat: ['Ratty', 'Pip', 'Squeak', 'Nibbles', 'Whiskers'],
+        cat: ['Kitty', 'Tom', 'Luna', 'Shadow', 'Simba'],
+        chicken: ['Cluck', 'Nugget'],
+        smallBird: ['Tweet', 'Chirp'],
     };
 
     const nameList = names[species] || ['Unknown'];

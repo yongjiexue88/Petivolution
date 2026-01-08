@@ -11,6 +11,8 @@ import { ServerClient } from '../../app/api/ServerClient';
 export class WorldScene extends Phaser.Scene {
     private entitySprites: Map<string, Phaser.GameObjects.Container> = new Map();
     private objectSprites: Map<string, Phaser.GameObjects.Container> = new Map();
+    // V1.3 Day/Night
+    private dayNightOverlay!: Phaser.GameObjects.Rectangle;
     private isDragging = false;
     private dragStart = { x: 0, y: 0 };
     private cameraStart = { x: 0, y: 0 };
@@ -136,6 +138,16 @@ export class WorldScene extends Phaser.Scene {
         this.load.image('wolf_sleep', `${spriteBase}/wolf_sleep.png`);
         this.load.image('wolf_dead', `${spriteBase}/wolf_dead.png`);
 
+        // Tier 3(extra) Snake Placeholders
+        this.load.image('snake_idle', `${spriteBase}/snake_idle.png`);
+        this.load.image('snake_move1', `${spriteBase}/snake_move1.png`);
+        this.load.image('snake_move2', `${spriteBase}/snake_move2.png`);
+        this.load.image('snake_attack', `${spriteBase}/snake_attack.png`);
+        this.load.image('snake_eat', `${spriteBase}/snake_eat.png`);
+        this.load.image('snake_sleep', `${spriteBase}/snake_sleep.png`);
+        this.load.image('snake_dead', `${spriteBase}/snake_dead.png`);
+        // Note: Snake uses 'move' for run, and 'idle' for others if mapped
+
         // Other resources
         this.load.image('trash_bin', `${spriteBase}/trash_bin.png`);
         this.load.image('carcass', `${spriteBase}/carcass.png`);
@@ -187,6 +199,19 @@ export class WorldScene extends Phaser.Scene {
         const initialState = useGameStore.getState();
         this.syncAnimals(initialState.entities);
         this.syncObjects(initialState.objects);
+
+        // 7. Day/Night Overlay (V1.3)
+        this.dayNightOverlay = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000022) // Dark blueish
+            .setScrollFactor(0)
+            .setDepth(20000)
+            .setAlpha(0)
+            .setOrigin(0, 0)
+            .setBlendMode(Phaser.BlendModes.MULTIPLY); // Better for darkening
+
+        // Handle resize
+        this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
+            this.dayNightOverlay.setSize(gameSize.width, gameSize.height);
+        });
     }
 
     createAnimations() {
@@ -221,6 +246,7 @@ export class WorldScene extends Phaser.Scene {
         this.anims.create({ key: 'bird-move', frames: [{ key: 'bird_hop1' }, { key: 'bird_hop2' }], frameRate: 5, repeat: -1 });
         this.anims.create({ key: 'bird-run', frames: [{ key: 'bird_fly1' }, { key: 'bird_fly2' }], frameRate: 12, repeat: -1 });
         this.anims.create({ key: 'bird-eat', frames: [{ key: 'bird_eat' }], frameRate: 3, repeat: -1 });
+        this.anims.create({ key: 'bird-perch', frames: [{ key: 'bird_perch' }], frameRate: 1, repeat: -1 });
         this.anims.create({ key: 'bird-dead', frames: [{ key: 'bird_dead' }], frameRate: 1, repeat: -1 });
 
         // --- RACCOON ANIMATIONS ---
@@ -276,6 +302,15 @@ export class WorldScene extends Phaser.Scene {
         this.anims.create({ key: 'wolf-attack', frames: [{ key: 'wolf_attack' }], frameRate: 8, repeat: -1 });
         this.anims.create({ key: 'wolf-sleep', frames: [{ key: 'wolf_sleep' }], frameRate: 1, repeat: -1 });
         this.anims.create({ key: 'wolf-dead', frames: [{ key: 'wolf_dead' }], frameRate: 1, repeat: -1 });
+
+        // --- SNAKE ANIMATIONS ---
+        this.anims.create({ key: 'snake-idle', frames: [{ key: 'snake_idle' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'snake-move', frames: [{ key: 'snake_move1' }, { key: 'snake_move2' }], frameRate: 4, repeat: -1 }); // Slither
+        this.anims.create({ key: 'snake-run', frames: [{ key: 'snake_move1' }, { key: 'snake_move2' }], frameRate: 8, repeat: -1 });
+        this.anims.create({ key: 'snake-eat', frames: [{ key: 'snake_eat' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'snake-attack', frames: [{ key: 'snake_attack' }], frameRate: 8, repeat: -1 });
+        this.anims.create({ key: 'snake-sleep', frames: [{ key: 'snake_sleep' }], frameRate: 1, repeat: -1 });
+        this.anims.create({ key: 'snake-dead', frames: [{ key: 'snake_dead' }], frameRate: 1, repeat: -1 });
     }
 
     destroy() {
@@ -380,6 +415,16 @@ export class WorldScene extends Phaser.Scene {
                 // this.cameras.main.stopFollow(); 
                 // Don't call stopFollow every frame, but we need to ensure we stop if we were following
             }
+        }
+
+        // Update Day/Night Overlay
+        const stats = useGameStore.getState().stats;
+        if (stats && this.dayNightOverlay) {
+            const time = stats.timeOfDay || 0;
+            // 0=dawn, 0.25=noon, 0.75=midnight
+            const rad = (time - 0.25) * Math.PI * 2;
+            const intensity = (1 - Math.cos(rad)) / 2; // 0 at noon, 1 at midnight
+            this.dayNightOverlay.setAlpha(intensity * 0.7); // Max darkness 0.7
         }
 
         // Sync TileSprite position and scale with Camera
@@ -554,6 +599,11 @@ export class WorldScene extends Phaser.Scene {
         const names = {
             cat: ['Kitty', 'Tiger', 'Luna', 'Shadow', 'Simba', 'Oreo'],
             rat: ['Squeak', 'Jerry', 'Pip', 'Ratty', 'Cheese', 'Scabbers'],
+            chicken: ['Henny', 'Penny', 'Cluck', 'Nugget', 'Feathers', 'Peck'],
+            smallBird: ['Tweety', 'Chirp', 'Sky', 'Blue', 'Robin', 'Pip'],
+            raccoon: ['Bandit', 'Rocket', 'Sly', 'Meeko', 'Rascal'],
+            crow: ['Edgar', 'Poe', 'Odin', 'Raven', 'Shadow'],
+            dog: ['Buddy', 'Rex', 'Spot', 'Max', 'Bella', 'Charlie'],
         };
         const nameList = names[store.spawnSpecies] || ['Unknown'];
         const name = nameList[Math.floor(Math.random() * nameList.length)] + Math.floor(Math.random() * 99);
@@ -666,32 +716,50 @@ export class WorldScene extends Phaser.Scene {
                 // Play Animation
                 const sprite = visual.getByName('sprite') as Phaser.GameObjects.Sprite;
                 if (sprite) {
-                    const speciesPrefix = entity.species; // 'rat' or 'cat'
-                    let animKey = `${speciesPrefix}-idle`;
+                    const species = entity.species;
+                    // Mapping species ID to animation prefix if needed
+                    // smallBird -> bird
+                    const animPrefix = species === 'smallBird' ? 'bird' : species;
+
+                    let animKey = `${animPrefix}-idle`;
 
                     // basic mapping
                     switch (entity.state) {
-                        case 'idle': animKey = `${speciesPrefix}-idle`; break;
+                        case 'idle': animKey = `${animPrefix}-idle`; break;
                         case 'wander':
                         case 'moveTo':
-                            animKey = `${speciesPrefix}-move`;
+                            animKey = `${animPrefix}-move`;
                             break;
                         case 'chase':
                         case 'flee':
-                            animKey = `${speciesPrefix}-run`;
+                            animKey = `${animPrefix}-run`;
                             break;
                         case 'eat':
                         case 'drink':
-                            animKey = `${speciesPrefix}-eat`;
+                        case 'peck': // V4
+                            animKey = `${animPrefix}-eat`;
                             break;
-                        case 'attack': animKey = `${speciesPrefix}-attack`; break;
-                        case 'sleep': animKey = `${speciesPrefix}-sleep`; break;
-                        case 'dead': animKey = `${speciesPrefix}-dead`; break;
+                        case 'perch': // V4
+                            // Use perch anim for birds, else idle
+                            animKey = species === 'smallBird' ? 'bird-perch' : `${animPrefix}-idle`;
+                            break;
+                        case 'hop': // V4
+                            animKey = `${animPrefix}-move`;
+                            break;
+                        case 'attack': animKey = `${animPrefix}-attack`; break;
+                        case 'sleep': animKey = `${animPrefix}-sleep`; break;
+                        case 'dead': animKey = `${animPrefix}-dead`; break;
                     }
 
                     // Only play if different to avoid restarting loop
                     if (sprite.anims.currentAnim?.key !== animKey) {
-                        sprite.play(animKey);
+                        // Check if animation exists to avoid warnings
+                        if (this.anims.exists(animKey)) {
+                            sprite.play(animKey);
+                        } else {
+                            // Fallback to idle
+                            sprite.play(`${animPrefix}-idle`, true);
+                        }
                     }
                 }
             }
@@ -728,15 +796,27 @@ export class WorldScene extends Phaser.Scene {
         container.add(outline);
 
         // Sprite - use species-specific initial texture
-        const initialTexture = isCat ? 'cat_idle' : 'rat_idle';
+        let initialTexture = 'rat_idle';
+        let scale = 0.08;
+
+        if (entity.species === 'cat') {
+            initialTexture = 'cat_idle';
+            scale = 0.1;
+        } else if (entity.species === 'chicken') {
+            initialTexture = 'chicken_idle';
+            scale = 0.09;
+        } else if (entity.species === 'smallBird') {
+            initialTexture = 'bird_idle';
+            scale = 0.06;
+        }
+
         const sprite = this.add.sprite(0, 0, initialTexture);
         sprite.setName('sprite');
-
-        // 204px frame -> 16px tile => ~0.08 scale, cats slightly bigger
-        sprite.setScale(isCat ? 0.1 : 0.08);
+        sprite.setScale(scale);
 
         // Initial animation
-        sprite.play(isCat ? 'cat-idle' : 'rat-idle');
+        const animPrefix = entity.species === 'smallBird' ? 'bird' : entity.species;
+        sprite.play(`${animPrefix}-idle`);
         visual.add(sprite);
 
         container.add(visual);
@@ -816,6 +896,7 @@ export class WorldScene extends Phaser.Scene {
             case 'water': textureKey = 'water'; break;
             case 'bush': textureKey = 'bush'; break;
             case 'trash': textureKey = 'trash'; break;
+            case 'perch': textureKey = 'perch'; break;
             default: textureKey = 'bush'; break;
         }
 

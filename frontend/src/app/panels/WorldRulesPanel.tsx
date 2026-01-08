@@ -65,7 +65,7 @@ export function WorldRulesPanel() {
     };
 
     // V1.1 Costs
-    const COSTS: Record<ObjectType, number> = { water: 10, bush: 4, trash: 6 };
+    const COSTS: Record<ObjectType, number> = { water: 10, bush: 4, trash: 6, perch: 5 };
     const EMERGENCY_AID_COST = 15;
     const EMERGENCY_AID_CD = 120; // seconds
 
@@ -112,8 +112,8 @@ export function WorldRulesPanel() {
             data: {
                 resources: OBJECT_CONFIGS[type].maxResources,
                 maxResources: OBJECT_CONFIGS[type].maxResources,
-                regenRate: OBJECT_CONFIGS[type].regenRate,
-                strength01: OBJECT_CONFIGS[type].strengthDefault,
+                regenRate: OBJECT_CONFIGS[type].regenRatePerTick,
+                strength01: OBJECT_CONFIGS[type].strengthDefault || 1,
             },
         };
 

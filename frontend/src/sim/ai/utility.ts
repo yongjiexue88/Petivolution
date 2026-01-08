@@ -18,7 +18,7 @@ import { V1 } from '@shared/constants';
 
 export function calculateUtility(
     entity: EntityRuntime,
-    _sim: SimulationState
+    sim: SimulationState
 ): Partial<Record<Goal, number>> {
     const config = SPECIES_CONFIGS[entity.species];
     const uw = config.utility;
@@ -54,7 +54,7 @@ export function calculateUtility(
     const scores: Partial<Record<Goal, number>> = {};
 
     // -------- Flee --------
-    if (entity.species === 'rat') {
+    if (entity.species === 'rat' || entity.species === 'chicken' || entity.species === 'smallBird') {
         let fleeScore = uw.base.flee;
         fleeScore += uw.urgency.fear * uFear;
 
@@ -107,9 +107,48 @@ export function calculateUtility(
         if (personalityMod.nearTrash) eatScore += personalityMod.nearTrash;
 
         scores.eat = eatScore;
+        scores.eat = eatScore;
     }
 
-    // -------- Hunt (猫用) --------
+    // -------- Forage (Chicken/Bird) --------
+    if (entity.species === 'chicken' || entity.species === 'smallBird' || entity.species === 'rat') {
+        let forageScore = uw.base.forage ?? 0;
+        forageScore += uw.urgency.hunger * uHunger;
+
+        // Chickens like bushes
+        if (nearestBush && entity.species === 'chicken') {
+            forageScore += uw.bonuses.nearBush * 0.5;
+        }
+
+        const personalityMod = uw.personality[entity.personality];
+        if (personalityMod.forage) forageScore += personalityMod.forage;
+
+        scores.forage = forageScore;
+
+        // Rat has a specific eat goal for trash, but can default to forage (scavenge) if configured
+    }
+
+    // -------- Rummage (Raccoon Only) --------
+    if (entity.species === 'raccoon') {
+        let rummageScore = uw.base.eat; // Base eat drive
+        rummageScore += uw.urgency.hunger * uHunger;
+
+        if (nearestTrash) {
+            rummageScore += uw.bonuses.nearTrash;
+            rummageScore -= uw.distancePenalty.trash * (nearestTrash.dist / V1.tileSizePx);
+
+            // Significant bonus if very hungry and near trash
+            if (uHunger > 0.6) {
+                rummageScore += 20;
+            }
+        } else {
+            rummageScore -= 5;
+        }
+
+        scores.rummage = rummageScore;
+    }
+
+    // -------- Eat (Prey/Carrion) --------
     if (entity.species === 'cat') {
         let huntScore = uw.base.hunt;
         huntScore += uw.urgency.hunger * uHunger;
@@ -128,14 +167,46 @@ export function calculateUtility(
         scores.hunt = huntScore;
     }
 
-    // -------- Rest --------
+    // -------- Rest (Sleep) --------
     {
         let restScore = uw.base.rest;
         restScore += uw.urgency.fatigue * uFatigue;
 
+        // Day/Night Cycle Sleep Pressure
+        // 0=Dawn(6am), 0.25=Noon, 0.5=Dusk(6pm), 0.75=Midnight
+        const time = sim.timeOfDay;
+
+        const isNight = time >= 0.5; // 0.5..1.0 is nightd 0..0.25 is night (adjusting for 0.25 being noon, 0.5 dusk)
+
+        if (config.activityCycle === 'diurnal') {
+            // Diurnal (Day active): Sleep at night
+            if (isNight && uFatigue > 0.2) {
+                restScore += 50; // High pressure to sleep at night
+            }
+        } else if (config.activityCycle === 'nocturnal') {
+            // Nocturnal (Night active): Sleep during day
+            if (!isNight && uFatigue > 0.2) {
+                restScore += 50;
+            }
+        }
+
         if (nearestBush) {
             restScore += uw.bonuses.nearBush * 0.5;
         }
+
+        // Small Birds love Perches
+        if (entity.species === 'smallBird') {
+            const nearestPerch = findNearest(stimuli, 'perch');
+            if (nearestPerch) {
+                // Strong bonus for perch if tired
+                restScore += 0.3 + uFatigue * 0.2;
+                // Less penalty for distance effectively makes it "see" perches further
+                restScore -= (uw.distancePenalty.bush * 0.5) * (nearestPerch.dist / V1.tileSizePx);
+            }
+        }
+
+        const personalityMod = uw.personality[entity.personality];
+        if (personalityMod.rest) restScore += personalityMod.rest;
 
         scores.rest = restScore;
     }

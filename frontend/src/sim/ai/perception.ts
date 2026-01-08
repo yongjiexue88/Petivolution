@@ -47,19 +47,52 @@ export function perceive(entity: EntityRuntime, sim: SimulationState): Perceptio
         const dist = distance(entity.pos, other.pos);
         if (dist > senseRadius) continue;
 
-        // 鼠视角: 猫是捕食者
-        if (entity.species === 'rat' && other.species === 'cat') {
-            stimuli.push({ type: 'predator', entityId: other.id, dist });
-            if (!nearestPredator || dist < nearestPredator.dist) {
-                nearestPredator = { entityId: other.id, dist };
+        // 鼠视角: 猫、狗、浣熊是捕食者
+        if (entity.species === 'rat') {
+            if (other.species === 'cat' || other.species === 'dog' || other.species === 'raccoon') {
+                stimuli.push({ type: 'predator', entityId: other.id, dist });
+                if (!nearestPredator || dist < nearestPredator.dist) nearestPredator = { entityId: other.id, dist };
             }
         }
 
-        // 猫视角: 鼠是猎物
-        if (entity.species === 'cat' && other.species === 'rat') {
-            stimuli.push({ type: 'prey', entityId: other.id, dist });
-            if (!nearestPrey || dist < nearestPrey.dist) {
-                nearestPrey = { entityId: other.id, dist };
+        // 猫视角: 鼠、小鸟、鸡是猎物; 狗是捕食者
+        if (entity.species === 'cat') {
+            if (['rat', 'smallBird', 'chicken'].includes(other.species)) {
+                stimuli.push({ type: 'prey', entityId: other.id, dist });
+                if (!nearestPrey || dist < nearestPrey.dist) nearestPrey = { entityId: other.id, dist };
+            }
+            if (other.species === 'dog') {
+                stimuli.push({ type: 'predator', entityId: other.id, dist });
+                if (!nearestPredator || dist < nearestPredator.dist) nearestPredator = { entityId: other.id, dist };
+            }
+        }
+
+        // 狗视角: 鼠、浣熊、狐狸(future)是猎物/威胁
+        if (entity.species === 'dog') {
+            if (['rat', 'raccoon', 'cat', 'wolf', 'fox'].includes(other.species)) {
+                stimuli.push({ type: 'prey', entityId: other.id, dist });
+                if (!nearestPrey || dist < nearestPrey.dist) nearestPrey = { entityId: other.id, dist };
+            }
+        }
+
+        // 浣熊视角: 鸡、蛋(future)、垃圾是目标; 狗是威胁
+        if (entity.species === 'raccoon') {
+            if (['chicken', 'smallBird', 'rat'].includes(other.species)) { // Opportunistic
+                stimuli.push({ type: 'prey', entityId: other.id, dist });
+                if (!nearestPrey || dist < nearestPrey.dist) nearestPrey = { entityId: other.id, dist };
+            }
+            if (other.species === 'dog') {
+                stimuli.push({ type: 'predator', entityId: other.id, dist });
+                if (!nearestPredator || dist < nearestPredator.dist) nearestPredator = { entityId: other.id, dist };
+            }
+        }
+
+        // 鸡/鸟视角: 猫、浣熊、狗是威胁
+        if (['chicken', 'smallBird'].includes(entity.species)) {
+            if (['cat', 'raccoon', 'dog', 'rat'].includes(other.species)) {
+                stimuli.push({ type: 'predator', entityId: other.id, dist });
+                // Small birds fear cats more, logic in utility?
+                if (!nearestPredator || dist < nearestPredator.dist) nearestPredator = { entityId: other.id, dist };
             }
         }
     }

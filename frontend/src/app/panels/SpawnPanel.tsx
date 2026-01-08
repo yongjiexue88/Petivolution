@@ -12,6 +12,11 @@ import './SpawnPanel.css';
 // 随机名字库
 const RAT_NAMES = ['小米', '花花', '点点', '豆豆', '毛毛', '圆圆', '跳跳', '灰灰', '胖胖', '乖乖'];
 const CAT_NAMES = ['咪咪', 'Lucky', '橘子', '雪球', 'Tom', '虎子', '花卷', '布丁', '饼干', '团子'];
+const CHICKEN_NAMES = ['咯咯', '小黄', '白白', '阿花', '咕咕'];
+const BIRD_NAMES = ['啾啾', '蓝蓝', '小飞', '云云'];
+const RACCOON_NAMES = ['浣浣', '熊熊', '面具', '小偷', '班迪'];
+const CROW_NAMES = ['鸦鸦', '黑黑', '哇哇', '暗影'];
+const DOG_NAMES = ['汪汪', '旺财', '大黄', '小白', '忠犬'];
 
 export function SpawnPanel() {
     const {
@@ -27,7 +32,15 @@ export function SpawnPanel() {
     const [customName, setCustomName] = useState('');
 
     const getRandomName = (species: SpeciesId): string => {
-        const names = species === 'rat' ? RAT_NAMES : CAT_NAMES;
+        let names = RAT_NAMES;
+        switch (species) {
+            case 'cat': names = CAT_NAMES; break;
+            case 'chicken': names = CHICKEN_NAMES; break;
+            case 'smallBird': names = BIRD_NAMES; break;
+            case 'raccoon': names = RACCOON_NAMES; break;
+            case 'crow': names = CROW_NAMES; break;
+            case 'dog': names = DOG_NAMES; break;
+        }
         const baseName = names[Math.floor(Math.random() * names.length)];
         return `${baseName}${Math.floor(Math.random() * 100)}`;
     };
@@ -78,13 +91,21 @@ export function SpawnPanel() {
     };
 
     // V1.1 Costs
-    const COSTS = { rat: 2, cat: 8 };
+    const COSTS: Record<SpeciesId, number> = {
+        rat: 10,
+        cat: 50,
+        chicken: 20,
+        smallBird: 15,
+        raccoon: 35,
+        crow: 15,
+        dog: 60,
+    };
 
     const canAfford = (species: SpeciesId) => useGameStore.getState().godPower >= COSTS[species];
 
 
     // V1 Fishbowl: Show density target max as "cap" for UI
-    const getCap = (species: SpeciesId) => V1.densityTargets[species].max;
+    const getCap = (species: SpeciesId) => V1.densityTargets[species]?.max || 0; // Added fallback for safety
 
     return (
         <div className="panel spawn-panel">
@@ -117,6 +138,57 @@ export function SpawnPanel() {
                             <span className="species-icon">🐱</span>
                             <span>猫 (8GP)</span>
                             <span className="count">{stats.cat}/{getCap('cat')}</span>
+                        </button>
+
+                        <button
+                            className={`species-btn ${spawnSpecies === 'chicken' ? 'active' : ''}`}
+                            onClick={() => setSpawnSpecies('chicken')}
+                            disabled={!canAfford('chicken')}
+                            style={{ opacity: canAfford('chicken') ? 1 : 0.5 }}
+                        >
+                            <span className="species-icon">🐔</span>
+                            <span>鸡 (20GP)</span>
+                            <span className="count">{stats.chicken}/{getCap('chicken')}</span>
+                        </button>
+                        <button
+                            className={`species-btn ${spawnSpecies === 'smallBird' ? 'active' : ''}`}
+                            onClick={() => setSpawnSpecies('smallBird')}
+                            disabled={!canAfford('smallBird')}
+                            style={{ opacity: canAfford('smallBird') ? 1 : 0.5 }}
+                        >
+                            <span className="species-icon">🐦</span>
+                            <span>鸟 (15GP)</span>
+                            <span className="count">{stats.smallBird}/{getCap('smallBird')}</span>
+                        </button>
+                        <button
+                            className={`species-btn ${spawnSpecies === 'raccoon' ? 'active' : ''}`}
+                            onClick={() => setSpawnSpecies('raccoon')}
+                            disabled={!canAfford('raccoon')}
+                            style={{ opacity: canAfford('raccoon') ? 1 : 0.5 }}
+                        >
+                            <span className="species-icon">🦝</span>
+                            <span>浣熊 (35GP)</span>
+                            <span className="count">{stats.raccoon}/{getCap('raccoon')}</span>
+                        </button>
+                        <button
+                            className={`species-btn ${spawnSpecies === 'crow' ? 'active' : ''}`}
+                            onClick={() => setSpawnSpecies('crow')}
+                            disabled={!canAfford('crow')}
+                            style={{ opacity: canAfford('crow') ? 1 : 0.5 }}
+                        >
+                            <span className="species-icon">🦅</span>
+                            <span>乌鸦 (15GP)</span>
+                            <span className="count">{stats.crow}/{getCap('crow')}</span>
+                        </button>
+                        <button
+                            className={`species-btn ${spawnSpecies === 'dog' ? 'active' : ''}`}
+                            onClick={() => setSpawnSpecies('dog')}
+                            disabled={!canAfford('dog')}
+                            style={{ opacity: canAfford('dog') ? 1 : 0.5 }}
+                        >
+                            <span className="species-icon">🐕</span>
+                            <span>狗 (60GP)</span>
+                            <span className="count">{stats.dog}/{getCap('dog')}</span>
                         </button>
                     </div>
                 </div>

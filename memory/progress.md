@@ -537,16 +537,35 @@ Successfully implemented and integrated the new V1 AI system for Petivolution. T
 ### 5) V4 内容包路线 (Content Pack Roadmap)
 
 #### 📦 Content Pack 1: Backyard Life（庭院生态）
-- [ ] 🐔 鸡 + 🐦 小鸟
-- [ ] 新对象：`PerchPoint`
+- [x] 🐔 鸡 + 🐦 小鸟 (Basic behaviors implemented: Peck, Perch, Forage)
+- [x] 新对象：`PerchPoint`
 - [ ] 新挑战：维持"猫不灭绝 + 鼠不爆炸 + 鸡存活" 5分钟
 
 #### 📦 Content Pack 2: City Scavengers（城市清道夫）
-- [ ] 🦝 浣熊 + 🐦‍⬛ 乌鸦 + 垃圾箱
-- [ ] 新系统：昼夜（夜行性显著）
+- [x] 🦝 浣熊 + 🐦‍⬛ 乌鸦 + 垃圾箱 (Implemented Raccoon + Rummage)
+- [x] 新系统：昼夜（夜行性显著）(Implemented Day/Night Cycle + Sleep Activity)
 - [ ] 新挑战：控制垃圾导致的鼠增长
 
 #### 📦 Content Pack 3: Guardian Mode（管理与驱赶）
-- [ ] 🐕 狗 + 围栏 + 保护区
+- [/] 🐕 狗 + 围栏 + 保护区 (Dog + Guardian Perception implemented)
 - [ ] 新模式：平衡挑战（预算限制投放/摆放）
 
+
+## 🎨 Pending Art Assets (Placeholders)
+**Date Added:** 2026-01-08
+**Status:** Placeholder assets in use (Rat/Cat duplicates). Waiting for AI generation quota reset.
+
+| Animal | Current Placeholder | Status |
+| :--- | :--- | :--- |
+| **Chicken** (🐔) | Rat | ⏳ Pending |
+| **Small Bird** (🐦) | Rat | ⏳ Pending |
+| **Raccoon** (🦝) | Rat | ⏳ Pending |
+| **Crow** (🐦‍⬛) | Rat | ⏳ Pending |
+| **Fox** (🦊) | Cat | ⏳ Pending |
+| **Dog** (🐕) | Cat | ⏳ Pending |
+| **Hawk** (🦅) | Rat | ⏳ Pending |
+| **Wolf** (🐺) | Cat | ⏳ Pending |
+| **Snake** (🐍) | Rat | ⏳ Pending |
+
+**Resources Pending:**
+- `perch.png`, `trash_bin.png`, `carcass.png`, `food_bowl.png`, `fence.png`, `egg.png`, `seed.png`, `insect.png`

@@ -4,8 +4,8 @@
 // 基础类型
 // ============================================
 
-export type SpeciesId = 'rat' | 'cat';
-export type ObjectType = 'water' | 'bush' | 'trash';
+export type SpeciesId = 'rat' | 'cat' | 'chicken' | 'smallBird' | 'raccoon' | 'crow' | 'dog';
+export type ObjectType = 'water' | 'bush' | 'trash' | 'perch';
 
 export type Vec2 = { x: number; y: number };
 export type TilePos = { tx: number; ty: number };
@@ -28,11 +28,15 @@ export type SimState =
     | 'attack'
     | 'flee'
     | 'sleep'
+    | 'peck'    // V4: Chicken foraging
+    | 'perch'   // V4: Bird resting
+    | 'hop'     // V4: Bird movement
+    | 'rummage' // V1.3 Raccoonrd movement
     | 'dead';
 
 export type Facing = 'n' | 's' | 'e' | 'w';
 
-export type Goal = 'drink' | 'eat' | 'hunt' | 'rest' | 'flee' | 'wander';
+export type Goal = 'drink' | 'eat' | 'hunt' | 'rest' | 'flee' | 'wander' | 'forage' | 'rummage';
 
 // ============================================
 // Vitals (生命体征)
@@ -54,7 +58,8 @@ export type Stimulus =
     | { type: 'predator'; entityId: EntityId; dist: number }
     | { type: 'water'; objectId: ObjectId; dist: number }
     | { type: 'bush'; objectId: ObjectId; dist: number }
-    | { type: 'trash'; objectId: ObjectId; dist: number };
+    | { type: 'trash'; objectId: ObjectId; dist: number }
+    | { type: 'perch'; objectId: ObjectId; dist: number };
 
 // ============================================
 // Entity AI 状态 (可解释性)
@@ -196,6 +201,16 @@ export type WorldRule = {
         showPaths: boolean;
         showChunkBounds: boolean;
     };
+
+    // V4 Challenges
+    challenge?: {
+        enabled: boolean;
+        title: string;
+        description: string;
+        targetDurationTicks: number; // e.g. 5 mins = 4500 ticks
+        minPopulation?: Partial<Record<SpeciesId, number>>;
+        maxPopulation?: Partial<Record<SpeciesId, number>>;
+    };
 };
 
 // ============================================
@@ -302,12 +317,20 @@ export type SimEvent =
     | { type: 'HUNT'; tick: number; predatorId: EntityId; preyId: EntityId; importance?: EventImportance; tags?: string[]; location?: Vec2; subjectName?: string; targetName?: string }
     | { type: 'DRINK'; tick: number; entityId: EntityId; waterId: ObjectId; importance?: EventImportance; tags?: string[]; location?: Vec2; subjectName?: string; targetName?: string }
     | { type: 'EAT'; tick: number; entityId: EntityId; source: 'prey' | 'trash'; importance?: EventImportance; tags?: string[]; location?: Vec2; subjectName?: string; targetName?: string }
+    | { type: 'CHALLENGE_WIN'; tick: number; entityId: 'SYSTEM'; importance: 'S'; tags?: string[]; location?: Vec2; subjectName?: string; data?: any; targetName?: string }
+    | { type: 'CHALLENGE_FAIL'; tick: number; entityId: 'SYSTEM'; importance: 'S'; tags?: string[]; location?: Vec2; subjectName?: string; data?: any; targetName?: string }
     | { type: 'GENERIC'; tick: number; message: string; importance: EventImportance; tags?: string[]; location?: Vec2; subjectName?: string; targetName?: string }; // For system events
 
 // Simulation Stats
 export type SimStats = {
+    timeOfDay: number; // 0..1 (0=dawn, 0.25=noon, 0.75=midnight)
     rat: number;
     cat: number;
+    chicken: number;
+    smallBird: number;
+    raccoon: number;
+    crow: number;
+    dog: number;
     deathsLastMin: number;
     birthsLastMin: number;
     warning?: boolean;     // V1.1 SOS
@@ -375,7 +398,7 @@ export interface ChallengeDef {
 export const DEFAULT_WORLD_RULES: WorldRule = {
     timeScale: 1,
     capsEnabled: true,
-    capPerChunk: { rat: 20, cat: 6 },
+    capPerChunk: { rat: 20, cat: 6, chicken: 10, smallBird: 15, raccoon: 5, crow: 10, dog: 2 },
     trashSpawnsRats: true,
     ratSpawn: {
         enabled: true,
