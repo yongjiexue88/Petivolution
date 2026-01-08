@@ -7,6 +7,7 @@ import { WorldRulesPanel } from './panels/WorldRulesPanel';
 import { GraveyardPanel } from './panels/GraveyardPanel';
 import { EventLogPanel } from './panels/EventLogPanel';
 import { ChallengePanel } from './panels/ChallengePanel';
+import { DebugPanel } from './panels/DebugPanel';
 import { Toolbar } from './components/Toolbar';
 import type { WorkerUpdate } from '@shared/types';
 import { DEFAULT_WORLD_RULES } from '@shared/types';
@@ -25,6 +26,8 @@ function App() {
         showRulesPanel,
         showGraveyardPanel,
         showEventLog,
+        showChallengePanel,
+        showDebugPanel,
         // selectedEntityId,
         selectedEntityDetail,
         // entities,
@@ -131,11 +134,12 @@ function App() {
                 {showSpawnPanel && <SpawnPanel />}
                 {showRulesPanel && <WorldRulesPanel />}
                 {showEventLog && <EventLogPanel />}
-                <ChallengePanel />
+                {showChallengePanel && <ChallengePanel />}
             </div>
 
             {/* 右侧面板 */}
             <div className="panels-right">
+                {showDebugPanel && <DebugPanel />}
                 {selectedEntityDetail && (
                     <AnimalDetailPanel entity={selectedEntityDetail} />
                 )}

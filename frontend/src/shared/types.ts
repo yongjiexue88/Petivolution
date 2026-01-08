@@ -292,16 +292,17 @@ export type SnapshotEntity = {
     state: SimState;
     hp01: number;
     selected?: boolean;
+    targetPos?: Vec2; // V1.2 Debug: For showing target lines
 };
 
 // Simulation Events
 export type SimEvent =
-    | { type: 'DEATH'; tick: number; entityId: EntityId; reason: string; killedBy?: EntityId; importance?: EventImportance; tags?: string[]; location?: Vec2; subjectName?: string }
-    | { type: 'BIRTH'; tick: number; entityId: EntityId; parentId: EntityId; importance?: EventImportance; tags?: string[]; location?: Vec2; subjectName?: string } // V2
+    | { type: 'DEATH'; tick: number; entityId: EntityId; reason: string; killedBy?: EntityId; importance?: EventImportance; tags?: string[]; location?: Vec2; subjectName?: string; targetName?: string }
+    | { type: 'BIRTH'; tick: number; entityId: EntityId; parentId: EntityId; importance?: EventImportance; tags?: string[]; location?: Vec2; subjectName?: string; targetName?: string } // V2
     | { type: 'HUNT'; tick: number; predatorId: EntityId; preyId: EntityId; importance?: EventImportance; tags?: string[]; location?: Vec2; subjectName?: string; targetName?: string }
-    | { type: 'DRINK'; tick: number; entityId: EntityId; waterId: ObjectId; importance?: EventImportance; tags?: string[]; location?: Vec2; subjectName?: string }
+    | { type: 'DRINK'; tick: number; entityId: EntityId; waterId: ObjectId; importance?: EventImportance; tags?: string[]; location?: Vec2; subjectName?: string; targetName?: string }
     | { type: 'EAT'; tick: number; entityId: EntityId; source: 'prey' | 'trash'; importance?: EventImportance; tags?: string[]; location?: Vec2; subjectName?: string; targetName?: string }
-    | { type: 'GENERIC'; tick: number; message: string; importance: EventImportance; tags?: string[]; location?: Vec2 }; // For system events
+    | { type: 'GENERIC'; tick: number; message: string; importance: EventImportance; tags?: string[]; location?: Vec2; subjectName?: string; targetName?: string }; // For system events
 
 // Simulation Stats
 export type SimStats = {

@@ -533,6 +533,12 @@ export function getSnapshot(sim: SimulationState): {
             state: entity.state,
             hp01: entity.vitals.health01,
             selected: entity.id === sim.selectedEntityId,
+            targetPos: (() => {
+                if (sim.rules.debug.showTargets && sim.tick % 60 === 0 && entity.id === sim.entities.keys().next().value) {
+                    // console.log('[Worker] Snapshot showTargets:', sim.rules.debug.showTargets);
+                }
+                return sim.rules.debug.showTargets ? getEntityTargetPos(entity, sim) : undefined;
+            })(),
         });
     }
 
@@ -587,4 +593,28 @@ function getAnimationName(entity: EntityRuntime): string {
 export function getSelectedEntityDetail(sim: SimulationState): EntityRuntime | null {
     if (!sim.selectedEntityId) return null;
     return sim.entities.get(sim.selectedEntityId) ?? null;
+}
+
+function getEntityTargetPos(entity: EntityRuntime, sim: SimulationState): Vec2 | undefined {
+    // 1. Direct Target Pos
+    if (entity.targetPos) return entity.targetPos;
+
+    // 2. Target Entity
+    if (entity.targetEntityId) {
+        const target = sim.entities.get(entity.targetEntityId);
+        if (target) return target.pos;
+    }
+
+    // 3. Target Object
+    if (entity.targetObjectId) {
+        const obj = sim.objects.get(entity.targetObjectId);
+        if (obj) {
+            return {
+                x: obj.pos.tx * V1.tileSizePx + V1.tileSizePx / 2,
+                y: obj.pos.ty * V1.tileSizePx + V1.tileSizePx / 2
+            };
+        }
+    }
+
+    return undefined;
 }

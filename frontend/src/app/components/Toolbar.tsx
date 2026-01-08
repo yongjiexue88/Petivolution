@@ -140,6 +140,13 @@ export function Toolbar() {
                     📜
                 </button>
                 <button
+                    className={`tool-btn ${useGameStore().showChallengePanel ? 'active' : ''}`}
+                    onClick={() => togglePanel('challenge')}
+                    title="挑战"
+                >
+                    🏆
+                </button>
+                <button
                     className={`panel-btn ${showDebugPanel ? 'active' : ''}`}
                     onClick={() => togglePanel('debug')}
                 >

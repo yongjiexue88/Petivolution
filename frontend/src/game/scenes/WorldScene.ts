@@ -605,6 +605,7 @@ export class WorldScene extends Phaser.Scene {
         const { showSenseRadius, showTargets, showChunkBounds } = store.rules.debug;
 
 
+
         const selectedId = store.selectedEntityId;
         if (selectedId) {
             const entity = store.entities.find(e => e.id === selectedId);
@@ -680,34 +681,19 @@ export class WorldScene extends Phaser.Scene {
                 }
 
                 if (showTargets) {
-                    // We don't have targetPos in SnapshotEntity to save bandwidth?
-                    // Let's check shared/types.ts -> SnapshotEntity does NOT have targetPos.
-                    // It only has state.
-                    // To show targets, we need `EntityRuntime`.
-                    // BUT, `EntityRuntime` is only sending for `selectedEntityDetail`.
-                    // So we can only show target for the SELECTED entity?
-                    // OR we need to add targetPos to SnapshotEntity if we want global debug.
-                    // User request: "target line boundary is not showing".
-                    // If they want it for ALL, we need to add it to snapshot.
-                    // If just for selected, we use `selectedEntityDetail`.
-                    // Let's try drawing for selected entity if available.
+                    if (entity.targetPos) {
+                        const tx = entity.targetPos.x;
+                        const ty = entity.targetPos.y;
 
-                    if (entity.selected && store.selectedEntityDetail && store.selectedEntityDetail.id === entity.id) {
-                        const detail = store.selectedEntityDetail;
-                        if (detail.targetPos) {
-                            const tx = detail.targetPos.x * V1.tileSizePx + V1.tileSizePx / 2;
-                            const ty = detail.targetPos.y * V1.tileSizePx + V1.tileSizePx / 2;
+                        this.debugGraphics.lineStyle(1, 0xff0000, 0.6); // Red line
+                        this.debugGraphics.moveTo(entity.x, entity.y);
+                        this.debugGraphics.lineTo(tx, ty);
+                        this.debugGraphics.strokePath();
 
-                            this.debugGraphics.lineStyle(2, 0xff0000, 0.8); // Red line
-                            this.debugGraphics.moveTo(entity.x, entity.y);
-                            this.debugGraphics.lineTo(tx, ty);
-                            this.debugGraphics.strokePath();
-
-                            // Draw X at target
-                            this.debugGraphics.lineStyle(2, 0xff0000, 1);
-                            this.debugGraphics.lineBetween(tx - 5, ty - 5, tx + 5, ty + 5);
-                            this.debugGraphics.lineBetween(tx + 5, ty - 5, tx - 5, ty + 5);
-                        }
+                        // Tiny cross
+                        this.debugGraphics.lineStyle(1, 0xff0000, 0.8);
+                        this.debugGraphics.lineBetween(tx - 3, ty - 3, tx + 3, ty + 3);
+                        this.debugGraphics.lineBetween(tx + 3, ty - 3, tx - 3, ty + 3);
                     }
                 }
             }

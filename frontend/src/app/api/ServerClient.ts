@@ -49,7 +49,7 @@ export class ServerClient {
         }
     }
 
-    public async getSnapshot(lastTick: number = 0): Promise<ServerSnapshot | null> {
+    public async getSnapshot(): Promise<ServerSnapshot | null> {
         try {
             const start = Date.now();
             // In a real optimized system we'd pass ?since=lastTick

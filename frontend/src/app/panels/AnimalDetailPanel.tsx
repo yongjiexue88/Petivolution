@@ -4,6 +4,7 @@
 
 import type { EntityRuntime, Goal, Stimulus } from '@shared/types';
 import { V1 } from '@shared/constants';
+import { useGameStore } from '../store/gameStore';
 import './AnimalDetailPanel.css';
 
 interface Props {

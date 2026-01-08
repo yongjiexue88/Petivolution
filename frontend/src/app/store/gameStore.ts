@@ -3,10 +3,9 @@
 // ============================================
 
 import { create } from 'zustand';
-import type { EntityRuntime, SnapshotEntity, SimEvent, GraveyardEntry, SimStats, WorldSaveData, EntityId, SpeciesId, Personality, ObjectType } from '@shared/types';
+import type { EntityRuntime, SnapshotEntity, SimEvent, GraveyardEntry, SimStats, WorldSaveData, SpeciesId, Personality, ObjectType } from '@shared/types';
 import { WorldObject, WorldRule } from '@shared/types';
 import { DEFAULT_WORLD_RULES } from '@shared/types';
-import { ServerClient } from '../api/ServerClient';
 
 // ============================================
 // 状态类型
@@ -24,6 +23,9 @@ export interface GameState {
     events: SimEvent[];
     stats: SimStats;
     graveyard: GraveyardEntry[];
+
+    // World Status
+    chunks: Record<string, any>; // V3
 
     // 选中实体详情
     selectedEntityId: string | null;
@@ -63,7 +65,12 @@ export interface GameState {
     showRulesPanel: boolean;
     showGraveyardPanel: boolean;
     showDebugPanel: boolean;
+    showSpawnPanel: boolean;
+    showRulesPanel: boolean;
+    showGraveyardPanel: boolean;
+    showDebugPanel: boolean;
     showEventLog: boolean;
+    showChallengePanel: boolean;
 
     // 世界规则
     rules: WorldRule;
@@ -87,7 +94,7 @@ export interface GameState {
     setSpawnSpecies: (species: SpeciesId) => void;
     setSpawnPersonality: (personality: Personality) => void;
     setPlaceObjectType: (type: ObjectType) => void;
-    togglePanel: (panel: 'spawn' | 'rules' | 'graveyard' | 'debug' | 'eventLog') => void;
+    togglePanel: (panel: 'spawn' | 'rules' | 'graveyard' | 'debug' | 'eventLog' | 'challenge') => void;
     setRules: (rules: Partial<WorldRule>) => void;
     setTimeScale: (scale: 0 | 1 | 2 | 4) => void;
 
@@ -153,6 +160,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     showGraveyardPanel: false,
     showDebugPanel: false,
     showEventLog: true,
+    showChallengePanel: false,
 
     // V1.1 God Mode Init
     godPower: 60, // Start with 60
@@ -270,6 +278,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                 return { showDebugPanel: !state.showDebugPanel };
             case 'eventLog':
                 return { showEventLog: !state.showEventLog };
+            case 'challenge':
+                return { showChallengePanel: !state.showChallengePanel };
             default:
                 return {};
         }

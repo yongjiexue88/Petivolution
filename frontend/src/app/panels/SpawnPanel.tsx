@@ -4,6 +4,7 @@
 
 import { useState } from 'react';
 import { useGameStore, getSimWorker } from '../store/gameStore';
+import { ServerClient } from '../api/ServerClient';
 import type { SpeciesId, TilePos } from '@shared/types';
 import { V1 } from '@shared/constants';
 import './SpawnPanel.css';

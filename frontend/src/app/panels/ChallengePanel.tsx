@@ -1,7 +1,7 @@
 
 import { useGameStore, getSimWorker } from '../store/gameStore';
 import { CHALLENGES } from '@shared/challenges.config';
-import { V1 } from '@shared/constants';
+
 import './WorldRulesPanel.css'; // Re-use panel styles
 import { useEffect, useState } from 'react';
 
@@ -94,7 +94,7 @@ export function ChallengePanel() {
             <div className="panel-header">
                 <span className="panel-icon">🏆</span>
                 <h3>Challenges</h3>
-                {!activeChallengeId && <button className="close-btn" onClick={() => togglePanel('rules')}>×</button>}
+                <button className="close-btn" onClick={() => togglePanel('challenge')}>×</button>
             </div>
 
             <div className="panel-body">

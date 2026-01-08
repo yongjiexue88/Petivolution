@@ -14,8 +14,6 @@ export function WorldRulesPanel() {
         setPlaceObjectType,
         currentTool,
         setCurrentTool,
-        rules,
-        setRules,
         seed, // V1.2
         exportWorld, // V1.2
         importWorld, // V1.2
@@ -136,18 +134,7 @@ export function WorldRulesPanel() {
         }
     };
 
-    const handleToggleDebug = (key: keyof typeof rules.debug) => {
-        const worker = getSimWorker();
-        const newDebug = { ...rules.debug, [key]: !rules.debug[key] };
-        setRules({ debug: newDebug });
 
-        if (worker) {
-            worker.postMessage({
-                type: 'SET_RULES',
-                payload: { rules: { debug: newDebug } }
-            });
-        }
-    };
 
     const objects: Array<{ type: ObjectType; icon: string; label: string; desc: string }> = [
         { type: 'water', icon: '💧', label: '水源 (10GP)', desc: '动物来此喝水补充渴值' },
@@ -249,35 +236,7 @@ export function WorldRulesPanel() {
                 </div>
 
                 {/* 调试选项 */}
-                <div className="form-group">
-                    <label>调试选项</label>
-                    <div className="debug-options">
-                        <label className="checkbox-label">
-                            <input
-                                type="checkbox"
-                                checked={rules.debug.showSenseRadius}
-                                onChange={() => handleToggleDebug('showSenseRadius')}
-                            />
-                            显示感知范围
-                        </label>
-                        <label className="checkbox-label">
-                            <input
-                                type="checkbox"
-                                checked={rules.debug.showTargets}
-                                onChange={() => handleToggleDebug('showTargets')}
-                            />
-                            显示目标线
-                        </label>
-                        <label className="checkbox-label">
-                            <input
-                                type="checkbox"
-                                checked={rules.debug.showChunkBounds}
-                                onChange={() => handleToggleDebug('showChunkBounds')}
-                            />
-                            显示区块边界
-                        </label>
-                    </div>
-                </div>
+
             </div>
 
             {/* V1.2 World Management */}
