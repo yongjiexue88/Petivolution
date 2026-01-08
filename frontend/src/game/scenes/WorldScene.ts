@@ -78,7 +78,7 @@ export class WorldScene extends Phaser.Scene {
         this.anims.create({ key: 'rat-move', frames: this.anims.generateFrameNumbers('sprites', { frames: [1, 2] }), frameRate: 6, repeat: -1 });
         this.anims.create({ key: 'rat-run', frames: this.anims.generateFrameNumbers('sprites', { frames: [3, 4] }), frameRate: 10, repeat: -1 });
         this.anims.create({ key: 'rat-eat', frames: this.anims.generateFrameNumbers('sprites', { frames: [5] }), frameRate: 1, repeat: -1 });
-        this.anims.create({ key: 'rat-attack', frames: this.anims.generateFrameNumbers('sprites', { frames: [6, 0] }), frameRate: 4, repeat: -1 }); // Lunge loop
+        this.anims.create({ key: 'rat-attack', frames: this.anims.generateFrameNumbers('sprites', { frames: [6] }), frameRate: 8, repeat: -1 });
         this.anims.create({ key: 'rat-sleep', frames: this.anims.generateFrameNumbers('sprites', { frames: [7] }), frameRate: 1, repeat: -1 });
         this.anims.create({ key: 'rat-dead', frames: this.anims.generateFrameNumbers('sprites', { frames: [8] }), frameRate: 1, repeat: -1 });
 
@@ -90,7 +90,7 @@ export class WorldScene extends Phaser.Scene {
         this.anims.create({ key: 'cat-move', frames: this.anims.generateFrameNumbers('sprites', { frames: [1 + offset, 2 + offset] }), frameRate: 6, repeat: -1 });
         this.anims.create({ key: 'cat-run', frames: this.anims.generateFrameNumbers('sprites', { frames: [3 + offset, 4 + offset] }), frameRate: 10, repeat: -1 });
         this.anims.create({ key: 'cat-eat', frames: this.anims.generateFrameNumbers('sprites', { frames: [5 + offset] }), frameRate: 1, repeat: -1 });
-        this.anims.create({ key: 'cat-attack', frames: this.anims.generateFrameNumbers('sprites', { frames: [6 + offset, 0 + offset] }), frameRate: 4, repeat: -1 });
+        this.anims.create({ key: 'cat-attack', frames: this.anims.generateFrameNumbers('sprites', { frames: [6 + offset] }), frameRate: 8, repeat: -1 });
         this.anims.create({ key: 'cat-sleep', frames: this.anims.generateFrameNumbers('sprites', { frames: [7 + offset] }), frameRate: 1, repeat: -1 });
         this.anims.create({ key: 'cat-dead', frames: this.anims.generateFrameNumbers('sprites', { frames: [8 + offset] }), frameRate: 1, repeat: -1 });
     }
@@ -543,9 +543,8 @@ export class WorldScene extends Phaser.Scene {
         const sprite = this.add.sprite(0, 0, 'sprites');
         sprite.setName('sprite');
 
-        // Scale down from 128x128 to ~32x32
-        const scale = isCat ? 0.3 : 0.25;
-        sprite.setScale(scale);
+        // 32px frame -> 16px tile => 0.5 baseline, cats slightly bigger
+        sprite.setScale(isCat ? 0.6 : 0.5);
 
         // Initial animation
         sprite.play(isCat ? 'cat-idle' : 'rat-idle');
@@ -622,19 +621,19 @@ export class WorldScene extends Phaser.Scene {
     createObjectSprite(obj: WorldObject, x: number, y: number): Phaser.GameObjects.Container {
         const container = this.add.container(x, y);
 
-        // Row 5 (Indices 32+)
-        // 32: Pond, 33: Bush, 34: Trash, 35: Bones
-        let frameIndex = 32;
+        // Row 5 starts at frame 20 (5 cols * 4 rows)
+        // 20: water, 21: bush, 22: trash, 23: skeleton, 24: (if present)
+        let frameIndex = 21;
 
         switch (obj.type) {
-            case 'water': frameIndex = 32; break;
-            case 'bush': frameIndex = 33; break;
-            case 'trash': frameIndex = 34; break;
-            default: frameIndex = 33;
+            case 'water': frameIndex = 20; break;
+            case 'bush': frameIndex = 21; break;
+            case 'trash': frameIndex = 22; break;
+            default: frameIndex = 21; break;
         }
 
         const sprite = this.add.sprite(0, 0, 'sprites', frameIndex);
-        sprite.setScale(0.25); // Scale down environment too
+        sprite.setScale(0.6); // 32px frame -> ~19px fits tile nicely
         container.add(sprite);
 
         // Background layer
