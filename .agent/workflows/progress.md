@@ -2,124 +2,76 @@
 description: Update project progress, run tests/coverage, and log memory
 ---
 
-# /progress Workflow Specification
+This workflow does two things:
+1. Runs tests to verify current state (targeted to what changed)
+2. Updates memory files with progress and learnings
 
-## Description
-When the user triggers /progress, you must own testing end-to-end and project memory updates.
+## Phase 1: Detect What Changed (Targeted Test Selection)
 
-## Core Responsibilities
-- Run all quality gates and coverage checks
-- Ensure minimum coverage requirements are met
-- Author missing tests when allowed
-- Maintain project progress and learning records under `memory/`
+We only run tests for the package(s) that were touched in this session.
 
-## Execution Rules
+1. Get changed files (staged + unstaged) compared to `HEAD`
+// turbo
+```bash
+git diff --name-only HEAD
+```
 
-### End-to-End Testing Ownership
-- Call subagent `verify-app` to run all quality gates + coverage.
-- If coverage < 80% (frontend/backend) OR tests are missing/insufficient, call subagent `test-author` to write tests.
-- Re-run `verify-app`.
-- Stop only when PASS, or when BLOCKED, or after max iterations.
+2. Decide which tests to run (rules):
+   - Touched only `frontend/**` → run only frontend tests
+   - Touched only `backend/**` → run only backend tests
+   - Touched only `memory/**` → skip tests
+   - Touched multiple packages → run tests for those packages only
+   - Treat as "touched multiple" (run relevant/all package tests) if you changed shared/root config, e.g.:
+     - `package.json` (root), lockfiles
+     - shared tsconfig, eslint/prettier configs
+     - CI configs (`.github/workflows/`)
 
-### Hard Rules
-- You may apply ONLY:
-  - format/lint auto-fixes (via scripts)
-  - test-only changes (new tests, mocks, setup/config for coverage)
-- Do NOT change production logic to make tests pass unless the user explicitly requests.
+## Phase 2: Run Targeted Tests (Only What You Touched)
 
-### Max Iterations
-- Max 2 loops:
-  - Loop 1: `verify-app` → (maybe `test-author`) → `verify-app`
-  - Loop 2 (only if needed): `test-author` → `verify-app`
-- If still not PASS after 2 loops, stop and report what remains.
+Based on your analysis in Phase 1, run the relevant tests below. **Skip** any steps for packages that were not touched.
 
-### Coverage Policy (Minimum)
-- Frontend coverage (lines): ≥ 80%
-- Backend coverage (lines): ≥ 80%
-- Electron: coverage is OPTIONAL unless a test harness already exists; report as N/A if not configured.
+A) Frontend tests (run if frontend/** changed)
+```bash
+cd frontend && npm run test
+```
 
-## Steps
+B) Backend tests (run if backend/** changed)
+```bash
+cd backend && npm run test
+```
 
-### 1) Pre-context
-- `git status -sb`
-- `git diff --stat`
+## Phase 3: Update Memory Files
 
-### 2) Loop 1
-- Call subagent `verify-app`.
-- Verdict handling:
-  - PASS → proceed to memory updates and finish.
-  - BLOCKED → proceed to memory updates, print report, and stop.
-  - FAIL:
-    - If failures are format/lint → `verify-app` should have auto-fixed; proceed based on output.
-    - If coverage < 80% (frontend/backend) → call `test-author`.
-    - If failures are due to missing tests or easy test setup issues → call `test-author`.
-    - If failures require production logic changes → STOP and report (do not proceed).
+3. Update `memory/progress.md`
+   - Review changes made in this session
+   - Move completed items from "🚧 Remaining TODO Items" to "✅ Completed Work"
+   - Add new TODO items discovered during work
+   - Update dates and descriptions
 
-### 3) After test-author
-- Re-run `verify-app`.
-- If PASS → proceed to memory updates and finish.
-- If not PASS and loop count < 2 and remaining blockers are coverage or test-only issues → loop again.
-- Otherwise → proceed to memory updates and STOP.
+4. Update `memory/mistake-learn.md`
+   - If any bugs were encountered or mistakes were made during this session:
+     - Add a new entry with the date
+     - Document: Problem, Root Cause, Solution, Prevention
+     - Categorize under appropriate section (Auth, Build, Code Quality, Workflow, etc.)
 
-## Memory Logging (MANDATORY)
-After `/progress` reaches a terminal state (PASS / FAIL / BLOCKED), you MUST update files under `memory/`.
+   **Entry Template for mistakes-learn.md**
+   ```markdown
+   ### [YYYY-MM-DD] - [Brief Description]
+   **Problem:** What went wrong
+   **Root Cause:** Why it happened
+   **Solution:** How it was fixed
+   **Prevention:** How to avoid this in the future
+   ```
 
-### 1) Ensure files exist (create if missing)
-- `memory/progress.md`
-- `memory/mistake-learn.md`
+## Phase 4: Save Progress
 
-Rules:
-- Create files if missing.
-- Never delete or rewrite existing history.
-- Append only.
+5. Stage memory file changes
+// turbo
+```bash
+git add memory/
+```
 
-### 2) Update memory/progress.md (ALWAYS)
-Append a dated entry including:
-- Timestamp
-- Final verdict (PASS / FAIL / BLOCKED)
-- Actions taken (auto-fixes, tests added, config changes)
-- Remaining TODOs (only if FAIL/BLOCKED), with clear next steps
-
-Behavior:
-- If PASS → mark relevant work as completed.
-- If FAIL/BLOCKED → add or retain actionable TODO items.
-
-### 3) Update memory/mistake-learn.md (CONDITIONAL, but checked EVERY run)
-Add a new entry only if:
-- Verdict is FAIL or BLOCKED, or
-- Non-trivial issues occurred (missing tooling, coverage provider issues, flaky tests, setup problems)
-
-Entry must include:
-- Problem
-- Root Cause
-- Solution
-- Prevention
-
-If PASS with no meaningful issues beyond routine auto-fixes, do not add an entry.
-
-### 4) Source of Truth
-Use the final `verify-app` report and actions taken by `test-author` only.
-
-## Output Requirements
-- Final `verify-app` report (verbatim structure)
-- One-line ending:
-  - ✅ Ready to commit (PASS)
-  - ❌ Not ready to commit (FAIL/BLOCKED)
-
-## Minimal File Templates (used only if files are missing)
-
-### memory/progress.md
-# progress
-
-## ✅ Completed
-- (none)
-
-## 🚧 Remaining TODO Items
-- (none)
-
-## 🗓️ Progress Log
-
-### memory/mistake-learn.md
-# mistake-learn
-
-## Entries
+6. Commit progress update
+```bash
+git commit -m "docs(memory): update progress and learnings"
+```
