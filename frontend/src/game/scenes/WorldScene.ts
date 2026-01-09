@@ -65,6 +65,7 @@ export class WorldScene extends Phaser.Scene {
         this.load.image('chicken_run1', `${spriteBase}/chicken_run1.png`);
         this.load.image('chicken_run2', `${spriteBase}/chicken_run2.png`);
         this.load.image('chicken_eat', `${spriteBase}/chicken_eat.png`);
+        this.load.image('chicken_attack', `${spriteBase}/chicken_attack.png`);
         this.load.image('chicken_sleep', `${spriteBase}/chicken_sleep.png`);
         this.load.image('chicken_dead', `${spriteBase}/chicken_dead.png`);
 
@@ -88,14 +89,20 @@ export class WorldScene extends Phaser.Scene {
         this.load.image('raccoon_idle', `${spriteBase}/raccoon_idle.png`);
         this.load.image('raccoon_walk1', `${spriteBase}/raccoon_walk1.png`);
         this.load.image('raccoon_walk2', `${spriteBase}/raccoon_walk2.png`);
+        this.load.image('raccoon_run1', `${spriteBase}/raccoon_run1.png`);
+        this.load.image('raccoon_run2', `${spriteBase}/raccoon_run2.png`);
         this.load.image('raccoon_steal', `${spriteBase}/raccoon_steal.png`);
+        this.load.image('raccoon_attack', `${spriteBase}/raccoon_attack.png`);
         this.load.image('raccoon_eat', `${spriteBase}/raccoon_eat.png`);
         this.load.image('raccoon_sleep', `${spriteBase}/raccoon_sleep.png`);
         this.load.image('raccoon_dead', `${spriteBase}/raccoon_dead.png`);
 
         this.load.image('crow_idle', `${spriteBase}/crow_idle.png`);
-        this.load.image('crow_hop', `${spriteBase}/crow_hop.png`);
-        this.load.image('crow_fly', `${spriteBase}/crow_fly.png`);
+        this.load.image('crow_hop1', `${spriteBase}/crow_hop1.png`);
+        this.load.image('crow_hop2', `${spriteBase}/crow_hop2.png`);
+        this.load.image('crow_fly1', `${spriteBase}/crow_fly1.png`);
+        this.load.image('crow_fly2', `${spriteBase}/crow_fly2.png`);
+        this.load.image('crow_attack', `${spriteBase}/crow_attack.png`);
         this.load.image('crow_eat', `${spriteBase}/crow_eat.png`);
         this.load.image('crow_dead', `${spriteBase}/crow_dead.png`);
 
@@ -122,8 +129,11 @@ export class WorldScene extends Phaser.Scene {
         this.load.image('dog_dead', `${spriteBase}/dog_dead.png`);
 
         this.load.image('hawk_idle', `${spriteBase}/hawk_idle.png`);
-        this.load.image('hawk_fly', `${spriteBase}/hawk_fly.png`);
-        this.load.image('hawk_dive', `${spriteBase}/hawk_dive.png`);
+        this.load.image('hawk_fly1', `${spriteBase}/hawk_fly1.png`);
+        this.load.image('hawk_fly2', `${spriteBase}/hawk_fly2.png`);
+        this.load.image('hawk_swoop1', `${spriteBase}/hawk_swoop1.png`);
+        this.load.image('hawk_swoop2', `${spriteBase}/hawk_swoop2.png`);
+        this.load.image('hawk_attack', `${spriteBase}/hawk_attack.png`);
         this.load.image('hawk_eat', `${spriteBase}/hawk_eat.png`);
         this.load.image('hawk_dead', `${spriteBase}/hawk_dead.png`);
 
@@ -151,6 +161,17 @@ export class WorldScene extends Phaser.Scene {
         // Other resources
         this.load.image('trash_bin', `${spriteBase}/trash_bin.png`);
         this.load.image('carcass', `${spriteBase}/carcass.png`);
+
+        // City Assets
+        this.load.image('city_house', '/assets/city/house.png');
+        this.load.image('city_road', '/assets/city/road.png');
+        this.load.image('city_fence', '/assets/city/fence.png');
+        this.load.image('city_tree', '/assets/city/tree.png');
+        this.load.image('city_crops', '/assets/city/crops.png');
+        this.load.image('city_chest', '/assets/city/chest.png');
+
+        // Tileset
+        this.load.spritesheet('tileset_spring', '/assets/city/tileset_spring.png', { frameWidth: 16, frameHeight: 16 });
     }
 
     create() {
@@ -164,6 +185,12 @@ export class WorldScene extends Phaser.Scene {
         // 2 Create Animations
         this.createAnimations();
 
+        // 3. Create City
+        this.createCity(worldWidth / 2, worldHeight / 2);
+
+        // 4. Create World Border Decoration
+        this.createWorldBorder(worldWidth, worldHeight);
+
         // DEBUG: prove individual images loaded
         // const dbg = this.add.image(200, 200, 'rat_idle');
         // dbg.setScale(0.15);
@@ -176,10 +203,21 @@ export class WorldScene extends Phaser.Scene {
         // console.log('[DEBUG] textures has cat_idle?', this.textures.exists('cat_idle'));
 
         // 3. Setup Camera
-        // Finite bounds removed for Infinite World
-        // this.cameras.main.setBounds(...) 
+        // 3. Setup Camera
+        // Finite bounds for restricted world
+        this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
         this.cameras.main.centerOn(worldWidth / 2, worldHeight / 2);
         this.cameras.main.setZoom(1);
+
+        // DEBUG: Contrast background to distinguish 'void' from 'black texture'
+        this.cameras.main.setBackgroundColor('#333333');
+
+        // DEBUG: Explicit Size Label
+        this.add.text(worldWidth / 2, worldHeight / 2, `MAP SIZE: ${worldWidth} x ${worldHeight}`, {
+            fontSize: '64px',
+            color: '#ffffff',
+            backgroundColor: '#000000'
+        }).setOrigin(0.5).setDepth(20000);
 
         // 4. Setup Controls
         this.setupCameraControls();
@@ -201,17 +239,26 @@ export class WorldScene extends Phaser.Scene {
         this.syncObjects(initialState.objects);
 
         // 7. Day/Night Overlay (V1.3)
-        this.dayNightOverlay = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000022) // Dark blueish
+        this.dayNightOverlay = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width, this.scale.height, 0x000022) // Dark blueish
             .setScrollFactor(0)
             .setDepth(20000)
             .setAlpha(0)
-            .setOrigin(0, 0)
+            .setOrigin(0.5, 0.5)
             .setBlendMode(Phaser.BlendModes.MULTIPLY); // Better for darkening
 
-        // Handle resize
+        // FIXED 2x Integer Zoom (40 tiles visible @ 1280px)
+        // 1280px / 2 = 640px world view = 40 tiles * 16px
+        this.cameras.main.setZoom(2);
+        this.cameras.main.setRoundPixels(true);
+
         this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
-            this.dayNightOverlay.setSize(gameSize.width, gameSize.height);
+            // Keep overlay centered
+            this.dayNightOverlay.setPosition(gameSize.width / 2, gameSize.height / 2);
+            // Sizing is handled in update() to account for zoom
         });
+
+        // Force initial size for overlay
+        this.dayNightOverlay.setSize(this.scale.width, this.scale.height);
     }
 
     createAnimations() {
@@ -238,6 +285,7 @@ export class WorldScene extends Phaser.Scene {
         this.anims.create({ key: 'chicken-move', frames: [{ key: 'chicken_walk1' }, { key: 'chicken_walk2' }], frameRate: 6, repeat: -1 });
         this.anims.create({ key: 'chicken-run', frames: [{ key: 'chicken_run1' }, { key: 'chicken_run2' }], frameRate: 10, repeat: -1 });
         this.anims.create({ key: 'chicken-eat', frames: [{ key: 'chicken_eat' }], frameRate: 2, repeat: -1 });
+        this.anims.create({ key: 'chicken-attack', frames: [{ key: 'chicken_attack' }], frameRate: 8, repeat: -1 });
         this.anims.create({ key: 'chicken-sleep', frames: [{ key: 'chicken_sleep' }], frameRate: 1, repeat: -1 });
         this.anims.create({ key: 'chicken-dead', frames: [{ key: 'chicken_dead' }], frameRate: 1, repeat: -1 });
 
@@ -252,18 +300,18 @@ export class WorldScene extends Phaser.Scene {
         // --- RACCOON ANIMATIONS ---
         this.anims.create({ key: 'raccoon-idle', frames: [{ key: 'raccoon_idle' }], frameRate: 1, repeat: -1 });
         this.anims.create({ key: 'raccoon-move', frames: [{ key: 'raccoon_walk1' }, { key: 'raccoon_walk2' }], frameRate: 6, repeat: -1 });
-        this.anims.create({ key: 'raccoon-run', frames: [{ key: 'raccoon_walk1' }, { key: 'raccoon_walk2' }], frameRate: 10, repeat: -1 }); // Reuse walk
+        this.anims.create({ key: 'raccoon-run', frames: [{ key: 'raccoon_run1' }, { key: 'raccoon_run2' }], frameRate: 10, repeat: -1 });
         this.anims.create({ key: 'raccoon-eat', frames: [{ key: 'raccoon_eat' }], frameRate: 2, repeat: -1 });
-        this.anims.create({ key: 'raccoon-attack', frames: [{ key: 'raccoon_steal' }], frameRate: 4, repeat: -1 }); // Steal as attack
+        this.anims.create({ key: 'raccoon-attack', frames: [{ key: 'raccoon_attack' }], frameRate: 8, repeat: -1 });
         this.anims.create({ key: 'raccoon-sleep', frames: [{ key: 'raccoon_sleep' }], frameRate: 1, repeat: -1 });
         this.anims.create({ key: 'raccoon-dead', frames: [{ key: 'raccoon_dead' }], frameRate: 1, repeat: -1 });
 
         // --- CROW ANIMATIONS ---
         this.anims.create({ key: 'crow-idle', frames: [{ key: 'crow_idle' }], frameRate: 1, repeat: -1 });
-        this.anims.create({ key: 'crow-move', frames: [{ key: 'crow_hop' }], frameRate: 5, repeat: -1 });
-        this.anims.create({ key: 'crow-run', frames: [{ key: 'crow_fly' }], frameRate: 10, repeat: -1 });
+        this.anims.create({ key: 'crow-move', frames: [{ key: 'crow_hop1' }, { key: 'crow_hop2' }], frameRate: 5, repeat: -1 });
+        this.anims.create({ key: 'crow-run', frames: [{ key: 'crow_fly1' }, { key: 'crow_fly2' }], frameRate: 10, repeat: -1 });
         this.anims.create({ key: 'crow-eat', frames: [{ key: 'crow_eat' }], frameRate: 2, repeat: -1 });
-        this.anims.create({ key: 'crow-attack', frames: [{ key: 'crow_fly' }], frameRate: 8, repeat: -1 }); // Fly as attack?
+        this.anims.create({ key: 'crow-attack', frames: [{ key: 'crow_attack' }], frameRate: 8, repeat: -1 });
         this.anims.create({ key: 'crow-sleep', frames: [{ key: 'crow_idle' }], frameRate: 1, repeat: -1 }); // No sleep sprite
         this.anims.create({ key: 'crow-dead', frames: [{ key: 'crow_dead' }], frameRate: 1, repeat: -1 });
 
@@ -287,10 +335,10 @@ export class WorldScene extends Phaser.Scene {
 
         // --- HAWK ANIMATIONS ---
         this.anims.create({ key: 'hawk-idle', frames: [{ key: 'hawk_idle' }], frameRate: 1, repeat: -1 });
-        this.anims.create({ key: 'hawk-move', frames: [{ key: 'hawk_fly' }], frameRate: 8, repeat: -1 }); // Fly in place logic for walk?
-        this.anims.create({ key: 'hawk-run', frames: [{ key: 'hawk_fly' }], frameRate: 12, repeat: -1 });
+        this.anims.create({ key: 'hawk-move', frames: [{ key: 'hawk_fly1' }, { key: 'hawk_fly2' }], frameRate: 8, repeat: -1 });
+        this.anims.create({ key: 'hawk-run', frames: [{ key: 'hawk_swoop1' }, { key: 'hawk_swoop2' }], frameRate: 12, repeat: -1 });
         this.anims.create({ key: 'hawk-eat', frames: [{ key: 'hawk_eat' }], frameRate: 2, repeat: -1 });
-        this.anims.create({ key: 'hawk-attack', frames: [{ key: 'hawk_dive' }], frameRate: 10, repeat: -1 });
+        this.anims.create({ key: 'hawk-attack', frames: [{ key: 'hawk_attack' }], frameRate: 10, repeat: -1 });
         this.anims.create({ key: 'hawk-sleep', frames: [{ key: 'hawk_idle' }], frameRate: 1, repeat: -1 });
         this.anims.create({ key: 'hawk-dead', frames: [{ key: 'hawk_dead' }], frameRate: 1, repeat: -1 });
 
@@ -313,6 +361,103 @@ export class WorldScene extends Phaser.Scene {
         this.anims.create({ key: 'snake-dead', frames: [{ key: 'snake_dead' }], frameRate: 1, repeat: -1 });
     }
 
+    createCity(centerX: number, centerY: number) {
+        console.log('Building City at', centerX, centerY);
+        const scale = 2; // Assets are 16x16, Grid is 32x32
+
+        // 1. Central House (Town Hall)
+        // Adjust position so it's centered on the tile
+        const house = this.add.image(centerX, centerY - V1.tileSizePx * 2, 'city_house');
+        house.setScale(scale);
+        house.setDepth(centerY - V1.tileSizePx * 2); // Depth sorting
+
+        // 2. Roads (Cross shape)
+        const roadLen = 10;
+        for (let i = -roadLen; i <= roadLen; i++) {
+            // Horizontal Road
+            const rx = centerX + i * V1.tileSizePx;
+            const ry = centerY;
+            const roadH = this.add.image(rx, ry, 'city_road');
+            roadH.setScale(scale);
+            roadH.setDepth(0); // Roads on ground
+
+            // Vertical Road
+            const vx = centerX;
+            const vy = centerY + i * V1.tileSizePx;
+            // Don't overlap center tile twice roughly
+            if (i !== 0) {
+                const roadV = this.add.image(vx, vy, 'city_road');
+                roadV.setScale(scale);
+                roadV.setDepth(0);
+            }
+        }
+
+        // 3. Fences (Garden Area)
+        const gardenOffsetX = V1.tileSizePx * 6;
+        const gardenOffsetY = V1.tileSizePx * 2;
+        this.add.image(centerX + gardenOffsetX, centerY + gardenOffsetY, 'city_fence').setScale(scale).setDepth(centerY);
+        this.add.image(centerX + gardenOffsetX + V1.tileSizePx, centerY + gardenOffsetY, 'city_fence').setScale(scale).setDepth(centerY);
+
+        // 4. Crops
+        this.add.image(centerX + gardenOffsetX, centerY + gardenOffsetY + V1.tileSizePx, 'city_crops').setScale(scale).setDepth(centerY);
+
+        // 5. Trees scattered
+        // simple fixed placement
+        const treePositions = [
+            { x: centerX - V1.tileSizePx * 4, y: centerY - V1.tileSizePx * 4 },
+            { x: centerX + V1.tileSizePx * 4, y: centerY - V1.tileSizePx * 4 },
+            { x: centerX - V1.tileSizePx * 4, y: centerY + V1.tileSizePx * 4 },
+            { x: centerX + V1.tileSizePx * 4, y: centerY + V1.tileSizePx * 4 },
+        ];
+
+        treePositions.forEach(pos => {
+            const tree = this.add.image(pos.x, pos.y, 'city_tree');
+            tree.setScale(scale);
+            tree.setDepth(pos.y);
+        });
+
+        // 6. Chest
+        const chest = this.add.image(centerX - V1.tileSizePx * 2, centerY + V1.tileSizePx * 2, 'city_chest');
+        chest.setScale(scale);
+        chest.setDepth(centerY + V1.tileSizePx * 2);
+    }
+
+    createWorldBorder(worldWidth: number, worldHeight: number) {
+        // Place trees along the perimeter to visualizing the "Edge of the World"
+        const spacing = 120; // Slight overlap or gap
+        console.log('Creating World Border...');
+
+        // Top & Bottom
+        for (let x = 0; x <= worldWidth; x += spacing) {
+            // Top
+            this.add.image(x, 0, 'city_tree')
+                .setOrigin(0.5, 1) // Anchor at bottom to sit on line
+                .setDepth(1) // Sit above ground
+                .setScale(1.5);
+
+            // Bottom
+            this.add.image(x, worldHeight, 'city_tree')
+                .setOrigin(0.5, 1)
+                .setDepth(worldHeight) // Z-index sorting
+                .setScale(1.5);
+        }
+
+        // Left & Right
+        for (let y = 0; y <= worldHeight; y += spacing) {
+            // Left
+            this.add.image(0, y, 'city_tree')
+                .setOrigin(0.5, 1)
+                .setDepth(y)
+                .setScale(1.5);
+
+            // Right
+            this.add.image(worldWidth, y, 'city_tree')
+                .setOrigin(0.5, 1)
+                .setDepth(y)
+                .setScale(1.5);
+        }
+    }
+
     destroy() {
         this.unsubscribeStore();
         // Invoke parent destroy, but specifically clean up plugins/listeners if needed
@@ -323,34 +468,65 @@ export class WorldScene extends Phaser.Scene {
     private chunkGridSprite!: Phaser.GameObjects.TileSprite;
 
     createBackground() {
-        // Generate Textures programmatically
-        this.createGridTexture('grid-texture', V1.tileSizePx, 0x232336, 0x2a2a3a);
-        // Chunk grid is larger, maybe just draw it or use another tile sprite? 
-        // Chunk size is 32x32 tiles = 1024px. Texture might be too big for some GPUs? 1024 is fine.
-        this.createGridTexture('chunk-texture', V1.chunkSize * V1.tileSizePx, 0x00000000, 0x3a3a4a, 2);
-
         const width = this.scale.width;
         const height = this.scale.height;
+        const worldWidth = V1.defaultMapWidth * V1.tileSizePx;
+        const worldHeight = V1.defaultMapHeight * V1.tileSizePx;
 
-        // 1. Base TileSprite (The Main Grid)
-        // using setScrollFactor(0) to stick to camera, then we update tilePosition
-        this.gridSprite = this.add.tileSprite(0, 0, width, height, 'grid-texture')
+        // 1. Generate Grass Texture Programmatically (Reliable Fallback)
+        if (!this.textures.exists('grass-base')) {
+            const g = this.add.graphics();
+            g.fillStyle(0x2f5a2f, 1); // Darker Grass Green
+            g.fillRect(0, 0, 32, 32);
+            // Add some "noise" dots
+            g.fillStyle(0x3e7a3e, 1);
+            g.fillRect(4, 4, 2, 2);
+            g.fillRect(20, 10, 2, 2);
+            g.fillRect(10, 25, 2, 2);
+            g.generateTexture('grass-base', 32, 32);
+            g.destroy();
+        }
+
+        // 1. Base TileSprite (Screen Space)
+        // We use a screen-sized sprite that stays with the camera, but we scroll its texture UVs.
+        // This avoids GPU texture limits for huge worlds.
+        this.gridSprite = this.add.tileSprite(0, 0, width, height, 'grass-base')
             .setOrigin(0, 0)
-            .setScrollFactor(0)
+            .setScrollFactor(0) // Stick to camera
             .setDepth(-1000);
 
-        // 2. Chunk Grid Overlay
+        // 2. Chunk Grid Overlay (Screen Space)
+        this.createGridTexture('chunk-texture', V1.chunkSize * V1.tileSizePx, 0x00000000, 0x3a3a4a, 2);
         this.chunkGridSprite = this.add.tileSprite(0, 0, width, height, 'chunk-texture')
             .setOrigin(0, 0)
             .setScrollFactor(0)
             .setDepth(-999)
-            .setAlpha(0.6);
+            .setAlpha(0.2);
 
-        // Resize handler to keep background filling screen
-        this.scale.on('resize', this.resizeBackground, this);
+        // Resize handler
+        this.scale.on('resize', this.resizeUI, this);
 
-        // Force initial resize to ensure full coverage
-        this.resizeBackground(this.scale.gameSize);
+        // 7. Day/Night Overlay (V1.3)
+        // Correctly created here as UI element
+        this.dayNightOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000022) // Dark blueish
+            .setScrollFactor(0)
+            .setDepth(20000)
+            .setAlpha(0)
+            .setOrigin(0.5, 0.5)
+            .setBlendMode(Phaser.BlendModes.MULTIPLY);
+
+        // MAP BOUNDARY (World Object - Stays in World)
+        const border = this.add.graphics();
+        border.lineStyle(4, 0xff0000, 1); // Red, 4px thick
+        border.strokeRect(0, 0, worldWidth, worldHeight);
+        border.setDepth(10);
+
+        // Corner markers
+        this.add.text(10, 10, 'TL (0,0)', { fontSize: '32px', color: '#ff0000' }).setDepth(10);
+        this.add.text(worldWidth - 200, worldHeight - 50, 'BR', { fontSize: '32px', color: '#ff0000' }).setDepth(10);
+
+        // Force UI resize to set initial dimensions
+        this.resizeUI(this.scale.gameSize);
     }
 
     createGridTexture(key: string, size: number, color: number, lineColor: number, thickness: number = 1) {
@@ -375,21 +551,36 @@ export class WorldScene extends Phaser.Scene {
         graphics.destroy();
     }
 
-    resizeBackground(gameSize: Phaser.Structs.Size) {
+    resizeUI(gameSize: Phaser.Structs.Size) {
+        const width = gameSize.width;
+        const height = gameSize.height;
+
+        // Resize Screen-Space Backgrounds
+        // We set them to cover the screen. Scale is handled in update Loop.
         if (this.gridSprite) {
-            this.gridSprite.setSize(gameSize.width, gameSize.height);
+            this.gridSprite.setSize(width, height);
         }
         if (this.chunkGridSprite) {
-            this.chunkGridSprite.setSize(gameSize.width, gameSize.height);
+            this.chunkGridSprite.setSize(width, height);
+        }
+
+        // Keep UI overlays centered and sized
+        if (this.dayNightOverlay) {
+            this.dayNightOverlay.setPosition(width / 2, height / 2);
+            this.dayNightOverlay.setSize(width, height);
         }
     }
 
     update() {
+        const cam = this.cameras.main;
+        const zoom = cam.zoom;
+        const width = this.scale.width;
+        const height = this.scale.height;
+
         // V1.1 Camera Fly Request
         const store = useGameStore.getState();
         if (store.cameraFlyTo) {
             this.cameras.main.centerOn(store.cameraFlyTo.x, store.cameraFlyTo.y);
-            // Ensure visible zoom
             if (this.cameras.main.zoom < 0.8) {
                 this.cameras.main.setZoom(1);
             }
@@ -399,49 +590,77 @@ export class WorldScene extends Phaser.Scene {
 
         // V1.1 Follow Mode
         if (store.followingEntityId && !store.cameraFlyTo) {
-            // Find entity position
             const entitySprite = this.entitySprites.get(store.followingEntityId);
             if (entitySprite && entitySprite.visible) {
-                // Smooth follow
                 this.cameras.main.startFollow(entitySprite, true, 0.1, 0.1);
             } else {
-                // Lost tracking or dead
                 this.cameras.main.stopFollow();
                 store.setFollowingEntityId(null);
             }
-        } else if (!store.followingEntityId) {
-            if (this.cameras.main.dirty) {
-                // If we were following, stop
-                // this.cameras.main.stopFollow(); 
-                // Don't call stopFollow every frame, but we need to ensure we stop if we were following
-            }
+        }
+
+        // --- BACKGROUND SYNC ---
+        // Inverse zoom sizing for the screen-space sprite to ensure it covers the visible area?
+        // Actually, if we setSize(width, height) and scrollFactor(0), it is STUCK to the specific screen pixels.
+        // It DOES NOT scale with camera zoom automatically?
+        // Camera Zoom affects everything rendered by the camera.
+        // So a 100x100 sprite becomes 200x200 onscreen if zoom=2.
+        // So we need to Inverse Scale the dimensions of the TileSprite so that after Zoom it matches Screen Size.
+        // Size = (ScreenWidth / Zoom, ScreenHeight / Zoom).
+        const invZoom = 1 / zoom;
+
+        if (this.gridSprite) {
+            this.gridSprite.setScale(invZoom); // Scale the sprite DOWN so zoom blows it back up to 1:1 screen ratio?
+            // Actually, simplest is just to make it HUGE or set width/height dynamic.
+            // If we use setScale(invZoom), the 32x32 texture becomes 16x16 visual? 
+            // NO. We want the texture pixels to match world pixels (zoomable).
+            // So we WANT the texture to get bigger when we zoom in.
+            // So we KEEP scale = 1 (or whatever helps matching pixel grid).
+            // But we need the Sprite Itself (the window) to cover the screen.
+            // If Zoom=2, Visual Viewport is Width/2.
+            // So we should set the Sprite Size to Width/2, Height/2.
+            // And position it at TopLeft of View relative to Camera Center?
+            // ScrollFactor(0) means Position 0,0 is Center of Screen or TopLeft? 
+            // Default origin 0.5,0.5 means center.
+            // Set Origin 0,0 means TopLeft of Camera view.
+
+            // It's tricky to mix ScrollFactor(0) with Zoom.
+            // Alternative: Don't use ScrollFactor 0 for the Background. 
+            // Position it at Camera.worldView.x, Camera.worldView.y every frame.
+            // Size it Camera.worldView.width, Camera.worldView.height.
+
+            const worldView = cam.worldView;
+            this.gridSprite.setPosition(worldView.x, worldView.y);
+            this.gridSprite.setSize(worldView.width + 32, worldView.height + 32); // +Buffer
+            this.gridSprite.setTilePosition(worldView.x, worldView.y);
+            this.gridSprite.setDepth(-1000);
+            this.gridSprite.setScrollFactor(1); // Normal world behavior for position, but we act like a "window"
+
+            // Wait, if it's world position, setScrollFactor needs to be 1.
+            // But tilePosition needs to be synced to world coordinate?
+            // Yes.
+
+            this.chunkGridSprite.setPosition(worldView.x, worldView.y);
+            this.chunkGridSprite.setSize(worldView.width + 32, worldView.height + 32);
+            this.chunkGridSprite.setTilePosition(worldView.x, worldView.y);
+            this.chunkGridSprite.setDepth(-999);
+            this.chunkGridSprite.setScrollFactor(1);
+
+            // Revert strict screen-space specific logic above for simplicity
         }
 
         // Update Day/Night Overlay
-        const stats = useGameStore.getState().stats;
+        // Overlay IS Screen Space (should not zoom texture? just flat color).
+        // Rectangle with ScrollFactor 0 and Zoom 2x => Rectangle appears 2x bigger.
+        // We want it to cover screen.
+        // Overlay Size = ScreenWidth / Zoom.
         if (stats && this.dayNightOverlay) {
             const time = stats.timeOfDay || 0;
-            // 0=dawn, 0.25=noon, 0.75=midnight
             const rad = (time - 0.25) * Math.PI * 2;
-            const intensity = (1 - Math.cos(rad)) / 2; // 0 at noon, 1 at midnight
-            this.dayNightOverlay.setAlpha(intensity * 0.7); // Max darkness 0.7
-        }
+            const intensity = (1 - Math.cos(rad)) / 2;
+            this.dayNightOverlay.setAlpha(intensity * 0.7);
 
-        // Sync TileSprite position and scale with Camera
-        const cam = this.cameras.main;
-        const zoom = cam.zoom;
-
-        if (this.gridSprite) {
-            // Use setTileScale to scale the pattern, not the object itself
-            this.gridSprite.setTileScale(zoom);
-            // tilePosition should be world scroll 
-            this.gridSprite.tilePositionX = cam.scrollX;
-            this.gridSprite.tilePositionY = cam.scrollY;
-        }
-        if (this.chunkGridSprite) {
-            this.chunkGridSprite.setTileScale(zoom);
-            this.chunkGridSprite.tilePositionX = cam.scrollX;
-            this.chunkGridSprite.tilePositionY = cam.scrollY;
+            this.dayNightOverlay.setSize(width / zoom, height / zoom);
         }
     }
 
@@ -452,8 +671,22 @@ export class WorldScene extends Phaser.Scene {
                 const dx = (pointer.x - this.dragStart.x) / this.cameras.main.zoom;
                 const dy = (pointer.y - this.dragStart.y) / this.cameras.main.zoom;
 
-                this.cameras.main.scrollX = this.cameraStart.x - dx;
-                this.cameras.main.scrollY = this.cameraStart.y - dy;
+                // Calculate potential new position
+                const newScrollX = this.cameraStart.x - dx;
+                const newScrollY = this.cameraStart.y - dy;
+
+                // Manual clamping to ensure drag doesn't pull camera out of bounds
+                // (Though setBounds usually handles this, direct assignment can sometimes bypass)
+                const cam = this.cameras.main;
+                // Visible world width at current zoom
+                const visibleWidth = cam.width / cam.zoom;
+                const visibleHeight = cam.height / cam.zoom;
+
+                const worldWidth = V1.defaultMapWidth * V1.tileSizePx;
+                const worldHeight = V1.defaultMapHeight * V1.tileSizePx;
+
+                this.cameras.main.scrollX = Phaser.Math.Clamp(newScrollX, 0, worldWidth - visibleWidth);
+                this.cameras.main.scrollY = Phaser.Math.Clamp(newScrollY, 0, worldHeight - visibleHeight);
 
                 // Throttle worker updates for LOD if needed
                 if (this.game.loop.frame % 30 === 0) {
@@ -604,6 +837,10 @@ export class WorldScene extends Phaser.Scene {
             raccoon: ['Bandit', 'Rocket', 'Sly', 'Meeko', 'Rascal'],
             crow: ['Edgar', 'Poe', 'Odin', 'Raven', 'Shadow'],
             dog: ['Buddy', 'Rex', 'Spot', 'Max', 'Bella', 'Charlie'],
+            fox: ['Foxy', 'Rusty', 'Vixey', 'Swift', 'Red'],
+            hawk: ['Sky', 'Talon', 'Soar', 'Hunter', 'Swift'],
+            wolf: ['Alpha', 'Fang', 'Luna', 'Ghost', 'Shadow'],
+            snake: ['Sly', 'Hiss', 'Nagini', 'Ka', 'Fang'],
         };
         const nameList = names[store.spawnSpecies] || ['Unknown'];
         const name = nameList[Math.floor(Math.random() * nameList.length)] + Math.floor(Math.random() * 99);
@@ -797,18 +1034,22 @@ export class WorldScene extends Phaser.Scene {
 
         // Sprite - use species-specific initial texture
         let initialTexture = 'rat_idle';
-        let scale = 0.08;
+        // Now all assets are standardized to 64x64 source
+        // Target display size: 32x32px -> Scale 0.5
+        let scale = 0.5;
 
-        if (entity.species === 'cat') {
-            initialTexture = 'cat_idle';
-            scale = 0.1;
-        } else if (entity.species === 'chicken') {
-            initialTexture = 'chicken_idle';
-            scale = 0.09;
-        } else if (entity.species === 'smallBird') {
-            initialTexture = 'bird_idle';
-            scale = 0.06;
-        }
+        // Map species to initial texture
+        if (entity.species === 'rat') initialTexture = 'rat_idle';
+        else if (entity.species === 'cat') initialTexture = 'cat_idle';
+        else if (entity.species === 'chicken') initialTexture = 'chicken_idle';
+        else if (entity.species === 'smallBird') { initialTexture = 'bird_idle'; scale = 0.35; } // Birds slightly smaller
+        else if (entity.species === 'raccoon') initialTexture = 'raccoon_idle';
+        else if (entity.species === 'crow') { initialTexture = 'crow_idle'; scale = 0.4; } // Crow slightly smaller
+        else if (entity.species === 'fox') initialTexture = 'fox_idle';
+        else if (entity.species === 'dog') initialTexture = 'dog_idle';
+        else if (entity.species === 'hawk') initialTexture = 'hawk_idle';
+        else if (entity.species === 'wolf') initialTexture = 'wolf_idle';
+        else if (entity.species === 'snake') initialTexture = 'snake_idle';
 
         const sprite = this.add.sprite(0, 0, initialTexture);
         sprite.setName('sprite');

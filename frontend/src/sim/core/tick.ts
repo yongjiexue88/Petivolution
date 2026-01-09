@@ -551,11 +551,10 @@ export function getSnapshot(sim: SimulationState): {
         });
     }
 
-    let ratCount = 0;
-    let catCount = 0;
+    // Generic species counting
+    const counts: Record<string, number> = {};
     for (const e of sim.entities.values()) {
-        if (e.species === 'rat') ratCount++;
-        else if (e.species === 'cat') catCount++;
+        counts[e.species] = (counts[e.species] || 0) + 1;
     }
 
     const events = sim.pendingEvents.splice(0);
@@ -580,13 +579,17 @@ export function getSnapshot(sim: SimulationState): {
         objects: Array.from(sim.objects.values()),
         stats: {
             timeOfDay: sim.timeOfDay,
-            rat: ratCount,
-            cat: catCount,
-            chicken: Array.from(sim.entities.values()).filter(e => e.species === 'chicken').length,
-            smallBird: Array.from(sim.entities.values()).filter(e => e.species === 'smallBird').length,
-            raccoon: Array.from(sim.entities.values()).filter(e => e.species === 'raccoon').length,
-            crow: Array.from(sim.entities.values()).filter(e => e.species === 'crow').length,
-            dog: Array.from(sim.entities.values()).filter(e => e.species === 'dog').length,
+            rat: counts['rat'] || 0,
+            cat: counts['cat'] || 0,
+            chicken: counts['chicken'] || 0,
+            smallBird: counts['smallBird'] || 0,
+            raccoon: counts['raccoon'] || 0,
+            crow: counts['crow'] || 0,
+            dog: counts['dog'] || 0,
+            fox: counts['fox'] || 0,
+            hawk: counts['hawk'] || 0,
+            wolf: counts['wolf'] || 0,
+            snake: counts['snake'] || 0,
             deathsLastMin: sim.stats.deathsThisMinute,
             birthsLastMin: sim.stats.birthsThisMinute,
             warning: sim.stats.warning,

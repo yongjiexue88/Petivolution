@@ -65,35 +65,45 @@ export class ChunkManager {
         const centerY = V1.defaultMapHeight / 2;
         const spawnRadius = 30; // Spawn within 30 tiles of center
 
-        // Spawn rats
-        for (let i = 0; i < V1.defaultSpawns.rat; i++) {
-            const offsetX = (sim.rng() - 0.5) * spawnRadius * 2;
-            const offsetY = (sim.rng() - 0.5) * spawnRadius * 2;
-            spawnEntity(sim, 'rat', this.getRandomName('rat', sim), 'cautious', {
-                tx: centerX + offsetX,
-                ty: centerY + offsetY,
-            });
-        }
+        // Generic Spawner for all animals in config
+        const animals = ['rat', 'cat', 'chicken', 'smallBird', 'raccoon', 'crow', 'dog', 'fox', 'hawk', 'wolf', 'snake'] as const;
 
-        // Spawn cats
-        for (let i = 0; i < V1.defaultSpawns.cat; i++) {
-            const offsetX = (sim.rng() - 0.5) * spawnRadius * 2;
-            const offsetY = (sim.rng() - 0.5) * spawnRadius * 2;
-            spawnEntity(sim, 'cat', this.getRandomName('cat', sim), 'brave', {
-                tx: centerX + offsetX,
-                ty: centerY + offsetY,
-            });
-        }
+        animals.forEach(species => {
+            const count = (V1.defaultSpawns as any)[species] || 0;
+            for (let i = 0; i < count; i++) {
+                const offsetX = (sim.rng() - 0.5) * spawnRadius * 2;
+                const offsetY = (sim.rng() - 0.5) * spawnRadius * 2;
 
-        console.log(`🐭 Spawned ${V1.defaultSpawns.rat} rats and 🐱 ${V1.defaultSpawns.cat} cats`);
+                // Assign personality based on species role? Defaulting for now.
+                let personality: 'brave' | 'cautious' | 'curious' = 'curious';
+                if (['rat', 'chicken', 'smallBird'].includes(species)) personality = 'cautious';
+                if (['cat', 'dog', 'wolf', 'hawk', 'fox'].includes(species)) personality = 'brave';
+
+                spawnEntity(sim, species, this.getRandomName(species, sim), personality, {
+                    tx: centerX + offsetX,
+                    ty: centerY + offsetY,
+                });
+            }
+        });
+
+        console.log(`🌍 Spawned initial animals based on config`);
     }
 
-    private getRandomName(species: 'rat' | 'cat', sim: SimulationState): string {
-        const names = {
+    private getRandomName(species: string, sim: SimulationState): string {
+        const names: Record<string, string[]> = {
             cat: ['Tiger', 'Shadow', 'Luna', 'Simba', 'Oreo', 'Whiskers', 'Felix', 'Mittens'],
             rat: ['Squeaky', 'Pip', 'Cheese', 'Scurry', 'Nibbles', 'Dusty', 'Scout', 'Rustle'],
+            chicken: ['Cluck', 'Peck', 'Feathers', 'Nugget', 'Eggbert', 'Henny'],
+            smallBird: ['Tweety', 'Chirp', 'Sky', 'Blue', 'Robin', 'Pip'],
+            raccoon: ['Bandit', 'Rocket', 'Sly', 'Meeko', 'Rascal', 'Swiper'],
+            crow: ['Edgar', 'Poe', 'Odin', 'Raven', 'Shadow', 'Midnight'],
+            dog: ['Buddy', 'Rex', 'Spot', 'Max', 'Bella', 'Charlie', 'Daisy'],
+            fox: ['Foxy', 'Rusty', 'Vixey', 'Swift', 'Red', 'Tod'],
+            hawk: ['Sky', 'Talon', 'Soar', 'Hunter', 'Swift', 'Eye'],
+            wolf: ['Alpha', 'Fang', 'Luna', 'Ghost', 'Shadow', 'Winter'],
+            snake: ['Sly', 'Hiss', 'Nagini', 'Ka', 'Fang', 'Coil'],
         };
-        const nameList = names[species];
+        const nameList = names[species] || ['Unknown'];
         const name = nameList[Math.floor(sim.rng() * nameList.length)];
         return `${name}${Math.floor(sim.rng() * 99)}`;
     }
@@ -211,23 +221,27 @@ export class ChunkManager {
 
     private restoreFromStats(chunk: ChunkData, sim: SimulationState) {
         const [cx, cy] = chunk.id.split(',').map(Number);
+        const counts = chunk.stats.counts || {};
 
         // Simple statistical restoration
-        for (let i = 0; i < chunk.stats.ratCount; i++) {
-            spawnEntity(sim, 'rat', this.getRandomName('rat', sim), 'cautious', {
-                tx: cx * CHUNK_SIZE_TILES + sim.rng() * CHUNK_SIZE_TILES,
-                ty: cy * CHUNK_SIZE_TILES + sim.rng() * CHUNK_SIZE_TILES
-            });
-        }
-        for (let i = 0; i < chunk.stats.catCount; i++) {
-            spawnEntity(sim, 'cat', this.getRandomName('cat', sim), 'brave', {
-                tx: cx * CHUNK_SIZE_TILES + sim.rng() * CHUNK_SIZE_TILES,
-                ty: cy * CHUNK_SIZE_TILES + sim.rng() * CHUNK_SIZE_TILES
-            });
+        for (const speciesKey in counts) {
+            const species = speciesKey as SpeciesId;
+            const count = counts[species] || 0;
+
+            for (let i = 0; i < count; i++) {
+                // Determine personality based on species (simple heuristic or random)
+                let personality: 'brave' | 'cautious' | 'curious' = 'curious';
+                if (['rat', 'chicken', 'smallBird'].includes(species)) personality = 'cautious';
+                if (['cat', 'dog', 'wolf', 'hawk', 'fox'].includes(species)) personality = 'brave';
+
+                spawnEntity(sim, species, this.getRandomName(species, sim), personality, {
+                    tx: cx * CHUNK_SIZE_TILES + sim.rng() * CHUNK_SIZE_TILES,
+                    ty: cy * CHUNK_SIZE_TILES + sim.rng() * CHUNK_SIZE_TILES
+                });
+            }
         }
 
-        chunk.stats.ratCount = 0;
-        chunk.stats.catCount = 0;
+        chunk.stats.counts = {};
     }
 
     /**
@@ -239,20 +253,18 @@ export class ChunkManager {
 
         const [cx, cy] = id.split(',').map(Number);
         const toRemove: string[] = [];
-        let rats = 0;
-        let cats = 0;
+        const counts: Partial<Record<SpeciesId, number>> = {};
 
         for (const entity of sim.entities.values()) {
             const coords = this.getChunkCoords(entity.pos);
             if (coords.x === cx && coords.y === cy) {
-                if (entity.species === 'rat') rats++;
-                if (entity.species === 'cat') cats++;
+                const s = entity.species;
+                counts[s] = (counts[s] || 0) + 1;
                 toRemove.push(entity.id);
             }
         }
 
-        chunk.stats.ratCount = rats;
-        chunk.stats.catCount = cats;
+        chunk.stats.counts = counts;
         chunk.stats.lastTick = sim.tick;
 
         for (const sid of toRemove) {
@@ -348,8 +360,7 @@ export class ChunkManager {
             x,
             y,
             stats: {
-                ratCount: 0, // Handled by initial spawn, not per-chunk
-                catCount: 0,
+                counts: {}, // Handled by initial spawn or virtualization
                 resourceLevel,
                 dangerLevel,
                 lastTick: sim.tick

@@ -16,8 +16,8 @@ export function GameCanvas() {
         const config: Phaser.Types.Core.GameConfig = {
             type: Phaser.AUTO,
             parent: containerRef.current,
-            width: window.innerWidth,
-            height: window.innerHeight,
+            width: 1280,
+            height: 720,
             backgroundColor: '#1a1a2e',
             scene: [WorldScene],
             physics: {
@@ -28,12 +28,13 @@ export function GameCanvas() {
                 },
             },
             scale: {
-                mode: Phaser.Scale.RESIZE,
+                mode: Phaser.Scale.FIT,
                 autoCenter: Phaser.Scale.CENTER_BOTH,
             },
             render: {
                 pixelArt: true,
                 antialias: false,
+                roundPixels: true,
             },
         };
 

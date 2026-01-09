@@ -136,7 +136,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     entities: [],
     objects: [],
     events: [],
-    stats: { timeOfDay: 0.25, rat: 0, cat: 0, chicken: 0, smallBird: 0, raccoon: 0, crow: 0, dog: 0, deathsLastMin: 0, birthsLastMin: 0 },
+    stats: { timeOfDay: 0.25, rat: 0, cat: 0, chicken: 0, smallBird: 0, raccoon: 0, crow: 0, dog: 0, fox: 0, hawk: 0, wolf: 0, snake: 0, deathsLastMin: 0, birthsLastMin: 0 },
     graveyard: [],
     chunks: {}, // V3
 
@@ -221,11 +221,11 @@ export const useGameStore = create<GameState>((set, get) => ({
         const newEvents = [...state.events, ...data.events].slice(-50);
 
         // V1.1 God Power Regen: 1 per 3 seconds.
-        // Snapshot is ~100ms (10Hz). 30 snapshots = 3s.
-        // Regen 0.0333 per snapshot.
+        // Snapshot is ~200ms (5Hz). 15 snapshots = 3s.
+        // Regen 1/15 = 0.0666 per snapshot.
         let newGp = state.godPower;
         if (newGp < state.maxGodPower) {
-            newGp = Math.min(state.maxGodPower, newGp + 0.0333);
+            newGp = Math.min(state.maxGodPower, newGp + 0.0666);
         }
 
 
@@ -325,7 +325,7 @@ export const useGameStore = create<GameState>((set, get) => ({
             rules: data.world.rules,
             entities: data.entities as unknown as SnapshotEntity[], // SnapshotEntity mismatch
             objects: data.objects,
-            stats: { timeOfDay: 0.25, rat: 0, cat: 0, chicken: 0, smallBird: 0, raccoon: 0, crow: 0, dog: 0, deathsLastMin: 0, birthsLastMin: 0, currentSeed: data.world.seed }, // Reset stats but keep seed
+            stats: { timeOfDay: 0.25, rat: 0, cat: 0, chicken: 0, smallBird: 0, raccoon: 0, crow: 0, dog: 0, fox: 0, hawk: 0, wolf: 0, snake: 0, deathsLastMin: 0, birthsLastMin: 0, currentSeed: data.world.seed }, // Reset stats but keep seed
             graveyard: data.graveyard,
             chunks: data.chunks || {}, // V3
             events: [], // Clear events on load

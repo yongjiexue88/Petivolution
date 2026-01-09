@@ -7,7 +7,7 @@ export const V1 = {
 
     // 时间
     simTickHz: 15,              // 固定步长模拟 (10~20都行，推荐15)
-    snapshotHz: 10,             // worker -> main 快照频率
+    snapshotHz: 5,              // worker -> main 快照频率 (5Hz / 200ms)
     perceptionEveryNTicks: 5,   // 感知频率
     decisionEveryNTicks: 10,    // 决策频率
 
@@ -40,6 +40,10 @@ export const V1 = {
         raccoon: { min: 2, max: 5 },
         crow: { min: 5, max: 10 },
         dog: { min: 1, max: 2 },
+        fox: { min: 2, max: 4 },
+        hawk: { min: 1, max: 2 },
+        wolf: { min: 2, max: 5 },
+        snake: { min: 3, max: 6 },
     },
 
     // 每个chunk的密度上限 (防止局部过密)
@@ -50,18 +54,26 @@ export const V1 = {
         smallBird: 15,
         raccoon: 5,
         crow: 10,
-        dog: 2
+        dog: 2,
+        fox: 4,
+        hawk: 2,
+        wolf: 5,
+        snake: 6,
     },
 
     // 默认初始生成
     defaultSpawns: {
-        rat: 30,
-        cat: 3,
-        chicken: 10,
-        smallBird: 15,
-        raccoon: 2,
-        crow: 5,
-        dog: 0,
+        rat: 1,
+        cat: 1,
+        chicken: 1,
+        smallBird: 1,
+        raccoon: 1,
+        crow: 1,
+        dog: 1,
+        fox: 1,
+        hawk: 1,
+        wolf: 1,
+        snake: 1,
         water: 1,
         trash: 1,
         bush: 12,

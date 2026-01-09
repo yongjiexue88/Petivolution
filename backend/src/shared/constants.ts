@@ -35,21 +35,37 @@ export const V1 = {
     densityTargets: {
         rat: { min: 25, max: 55 },
         cat: { min: 2, max: 5 },
+        chicken: { min: 5, max: 15 },
+        smallBird: { min: 10, max: 20 },
+        raccoon: { min: 2, max: 5 },
+        crow: { min: 5, max: 10 },
+        dog: { min: 1, max: 2 },
     },
 
     // 每个chunk的密度上限 (防止局部过密)
     capPerChunk: {
         rat: 20,
         cat: 6,
+        chicken: 10,
+        smallBird: 15,
+        raccoon: 5,
+        crow: 10,
+        dog: 2
     },
 
     // 默认初始生成
     defaultSpawns: {
         rat: 30,
         cat: 3,
+        chicken: 10,
+        smallBird: 15,
+        raccoon: 2,
+        crow: 5,
+        dog: 0,
         water: 1,
         trash: 1,
         bush: 12,
+        perch: 5,
     },
 
     // 生态维护器
@@ -71,11 +87,14 @@ export const V1 = {
             spawn: {
                 rat: 2,
                 cat: 8,
+                chicken: 4,
+                smallBird: 3,
             },
             place: {
                 water: 10,
                 bush: 4,
                 trash: 6,
+                perch: 5,
             },
             action: {
                 emergencyAid: 15,

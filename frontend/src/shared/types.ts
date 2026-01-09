@@ -1,10 +1,12 @@
-// ============================================\n// V1 完整类型定义\n// ============================================
+// ============================================
+// V1 完整类型定义
+// ============================================
 
 // ============================================
 // 基础类型
 // ============================================
 
-export type SpeciesId = 'rat' | 'cat' | 'chicken' | 'smallBird' | 'raccoon' | 'crow' | 'dog';
+export type SpeciesId = 'rat' | 'cat' | 'chicken' | 'smallBird' | 'raccoon' | 'crow' | 'dog' | 'fox' | 'hawk' | 'wolf' | 'snake';
 export type ObjectType = 'water' | 'bush' | 'trash' | 'perch';
 
 export type Vec2 = { x: number; y: number };
@@ -261,8 +263,7 @@ export type WorldSaveData = {
 export type ChunkState = 'active' | 'semi_active' | 'far';
 
 export type ChunkStats = {
-    ratCount: number;
-    catCount: number;
+    counts: Partial<Record<SpeciesId, number>>;
     resourceLevel: number; // 0..1 generic resource index
     dangerLevel: number;   // 0..1 generic danger index
     lastTick: number;      // Last time this chunk was updated
@@ -331,6 +332,10 @@ export type SimStats = {
     raccoon: number;
     crow: number;
     dog: number;
+    fox: number;
+    hawk: number;
+    wolf: number;
+    snake: number;
     deathsLastMin: number;
     birthsLastMin: number;
     warning?: boolean;     // V1.1 SOS
@@ -398,7 +403,7 @@ export interface ChallengeDef {
 export const DEFAULT_WORLD_RULES: WorldRule = {
     timeScale: 1,
     capsEnabled: true,
-    capPerChunk: { rat: 20, cat: 6, chicken: 10, smallBird: 15, raccoon: 5, crow: 10, dog: 2 },
+    capPerChunk: { rat: 20, cat: 6, chicken: 10, smallBird: 15, raccoon: 5, crow: 10, dog: 2, fox: 3, hawk: 2, wolf: 4, snake: 5 },
     trashSpawnsRats: true,
     ratSpawn: {
         enabled: true,
