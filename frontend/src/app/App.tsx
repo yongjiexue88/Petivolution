@@ -52,6 +52,10 @@ function App() {
                 const snapshot = await ServerClient.getInstance().getSnapshot();
                 if (snapshot) {
                     setConnectionStatus(true, ServerClient.getInstance().lastLatencyMs);
+                    // DEBUG: Check if we are receiving entities
+                    if (snapshot.entities.length > 0) {
+                        console.log(`[App] Received snapshot with ${snapshot.entities.length} entities`);
+                    }
                     updateFromSnapshot(snapshot);
                     setInitialized(true);
                 } else {

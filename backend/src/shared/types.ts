@@ -6,7 +6,7 @@
 // 基础类型
 // ============================================
 
-export type SpeciesId = 'rat' | 'cat' | 'chicken' | 'smallBird' | 'raccoon' | 'crow' | 'dog';
+export type SpeciesId = 'rat' | 'cat' | 'chicken' | 'smallBird' | 'raccoon' | 'crow' | 'dog' | 'fox' | 'hawk' | 'wolf' | 'snake';
 export type ObjectType = 'water' | 'bush' | 'trash' | 'perch';
 
 export type Vec2 = { x: number; y: number };
@@ -400,7 +400,7 @@ export interface ChallengeDef {
 export const DEFAULT_WORLD_RULES: WorldRule = {
     timeScale: 1,
     capsEnabled: true,
-    capPerChunk: { rat: 20, cat: 6, chicken: 10, smallBird: 15, raccoon: 5, crow: 10, dog: 2 },
+    capPerChunk: { rat: 20, cat: 6, chicken: 10, smallBird: 15, raccoon: 5, crow: 10, dog: 2, fox: 3, hawk: 2, wolf: 4, snake: 5 },
     trashSpawnsRats: true,
     ratSpawn: {
         enabled: true,

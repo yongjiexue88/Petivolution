@@ -58,7 +58,12 @@ export class ServerClient {
             this.lastLatencyMs = Date.now() - start;
 
             if (res.ok) {
-                return await res.json();
+                const data = await res.json();
+                // DEBUG: Trace network response
+                if (data && data.entities && data.entities.length > 0) {
+                    console.log(`[ServerClient] Fetched snapshot with ${data.entities.length} entities`);
+                }
+                return data;
             }
             return null;
         } catch (e) {

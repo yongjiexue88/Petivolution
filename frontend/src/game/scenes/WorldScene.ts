@@ -654,6 +654,8 @@ export class WorldScene extends Phaser.Scene {
         // Rectangle with ScrollFactor 0 and Zoom 2x => Rectangle appears 2x bigger.
         // We want it to cover screen.
         // Overlay Size = ScreenWidth / Zoom.
+        // Overlay Size = ScreenWidth / Zoom.
+        const stats = useGameStore.getState().stats;
         if (stats && this.dayNightOverlay) {
             const time = stats.timeOfDay || 0;
             const rad = (time - 0.25) * Math.PI * 2;
@@ -909,7 +911,14 @@ export class WorldScene extends Phaser.Scene {
     // Sync Logic
     // ===============================================
 
-    syncAnimals(entities: SnapshotEntity[]) {
+    private syncAnimals(entities: SnapshotEntity[]) {
+        if (!entities) return;
+
+        // DEBUG: Trace sync
+        if (entities.length > 0 && Math.random() < 0.05) {
+            console.log(`[WorldScene] Syncing ${entities.length} entities. Sample:`, entities[0]);
+        }
+
         if (!this.sys || !this.sys.isActive() || !this.add) return;
 
         const selectedId = useGameStore.getState().selectedEntityId;

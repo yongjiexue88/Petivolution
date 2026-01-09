@@ -4,6 +4,7 @@ import {
     ChunkData,
     Vec2,
     WorldObject,
+    SpeciesId,
 } from '@shared/types';
 import { V1 } from '@shared/constants';
 import { SimulationState } from './tick';
@@ -82,35 +83,40 @@ export class ChunkManager {
         const centerY = V1.defaultMapHeight / 2;
         const spawnRadius = 30; // Spawn within 30 tiles of center
 
-        // Spawn rats
-        for (let i = 0; i < V1.defaultSpawns.rat; i++) {
-            const offsetX = (sim.rng() - 0.5) * spawnRadius * 2;
-            const offsetY = (sim.rng() - 0.5) * spawnRadius * 2;
-            spawnEntity(sim, 'rat', this.getRandomName('rat', sim), 'cautious', {
-                tx: centerX + offsetX,
-                ty: centerY + offsetY,
-            });
+        const animalSpecies: SpeciesId[] = ['rat', 'cat', 'chicken', 'smallBird', 'raccoon', 'crow', 'dog'];
+
+        for (const species of animalSpecies) {
+            const count = (V1.defaultSpawns as any)[species] || 0;
+            if (count <= 0) continue;
+
+            for (let i = 0; i < count; i++) {
+                const offsetX = (sim.rng() - 0.5) * spawnRadius * 2;
+                const offsetY = (sim.rng() - 0.5) * spawnRadius * 2;
+
+                // Determine personality based on species config or random
+                const personality = sim.rng() > 0.5 ? 'curious' : 'brave';
+
+                spawnEntity(sim, species, this.getRandomName(species, sim), personality, {
+                    tx: centerX + offsetX,
+                    ty: centerY + offsetY,
+                });
+            }
         }
 
-        // Spawn cats
-        for (let i = 0; i < V1.defaultSpawns.cat; i++) {
-            const offsetX = (sim.rng() - 0.5) * spawnRadius * 2;
-            const offsetY = (sim.rng() - 0.5) * spawnRadius * 2;
-            spawnEntity(sim, 'cat', this.getRandomName('cat', sim), 'brave', {
-                tx: centerX + offsetX,
-                ty: centerY + offsetY,
-            });
-        }
-
-        console.log(`🐭 Spawned ${V1.defaultSpawns.rat} rats and 🐱 ${V1.defaultSpawns.cat} cats`);
+        console.log(`🐭 Spawned initial animals: ${animalSpecies.map(s => `${s}:${V1.defaultSpawns[s]}`).join(', ')}`);
     }
 
-    private getRandomName(species: 'rat' | 'cat', sim: SimulationState): string {
-        const names = {
+    private getRandomName(species: SpeciesId, sim: SimulationState): string {
+        const names: Partial<Record<SpeciesId, string[]>> = {
             cat: ['Tiger', 'Shadow', 'Luna', 'Simba', 'Oreo', 'Whiskers', 'Felix', 'Mittens'],
             rat: ['Squeaky', 'Pip', 'Cheese', 'Scurry', 'Nibbles', 'Dusty', 'Scout', 'Rustle'],
+            chicken: ['Nugget', 'Peckers', 'Clucky', 'Eggbert', 'Feathers', 'Scratchy'],
+            smallBird: ['Tweety', 'Sky', 'Blue', 'Chirp', 'Sunny', 'Cloud', 'Windy'],
+            raccoon: ['Bandit', 'Rocket', 'Sly', 'Meeko', 'Ziggy', 'Rigby', 'Swiper'],
+            crow: ['Raven', 'Poe', 'Odin', 'Midnight', 'Onyx', 'Blackie', 'Caw'],
+            dog: ['Buddy', 'Max', 'Bella', 'Charlie', 'Daisy', 'Rocky', 'Coco'],
         };
-        const nameList = names[species];
+        const nameList = names[species] || ['Unknown'];
         const name = nameList[Math.floor(sim.rng() * nameList.length)];
         return `${name}${Math.floor(sim.rng() * 99)}`;
     }
@@ -187,11 +193,11 @@ export class ChunkManager {
         if (type === 'water') {
             obj.data!.resources = OBJECT_CONFIGS.water.maxResources;
             obj.data!.maxResources = OBJECT_CONFIGS.water.maxResources;
-            obj.data!.regenRate = OBJECT_CONFIGS.water.regenRate;
+            obj.data!.regenRate = OBJECT_CONFIGS.water.regenRatePerTick;
         } else if (type === 'trash') {
             obj.data!.resources = OBJECT_CONFIGS.trash.maxResources;
             obj.data!.maxResources = OBJECT_CONFIGS.trash.maxResources;
-            obj.data!.regenRate = OBJECT_CONFIGS.trash.regenRate;
+            obj.data!.regenRate = OBJECT_CONFIGS.trash.regenRatePerTick;
         } else if (type === 'bush') {
             obj.data!.strength01 = OBJECT_CONFIGS.bush.strengthDefault;
         }
