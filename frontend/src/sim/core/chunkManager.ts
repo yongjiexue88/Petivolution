@@ -4,6 +4,7 @@ import {
     ChunkData,
     Vec2,
     WorldObject,
+    SpeciesId,
 } from '@shared/types';
 import { V1 } from '@shared/constants';
 import { SimulationState } from './tick';
@@ -112,31 +113,44 @@ export class ChunkManager {
      * Update LOD based on camera position and zoom
      * Dynamically realize chunks as they come into view
      */
+    /**
+     * Update LOD based on ViewRect (Hot/Warm/Cold)
+     */
     updateLOD(sim: SimulationState) {
-        // Camera center in world pixels
-        const camX = sim.cameraCenter.x;
-        const camY = sim.cameraCenter.y;
-        const zoom = sim.cameraZoom || 1;
+        if (!sim.viewRectTiles) {
+            // Fallback if viewRect not set (e.g. init)
+            return;
+        }
 
-        const centerChunk = this.getChunkCoords({ x: camX, y: camY });
+        const view = sim.viewRectTiles;
+        const C_TILES = CHUNK_SIZE_TILES;
 
-        // Base radius is 1 chunk around center
-        // At zoom=1, we see roughly a few chunks.
-        // At zoom=0.2 (zoomed out), we see 5x more area.
-        // Radius increases as zoom decreases.
-        const dynamicRadius = Math.ceil(2 / zoom);
-        const semiRadius = dynamicRadius + 1;
+        // Calculate Chunk Rect visible
+        const minCx = Math.floor(view.leftTx / C_TILES);
+        const minCy = Math.floor(view.topTy / C_TILES);
+        const maxCx = Math.floor(view.rightTx / C_TILES);
+        const maxCy = Math.floor(view.bottomTy / C_TILES);
+
+
 
         const newActive = new Set<ChunkId>();
         const newSemi = new Set<ChunkId>();
 
-        // Identify new zones
-        for (let y = centerChunk.y - semiRadius; y <= centerChunk.y + semiRadius; y++) {
-            for (let x = centerChunk.x - semiRadius; x <= centerChunk.x + semiRadius; x++) {
-                const id = this.getChunkId(x, y);
-                const dist = Math.max(Math.abs(x - centerChunk.x), Math.abs(y - centerChunk.y));
+        // Hot Padding = 1 (Chunks strictly needed + 1 ring)
+        const hotPadding = 1;
+        // Warm Padding = 2 (Chunks preloaded)
+        const warmPadding = 2;
 
-                if (dist <= dynamicRadius) {
+        for (let cy = minCy - warmPadding; cy <= maxCy + warmPadding; cy++) {
+            for (let cx = minCx - warmPadding; cx <= maxCx + warmPadding; cx++) {
+                // Bounds check
+                if (cx < 0 || cy < 0 || cx >= 8 || cy >= 8) continue; // 256/32 = 8x8 grid
+
+                const id = this.getChunkId(cx, cy);
+
+                // Is Hot?
+                if (cx >= minCx - hotPadding && cx <= maxCx + hotPadding &&
+                    cy >= minCy - hotPadding && cy <= maxCy + hotPadding) {
                     newActive.add(id);
                 } else {
                     newSemi.add(id);

@@ -23,18 +23,18 @@ export const V1 = {
     // V1 Fishbowl World - 有限但"看起来很大"
     // ============================================
 
-    // 世界尺寸 (512×512 tiles = 8192×8192 px)
-    defaultMapWidth: 512,
-    defaultMapHeight: 512,
-    chunkSize: 32,              // 32×32 tiles per chunk = 16×16 chunks total
+    // 世界尺寸 (256×256 tiles = 4096×4096 px)
+    defaultMapWidth: 256,
+    defaultMapHeight: 256,
+    chunkSize: 32,              // 32×32 tiles per chunk = 8×8 chunks total
 
     // 活跃区 (摄像机中心为圆心的"戏剧区")
     activeZoneRadiusTiles: 50,  // 玩家主要观察的区域
 
     // 生态密度目标 (活跃区内)
     densityTargets: {
-        rat: { min: 25, max: 55 },
-        cat: { min: 2, max: 5 },
+        rat: { min: 12, max: 16 },
+        cat: { min: 4, max: 5 },
         chicken: { min: 5, max: 15 },
         smallBird: { min: 10, max: 20 },
         raccoon: { min: 2, max: 5 },
@@ -44,17 +44,17 @@ export const V1 = {
 
     // 每个chunk的密度上限 (防止局部过密)
     capPerChunk: {
-        rat: 20,
-        cat: 6,
-        chicken: 10,
-        smallBird: 15,
-        raccoon: 5,
-        crow: 10,
-        dog: 2,
-        fox: 5,
-        hawk: 3,
-        wolf: 3,
-        snake: 5,
+        rat: 10,
+        cat: 4,
+        chicken: 6,
+        smallBird: 8,
+        raccoon: 3,
+        crow: 5,
+        dog: 1,
+        fox: 2,
+        hawk: 1,
+        wolf: 2,
+        snake: 3,
     },
 
     // 默认初始生成

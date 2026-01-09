@@ -186,10 +186,13 @@ function handleSelectEntity(payload: { entityId?: string }) {
     }
 }
 
-function handleUpdateCamera(payload: { centerX: number; centerY: number; zoom: number }) {
+function handleUpdateCamera(payload: { centerX: number; centerY: number; zoom: number; viewRectTiles?: { leftTx: number, topTy: number, rightTx: number, bottomTy: number } }) {
     if (!sim) return;
     sim.cameraCenter = { x: payload.centerX, y: payload.centerY };
     sim.cameraZoom = payload.zoom;
+    if (payload.viewRectTiles) {
+        sim.viewRectTiles = payload.viewRectTiles;
+    }
 
     // V3: Update LOD when camera changes (recalculate visible chunks)
     sim.chunkManager.updateLOD(sim);

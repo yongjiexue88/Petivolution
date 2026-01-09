@@ -59,6 +59,7 @@ export interface SimulationState {
     // LOD
     cameraCenter: Vec2;
     cameraZoom: number;
+    viewRectTiles?: { leftTx: number, topTy: number, rightTx: number, bottomTy: number };
 
     // RNG
     rng: () => number;
@@ -100,6 +101,7 @@ export function createSimulation(
         chunkManager: new ChunkManager(),
         cameraCenter: { x: V1.defaultMapWidth * V1.tileSizePx / 2, y: V1.defaultMapHeight * V1.tileSizePx / 2 },
         cameraZoom: 1,
+        viewRectTiles: undefined,
         rng: createSeededRandom(seed),
         pendingEvents: [],
         stats: {
@@ -152,9 +154,41 @@ export function simulateTick(sim: SimulationState): void {
         for (const [id, entity] of sim.entities) {
             if (entity.state === 'dead') continue;
 
-            const isNearCamera = isInLODRange(entity.pos, sim);
-            // const config = SPECIES_CONFIGS[entity.species];
+            // ========================================
+            // LOD CHECK via ChunkManager
+            // ========================================
+            const chunkId = sim.chunkManager.getChunkId(
+                Math.floor(entity.pos.x / V1.tileSizePx / V1.chunkSize),
+                Math.floor(entity.pos.y / V1.tileSizePx / V1.chunkSize)
+            );
 
+            const isHot = sim.chunkManager.activeChunks.has(chunkId);
+            const isWarm = sim.chunkManager.semiActiveChunks.has(chunkId);
+
+
+            // Cold: Skip almost everything (frozen)
+            // Ideally we eventually delete them or standard "virtualize" removes them.
+            // For now, if they exist but are cold, we just don't update them to save CPU.
+            if (!isHot && !isWarm) {
+                // Occasional low-freq update or total freeze? 
+                // Let's freeze them except for age.
+                entity.ageTicks++;
+                continue;
+            }
+
+            // Warm: Simplified Update (Movement only, no AI)
+            if (isWarm) {
+                simplifiedUpdate(entity, sim); // Random wander / basic physics
+                entity.ageTicks++;
+                updateVitals(entity, sim); // Optional: keep them hungry?
+                if (entity.vitals.health01 <= 0) {
+                    handleDeath(entity, sim); // They can die off-screen
+                    deadEntities.push(id);
+                }
+                continue;
+            }
+
+            // Hot: Full Update
             // ========================================
             // 1. 每tick: 更新 vitals
             // ========================================
@@ -166,15 +200,6 @@ export function simulateTick(sim: SimulationState): void {
             if (entity.vitals.health01 <= 0) {
                 handleDeath(entity, sim);
                 deadEntities.push(id);
-                continue;
-            }
-
-            // ========================================
-            // 3. LOD: 远离摄像机简化处理
-            // ========================================
-            if (!isNearCamera) {
-                simplifiedUpdate(entity, sim);
-                entity.ageTicks++;
                 continue;
             }
 
@@ -358,17 +383,6 @@ function handleDeath(entity: EntityRuntime, sim: SimulationState): void {
 // LOD 简化更新
 // ============================================
 
-function isInLODRange(pos: Vec2, sim: SimulationState): boolean {
-    const viewWidth = 1920 / sim.cameraZoom;
-    const viewHeight = 1080 / sim.cameraZoom;
-    const margin = 300;
-
-    const dx = Math.abs(pos.x - sim.cameraCenter.x);
-    const dy = Math.abs(pos.y - sim.cameraCenter.y);
-
-    return dx < viewWidth / 2 + margin && dy < viewHeight / 2 + margin;
-}
-
 function simplifiedUpdate(entity: EntityRuntime, sim: SimulationState): void {
     if (entity.state !== 'sleep') {
         entity.state = 'wander';
@@ -531,24 +545,47 @@ export function getSnapshot(sim: SimulationState): {
     const entities: SnapshotEntity[] = [];
 
     for (const entity of sim.entities.values()) {
-        entities.push({
-            id: entity.id,
-            species: entity.species,
-            name: entity.name,
-            x: entity.pos.x,
-            y: entity.pos.y,
-            facing: entity.facing,
-            anim: getAnimationName(entity),
-            state: entity.state,
-            hp01: entity.vitals.health01,
-            selected: entity.id === sim.selectedEntityId,
-            targetPos: (() => {
-                if (sim.rules.debug.showTargets && sim.tick % 60 === 0 && entity.id === sim.entities.keys().next().value) {
-                    // console.log('[Worker] Snapshot showTargets:', sim.rules.debug.showTargets);
-                }
-                return sim.rules.debug.showTargets ? getEntityTargetPos(entity, sim) : undefined;
-            })(),
-        });
+        // LOD Filter: Only send Hot + Warm (optional)
+        const chunkId = sim.chunkManager.getChunkId(
+            Math.floor(entity.pos.x / V1.tileSizePx / V1.chunkSize),
+            Math.floor(entity.pos.y / V1.tileSizePx / V1.chunkSize)
+        );
+
+        const isHot = sim.chunkManager.activeChunks.has(chunkId);
+        const isWarm = sim.chunkManager.semiActiveChunks.has(chunkId);
+
+        // Include Hot + Warm.
+        // Also always include selected entity if it exists.
+        if (isHot || isWarm || entity.id === sim.selectedEntityId) {
+            entities.push({
+                id: entity.id,
+                species: entity.species,
+                name: entity.name,
+                x: entity.pos.x,
+                y: entity.pos.y,
+                facing: entity.facing,
+                anim: getAnimationName(entity),
+                state: entity.state,
+                hp01: entity.vitals.health01,
+                selected: entity.id === sim.selectedEntityId,
+                targetPos: (() => {
+
+                    return sim.rules.debug.showTargets ? getEntityTargetPos(entity, sim) : undefined;
+                })(),
+            });
+        }
+    }
+
+    // Filter Objects as well
+    const visibleObjects: WorldObject[] = [];
+    for (const obj of sim.objects.values()) {
+        const cx = Math.floor(obj.pos.tx / V1.chunkSize);
+        const cy = Math.floor(obj.pos.ty / V1.chunkSize);
+        const id = sim.chunkManager.getChunkId(cx, cy);
+
+        if (sim.chunkManager.activeChunks.has(id) || sim.chunkManager.semiActiveChunks.has(id)) {
+            visibleObjects.push(obj);
+        }
     }
 
     // Generic species counting
@@ -576,7 +613,7 @@ export function getSnapshot(sim: SimulationState): {
     return {
         tick: sim.tick,
         entities,
-        objects: Array.from(sim.objects.values()),
+        objects: visibleObjects,
         stats: {
             timeOfDay: sim.timeOfDay,
             rat: counts['rat'] || 0,

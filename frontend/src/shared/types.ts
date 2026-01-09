@@ -292,7 +292,7 @@ export type WorkerCommand =
     | { type: 'PLACE_OBJECT'; payload: { object: WorldObject } }
     | { type: 'REMOVE_OBJECT'; payload: { objectId: ObjectId } }
     | { type: 'SELECT_ENTITY'; payload: { entityId?: EntityId } }
-    | { type: 'UPDATE_CAMERA'; payload: { centerX: number; centerY: number; zoom: number } }
+    | { type: 'UPDATE_CAMERA'; payload: { centerX: number; centerY: number; zoom: number; viewRectTiles?: { leftTx: number; topTy: number; rightTx: number; bottomTy: number } } }
     | { type: 'REQUEST_SAVE'; payload: { saveName: string } }
     | { type: 'RESET_WORLD'; payload: { seed?: number } };
 

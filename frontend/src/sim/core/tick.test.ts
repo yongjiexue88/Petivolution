@@ -19,6 +19,9 @@ vi.mock('./chunkManager', () => {
     return {
         ChunkManager: vi.fn().mockImplementation(() => ({
             updateLOD: vi.fn(),
+            getChunkId: vi.fn((x, y) => `${x},${y}`),
+            activeChunks: { has: () => true },
+            semiActiveChunks: { has: () => false },
         }))
     };
 });
@@ -40,6 +43,8 @@ describe('Simulation Core', () => {
     describe('simulateTick', () => {
         it('should run simulation steps', () => {
             const sim = createSimulation(123);
+
+
             sim.rules.timeScale = 1;
             sim.cameraCenter = { x: 100, y: 100 };
 

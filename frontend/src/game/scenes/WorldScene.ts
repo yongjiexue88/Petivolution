@@ -188,7 +188,7 @@ export class WorldScene extends Phaser.Scene {
         // Finite bounds for restricted world
         this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
         this.cameras.main.centerOn(worldWidth / 2, worldHeight / 2);
-        this.cameras.main.setZoom(2); // Set initial zoom here
+        this.cameras.main.setZoom(2); // Default integer zoom
         this.cameras.main.setRoundPixels(true);
 
         // DEBUG: Contrast background to distinguish 'void' from 'black texture'
@@ -206,12 +206,7 @@ export class WorldScene extends Phaser.Scene {
         // 5. Create World Border Decoration
         this.createWorldBorder(worldWidth, worldHeight);
 
-        // DEBUG: Explicit Size Label
-        this.add.text(worldWidth / 2, worldHeight / 2, `MAP SIZE: ${worldWidth} x ${worldHeight}`, {
-            fontSize: '64px',
-            color: '#ffffff',
-            backgroundColor: '#000000'
-        }).setOrigin(0.5).setDepth(20000);
+
 
         // 4. Setup Controls
         this.setupCameraControls();
@@ -424,8 +419,8 @@ export class WorldScene extends Phaser.Scene {
         // this.scene.remove(this.key); // Not needed usually
     }
 
-    private gridSprite!: Phaser.GameObjects.TileSprite;
-    private chunkGridSprite!: Phaser.GameObjects.TileSprite;
+    // private gridSprite!: Phaser.GameObjects.TileSprite;
+    // private chunkGridSprite!: Phaser.GameObjects.TileSprite;
 
     createBackground() {
         const worldWidth = V1.defaultMapWidth * V1.tileSizePx;
@@ -448,7 +443,7 @@ export class WorldScene extends Phaser.Scene {
         // 1. Static World Background
         // Since the world is finite (8192x8192), we can just place a single large TileSprite.
         // Phaser handles culling automatically.
-        this.gridSprite = this.add.tileSprite(
+        this.add.tileSprite(
             worldWidth / 2,
             worldHeight / 2,
             worldWidth,
@@ -461,7 +456,7 @@ export class WorldScene extends Phaser.Scene {
 
         // 2. Chunk Grid Overlay (World Space)
         this.createGridTexture('chunk-texture', V1.chunkSize * V1.tileSizePx, 0x00000000, 0x3a3a4a, 2);
-        this.chunkGridSprite = this.add.tileSprite(
+        this.add.tileSprite(
             worldWidth / 2,
             worldHeight / 2,
             worldWidth,
@@ -623,33 +618,78 @@ export class WorldScene extends Phaser.Scene {
         });
 
         this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _: unknown, __: unknown, deltaY: number) => {
-            const zoom = this.cameras.main.zoom;
+            const cam = this.cameras.main;
+            const oldZoom = cam.zoom;
 
-            // Calculate dynamic minZoom based on current viewport and world size
-            const worldWidth = V1.defaultMapWidth * V1.tileSizePx;
-            const worldHeight = V1.defaultMapHeight * V1.tileSizePx;
-            const minZoom = Math.max(
-                this.scale.width / worldWidth,
-                this.scale.height / worldHeight
-            );
+            // Integer Zoom Steps: 1, 2, 3, 4
+            // DeltaY > 0 means zoom OUT (Mouse wheel down) -> decrease zoom
+            // DeltaY < 0 means zoom IN (Mouse wheel up) -> increase zoom
 
-            // Simple center zoom
-            const newZoom = Phaser.Math.Clamp(zoom - deltaY * 0.001, minZoom, 5);
-            this.cameras.main.setZoom(newZoom);
+            let newZoom = oldZoom;
+            if (deltaY > 0) {
+                newZoom = Math.max(1, oldZoom - 1);
+            } else if (deltaY < 0) {
+                newZoom = Math.min(4, oldZoom + 1);
+            }
 
-            this.updateWorkerCamera();
+            if (newZoom !== oldZoom) {
+                // ZOOM TO CURSOR LOGIC:
+                // 1. Get world position under pointer BEFORE zoom
+                const pointerWorldX = cam.scrollX + this.input.activePointer.x / oldZoom;
+                const pointerWorldY = cam.scrollY + this.input.activePointer.y / oldZoom;
+
+                // 2. Set new zoom
+                cam.setZoom(newZoom);
+
+                // 3. Adjust scroll so that the world point remains under the pointer
+                // New World View Left = PointerWorld - (PointerScreen / NewZoom)
+
+                const newScrollX = pointerWorldX - (this.input.activePointer.x / newZoom);
+                const newScrollY = pointerWorldY - (this.input.activePointer.y / newZoom);
+
+                // 4. Clamp to bounds
+                const worldWidth = V1.defaultMapWidth * V1.tileSizePx;
+                const worldHeight = V1.defaultMapHeight * V1.tileSizePx;
+                const visibleWidth = cam.width / newZoom;
+                const visibleHeight = cam.height / newZoom;
+
+                cam.scrollX = Phaser.Math.Clamp(newScrollX, 0, Math.max(0, worldWidth - visibleWidth));
+                cam.scrollY = Phaser.Math.Clamp(newScrollY, 0, Math.max(0, worldHeight - visibleHeight));
+
+                this.updateWorkerCamera();
+            }
         });
     }
 
     updateWorkerCamera() {
         const worker = getSimWorker();
         const cam = this.cameras.main;
+
+        // Calculate World ViewRect
+        // WorldView = { x, y, width, height } in pixels
+        // Convert to TileRect
+        const worldView = cam.worldView;
+
+        const leftTx = Math.floor(worldView.x / V1.tileSizePx);
+        const topTy = Math.floor(worldView.y / V1.tileSizePx);
+        const rightTx = Math.ceil((worldView.x + worldView.width) / V1.tileSizePx);
+        const bottomTy = Math.ceil((worldView.y + worldView.height) / V1.tileSizePx);
+
+        // Clamp to Map Bounds (0..255)
+        const viewRectTiles = {
+            leftTx: Phaser.Math.Clamp(leftTx, 0, V1.defaultMapWidth - 1),
+            topTy: Phaser.Math.Clamp(topTy, 0, V1.defaultMapHeight - 1),
+            rightTx: Phaser.Math.Clamp(rightTx, 0, V1.defaultMapWidth),
+            bottomTy: Phaser.Math.Clamp(bottomTy, 0, V1.defaultMapHeight)
+        };
+
         worker?.postMessage({
             type: 'UPDATE_CAMERA',
             payload: {
                 centerX: cam.midPoint.x,
                 centerY: cam.midPoint.y,
                 zoom: cam.zoom,
+                viewRectTiles: viewRectTiles,
             }
         });
     }

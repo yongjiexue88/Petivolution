@@ -11,7 +11,7 @@ describe('gameStore', () => {
             tick: 0,
             entities: [],
             objects: [],
-            stats: { timeOfDay: 0.25, rat: 0, cat: 0, chicken: 0, smallBird: 0, raccoon: 0, crow: 0, dog: 0, deathsLastMin: 0, birthsLastMin: 0 },
+            stats: { timeOfDay: 0.25, rat: 0, cat: 0, chicken: 0, smallBird: 0, raccoon: 0, crow: 0, dog: 0, fox: 0, hawk: 0, wolf: 0, snake: 0, deathsLastMin: 0, birthsLastMin: 0 },
             events: [],
             rules: DEFAULT_WORLD_RULES,
         });
@@ -33,7 +33,7 @@ describe('gameStore', () => {
             tick: 10,
             entities: [],
             objects: [],
-            stats: { timeOfDay: 0.25, rat: 0, cat: 0, chicken: 0, smallBird: 0, raccoon: 0, crow: 0, dog: 0, deathsLastMin: 0, birthsLastMin: 0 },
+            stats: { timeOfDay: 0.25, rat: 0, cat: 0, chicken: 0, smallBird: 0, raccoon: 0, crow: 0, dog: 0, fox: 0, hawk: 0, wolf: 0, snake: 0, deathsLastMin: 0, birthsLastMin: 0 },
             events: snapshotEvents
         });
 
@@ -54,7 +54,7 @@ describe('gameStore', () => {
             tick: 30,
             entities: [],
             objects: [],
-            stats: { timeOfDay: 0.25, rat: 0, cat: 0, chicken: 0, smallBird: 0, raccoon: 0, crow: 0, dog: 0, deathsLastMin: 0, birthsLastMin: 0 },
+            stats: { timeOfDay: 0.25, rat: 0, cat: 0, chicken: 0, smallBird: 0, raccoon: 0, crow: 0, dog: 0, fox: 0, hawk: 0, wolf: 0, snake: 0, deathsLastMin: 0, birthsLastMin: 0 },
             events: batch1
         });
 
@@ -69,7 +69,7 @@ describe('gameStore', () => {
             tick: 60,
             entities: [],
             objects: [],
-            stats: { timeOfDay: 0.25, rat: 0, cat: 0, chicken: 0, smallBird: 0, raccoon: 0, crow: 0, dog: 0, deathsLastMin: 0, birthsLastMin: 0 },
+            stats: { timeOfDay: 0.25, rat: 0, cat: 0, chicken: 0, smallBird: 0, raccoon: 0, crow: 0, dog: 0, fox: 0, hawk: 0, wolf: 0, snake: 0, deathsLastMin: 0, birthsLastMin: 0 },
             events: batch2
         });
 

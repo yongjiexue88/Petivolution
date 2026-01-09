@@ -100,6 +100,15 @@ describe('SimWorker', () => {
             }
         });
 
+        // Send Camera Update to ensure LOD is active (so snapshot doesn't filter out entity)
+        sendCommand({
+            type: 'UPDATE_CAMERA',
+            payload: {
+                centerX: 1600, centerY: 1600, zoom: 1,
+                viewRectTiles: { leftTx: 90, topTy: 90, rightTx: 110, bottomTy: 110 }
+            }
+        });
+
         // We can't easily inspect internal state without exporting it,
         // but we can check if it didn't crash and ideally we'd see a side effect.
         // The worker logs to console on spawn success in current impl

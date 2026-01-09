@@ -19,7 +19,11 @@ export const DEFAULT_RULES: WorldRule = {
         smallBird: 15,
         raccoon: 5,
         crow: 10,
-        dog: 2
+        dog: 2,
+        fox: 3,
+        hawk: 2,
+        wolf: 4,
+        snake: 5
     },
 
     trashSpawnsRats: true,
@@ -71,7 +75,11 @@ export const RULE_PRESETS: Record<'balanced' | 'wild' | 'abundant' | 'chaos' | '
             smallBird: 15,
             raccoon: 5,
             crow: 10,
-            dog: 2
+            dog: 2,
+            fox: 4,
+            hawk: 3,
+            wolf: 5,
+            snake: 6
         },
     },
 
@@ -89,7 +97,11 @@ export const RULE_PRESETS: Record<'balanced' | 'wild' | 'abundant' | 'chaos' | '
             smallBird: 15,
             raccoon: 4,
             crow: 8,
-            dog: 2
+            dog: 2,
+            fox: 3,
+            hawk: 2,
+            wolf: 3,
+            snake: 4
         },
     },
 
@@ -109,7 +121,11 @@ export const RULE_PRESETS: Record<'balanced' | 'wild' | 'abundant' | 'chaos' | '
             smallBird: 30,
             raccoon: 10,
             crow: 20,
-            dog: 5
+            dog: 5,
+            fox: 10,
+            hawk: 5,
+            wolf: 8,
+            snake: 10
         },
         timeScale: 2, // 加快时间流逝
         ai: {
@@ -127,13 +143,17 @@ export const RULE_PRESETS: Record<'balanced' | 'wild' | 'abundant' | 'chaos' | '
             probability: 0.4,
         },
         capPerChunk: {
-            rat: 25,
-            cat: 8,
-            chicken: 12,
-            smallBird: 20,
+            rat: 20,
+            cat: 6,
+            chicken: 10,
+            smallBird: 15,
             raccoon: 5,
             crow: 10,
-            dog: 2
+            dog: 2,
+            fox: 3,
+            hawk: 2,
+            wolf: 4,
+            snake: 5
         },
         challenge: {
             enabled: true,
