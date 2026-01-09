@@ -37,7 +37,20 @@ function App() {
         setConnectionStatus, // V1.3
         connected,
         latency,
+        showHUD,
+        toggleHUD
     } = useGameStore();
+
+    // Hotkey Listener (Shift+D to Toggle HUD)
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.shiftKey && (e.key === 'D' || e.key === 'd')) {
+                toggleHUD();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [toggleHUD]);
 
     // 初始化 Web Worker 或 连接服务器
     useEffect(() => {
@@ -54,7 +67,7 @@ function App() {
                     setConnectionStatus(true, ServerClient.getInstance().lastLatencyMs);
                     // DEBUG: Check if we are receiving entities
                     if (snapshot.entities.length > 0) {
-                        console.log(`[App] Received snapshot with ${snapshot.entities.length} entities`);
+                        // console.log(`[App] Received snapshot with ${snapshot.entities.length} entities`);
                     }
                     updateFromSnapshot(snapshot);
                     setInitialized(true);
@@ -131,7 +144,7 @@ function App() {
             <GameCanvas />
 
             {/* 工具栏 */}
-            <Toolbar />
+            {showHUD && <Toolbar />}
 
             {/* 左侧面板 */}
             <div className="panels-left">
@@ -151,18 +164,20 @@ function App() {
             </div>
 
             {/* 状态栏 */}
-            <div className="status-bar">
-                {useServer && (
-                    <span style={{ color: connected ? '#4ade80' : '#ef4444' }}>
-                        {connected ? `🟢 Server (${latency}ms)` : '🔴 Disconnected'}
-                    </span>
-                )}
-                <span>🐭 鼠: {stats.rat}</span>
-                <span>🐱 猫: {stats.cat}</span>
-                <span>⚰️ 死亡/分: {stats.deathsLastMin}</span>
-                <span>🐣 出生/分: {stats.birthsLastMin}</span>
-                <span>🕐 Tick: {tick}</span>
-            </div>
+            {showHUD && (
+                <div className="status-bar">
+                    {useServer && (
+                        <span style={{ color: connected ? '#4ade80' : '#ef4444' }}>
+                            {connected ? `🟢 Server (${latency}ms)` : '🔴 Disconnected'}
+                        </span>
+                    )}
+                    <span>🐭 鼠: {stats.rat}</span>
+                    <span>🐱 猫: {stats.cat}</span>
+                    <span>⚰️ 死亡/分: {stats.deathsLastMin}</span>
+                    <span>🐣 出生/分: {stats.birthsLastMin}</span>
+                    <span>🕐 Tick: {tick}</span>
+                </div>
+            )}
         </div>
     );
 }

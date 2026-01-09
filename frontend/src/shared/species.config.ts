@@ -590,7 +590,11 @@ export const SPECIES_CONFIGS: Record<SpeciesId, SpeciesConfig> = {
     smallBird: SMALL_BIRD_CONFIG,
     raccoon: RACCOON_CONFIG,
     crow: CROW_CONFIG,
-    dog: DOG_CONFIG
+    dog: DOG_CONFIG,
+    fox: { ...DOG_CONFIG, id: 'fox', spriteKey: 'fox_idle', spriteColor: 0xFF4500 },
+    hawk: { ...CROW_CONFIG, id: 'hawk', spriteKey: 'hawk_idle', spriteColor: 0x8B4513 },
+    wolf: { ...DOG_CONFIG, id: 'wolf', spriteKey: 'wolf_idle', spriteColor: 0x808080 },
+    snake: { ...RAT_CONFIG, id: 'snake', spriteKey: 'snake_idle', spriteColor: 0x006400 },
 };
 
 // ============================================

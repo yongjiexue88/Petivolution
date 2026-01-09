@@ -179,38 +179,32 @@ export class WorldScene extends Phaser.Scene {
         const worldWidth = V1.defaultMapWidth * V1.tileSizePx;
         const worldHeight = V1.defaultMapHeight * V1.tileSizePx;
 
-        // 1. Draw Background
-        this.createBackground();
+        // RESET CAMERA STATE (Fix for "Stuck at Top-Left" issue)
+        // Clear any stale fly/follow targets from store that might override our initial setBounds/centerOn
+        useGameStore.getState().setCameraFlyTo(null);
+        useGameStore.getState().setFollowingEntityId(null);
 
-        // 2 Create Animations
-        this.createAnimations();
-
-        // 3. Create City
-        this.createCity(worldWidth / 2, worldHeight / 2);
-
-        // 4. Create World Border Decoration
-        this.createWorldBorder(worldWidth, worldHeight);
-
-        // DEBUG: prove individual images loaded
-        // const dbg = this.add.image(200, 200, 'rat_idle');
-        // dbg.setScale(0.15);
-        // dbg.setDepth(99999);
-
-        // const t = this.add.text(200, 260, 'DEBUG RAT', { color: '#ffffff' }).setOrigin(0.5);
-        // t.setDepth(99999);
-
-        // console.log('[DEBUG] textures has rat_idle?', this.textures.exists('rat_idle'));
-        // console.log('[DEBUG] textures has cat_idle?', this.textures.exists('cat_idle'));
-
-        // 3. Setup Camera
-        // 3. Setup Camera
+        // 1. Setup Camera FIRST (before background needs camera properties)
         // Finite bounds for restricted world
         this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
         this.cameras.main.centerOn(worldWidth / 2, worldHeight / 2);
-        this.cameras.main.setZoom(1);
+        this.cameras.main.setZoom(2); // Set initial zoom here
+        this.cameras.main.setRoundPixels(true);
 
         // DEBUG: Contrast background to distinguish 'void' from 'black texture'
         this.cameras.main.setBackgroundColor('#333333');
+
+        // 2. Draw Background (now camera is configured)
+        this.createBackground();
+
+        // 3. Create Animations
+        this.createAnimations();
+
+        // 4. Create City
+        this.createCity(worldWidth / 2, worldHeight / 2);
+
+        // 5. Create World Border Decoration
+        this.createWorldBorder(worldWidth, worldHeight);
 
         // DEBUG: Explicit Size Label
         this.add.text(worldWidth / 2, worldHeight / 2, `MAP SIZE: ${worldWidth} x ${worldHeight}`, {
@@ -238,27 +232,39 @@ export class WorldScene extends Phaser.Scene {
         this.syncAnimals(initialState.entities);
         this.syncObjects(initialState.objects);
 
-        // 7. Day/Night Overlay (V1.3)
-        this.dayNightOverlay = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width, this.scale.height, 0x000022) // Dark blueish
-            .setScrollFactor(0)
-            .setDepth(20000)
-            .setAlpha(0)
-            .setOrigin(0.5, 0.5)
-            .setBlendMode(Phaser.BlendModes.MULTIPLY); // Better for darkening
+        // --- DEBUG LOGS FOR VIEWPORT/WORLD ---
+        const cam = this.cameras.main;
+        console.log('--- MAP SIZE DEBUG ---');
+        console.log('world:', worldWidth, worldHeight);
+        console.log('scale:', this.scale.width, this.scale.height);
+        console.log('cam zoom:', cam.zoom);
+        console.log('cam view:', cam.width / cam.zoom, cam.height / cam.zoom);
 
-        // FIXED 2x Integer Zoom (40 tiles visible @ 1280px)
-        // 1280px / 2 = 640px world view = 40 tiles * 16px
-        this.cameras.main.setZoom(2);
-        this.cameras.main.setRoundPixels(true);
+        // Calculate Min Zoom to prevent seeing void
+        const minZoomX = this.scale.width / worldWidth;
+        const minZoomY = this.scale.height / worldHeight;
+        const minZoom = Math.max(minZoomX, minZoomY);
+
+        if (cam.zoom < minZoom) {
+            console.log(`Initial zoom ${cam.zoom} is too small, clamping to ${minZoom}`);
+            cam.setZoom(minZoom);
+        }
 
         this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
-            // Keep overlay centered
-            this.dayNightOverlay.setPosition(gameSize.width / 2, gameSize.height / 2);
-            // Sizing is handled in update() to account for zoom
-        });
+            // Keep overlay centered (dayNightOverlay is created in createBackground)
+            if (this.dayNightOverlay) {
+                this.dayNightOverlay.setPosition(gameSize.width / 2, gameSize.height / 2);
+            }
 
-        // Force initial size for overlay
-        this.dayNightOverlay.setSize(this.scale.width, this.scale.height);
+            // Re-check zoom on resize
+            const newMinZoom = Math.max(
+                gameSize.width / (V1.defaultMapWidth * V1.tileSizePx),
+                gameSize.height / (V1.defaultMapHeight * V1.tileSizePx)
+            );
+            if (this.cameras.main.zoom < newMinZoom) {
+                this.cameras.main.setZoom(newMinZoom);
+            }
+        });
     }
 
     createAnimations() {
@@ -363,63 +369,8 @@ export class WorldScene extends Phaser.Scene {
 
     createCity(centerX: number, centerY: number) {
         console.log('Building City at', centerX, centerY);
-        const scale = 2; // Assets are 16x16, Grid is 32x32
+        // City elements removed as per user request
 
-        // 1. Central House (Town Hall)
-        // Adjust position so it's centered on the tile
-        const house = this.add.image(centerX, centerY - V1.tileSizePx * 2, 'city_house');
-        house.setScale(scale);
-        house.setDepth(centerY - V1.tileSizePx * 2); // Depth sorting
-
-        // 2. Roads (Cross shape)
-        const roadLen = 10;
-        for (let i = -roadLen; i <= roadLen; i++) {
-            // Horizontal Road
-            const rx = centerX + i * V1.tileSizePx;
-            const ry = centerY;
-            const roadH = this.add.image(rx, ry, 'city_road');
-            roadH.setScale(scale);
-            roadH.setDepth(0); // Roads on ground
-
-            // Vertical Road
-            const vx = centerX;
-            const vy = centerY + i * V1.tileSizePx;
-            // Don't overlap center tile twice roughly
-            if (i !== 0) {
-                const roadV = this.add.image(vx, vy, 'city_road');
-                roadV.setScale(scale);
-                roadV.setDepth(0);
-            }
-        }
-
-        // 3. Fences (Garden Area)
-        const gardenOffsetX = V1.tileSizePx * 6;
-        const gardenOffsetY = V1.tileSizePx * 2;
-        this.add.image(centerX + gardenOffsetX, centerY + gardenOffsetY, 'city_fence').setScale(scale).setDepth(centerY);
-        this.add.image(centerX + gardenOffsetX + V1.tileSizePx, centerY + gardenOffsetY, 'city_fence').setScale(scale).setDepth(centerY);
-
-        // 4. Crops
-        this.add.image(centerX + gardenOffsetX, centerY + gardenOffsetY + V1.tileSizePx, 'city_crops').setScale(scale).setDepth(centerY);
-
-        // 5. Trees scattered
-        // simple fixed placement
-        const treePositions = [
-            { x: centerX - V1.tileSizePx * 4, y: centerY - V1.tileSizePx * 4 },
-            { x: centerX + V1.tileSizePx * 4, y: centerY - V1.tileSizePx * 4 },
-            { x: centerX - V1.tileSizePx * 4, y: centerY + V1.tileSizePx * 4 },
-            { x: centerX + V1.tileSizePx * 4, y: centerY + V1.tileSizePx * 4 },
-        ];
-
-        treePositions.forEach(pos => {
-            const tree = this.add.image(pos.x, pos.y, 'city_tree');
-            tree.setScale(scale);
-            tree.setDepth(pos.y);
-        });
-
-        // 6. Chest
-        const chest = this.add.image(centerX - V1.tileSizePx * 2, centerY + V1.tileSizePx * 2, 'city_chest');
-        chest.setScale(scale);
-        chest.setDepth(centerY + V1.tileSizePx * 2);
     }
 
     createWorldBorder(worldWidth: number, worldHeight: number) {
@@ -429,29 +380,38 @@ export class WorldScene extends Phaser.Scene {
 
         // Top & Bottom
         for (let x = 0; x <= worldWidth; x += spacing) {
-            // Top
-            this.add.image(x, 0, 'city_tree')
+            // Top (Move down so feet are inside, and tree body (growing up) is visible)
+            // Tree is approx 48px tall (scaled 1.5x of 32?). 
+            // If anchor is (0.5, 1), feet at 48 ensures top is at 0.
+            this.add.image(x, 48, 'city_tree')
                 .setOrigin(0.5, 1) // Anchor at bottom to sit on line
-                .setDepth(1) // Sit above ground
+                .setDepth(48) // Depth sort by Y
                 .setScale(1.5);
 
-            // Bottom
-            this.add.image(x, worldHeight, 'city_tree')
+            // Bottom (DEBUG: Moved WAY up to -200 to check if they exist at all)
+            this.add.image(x, worldHeight - 200, 'city_tree')
                 .setOrigin(0.5, 1)
-                .setDepth(worldHeight) // Z-index sorting
+                .setDepth(worldHeight - 200) // Depth sort correct
                 .setScale(1.5);
         }
 
+        // DEBUG: Draw a red line at the actual bottom of the world
+        const g = this.add.graphics();
+        g.lineStyle(10, 0xff0000, 1);
+        g.lineBetween(0, worldHeight, worldWidth, worldHeight);
+        g.setDepth(20000); // On top of everything
+        console.log(`DEBUG: Bottom Border Y=${worldHeight}. Bottom Trees Y=${worldHeight - 200}`);
+
         // Left & Right
         for (let y = 0; y <= worldHeight; y += spacing) {
-            // Left
-            this.add.image(0, y, 'city_tree')
+            // Left (Move in slightly)
+            this.add.image(16, y, 'city_tree')
                 .setOrigin(0.5, 1)
                 .setDepth(y)
                 .setScale(1.5);
 
-            // Right
-            this.add.image(worldWidth, y, 'city_tree')
+            // Right (Move in slightly)
+            this.add.image(worldWidth - 16, y, 'city_tree')
                 .setOrigin(0.5, 1)
                 .setDepth(y)
                 .setScale(1.5);
@@ -468,8 +428,6 @@ export class WorldScene extends Phaser.Scene {
     private chunkGridSprite!: Phaser.GameObjects.TileSprite;
 
     createBackground() {
-        const width = this.scale.width;
-        const height = this.scale.height;
         const worldWidth = V1.defaultMapWidth * V1.tileSizePx;
         const worldHeight = V1.defaultMapHeight * V1.tileSizePx;
 
@@ -487,28 +445,41 @@ export class WorldScene extends Phaser.Scene {
             g.destroy();
         }
 
-        // 1. Base TileSprite (Screen Space)
-        // We use a screen-sized sprite that stays with the camera, but we scroll its texture UVs.
-        // This avoids GPU texture limits for huge worlds.
-        this.gridSprite = this.add.tileSprite(0, 0, width, height, 'grass-base')
-            .setOrigin(0, 0)
-            .setScrollFactor(0) // Stick to camera
+        // 1. Static World Background
+        // Since the world is finite (8192x8192), we can just place a single large TileSprite.
+        // Phaser handles culling automatically.
+        this.gridSprite = this.add.tileSprite(
+            worldWidth / 2,
+            worldHeight / 2,
+            worldWidth,
+            worldHeight,
+            'grass-base'
+        )
+            .setOrigin(0.5, 0.5) // Center anchored
+            .setScrollFactor(1)  // Moves with camera (part of the world)
             .setDepth(-1000);
 
-        // 2. Chunk Grid Overlay (Screen Space)
+        // 2. Chunk Grid Overlay (World Space)
         this.createGridTexture('chunk-texture', V1.chunkSize * V1.tileSizePx, 0x00000000, 0x3a3a4a, 2);
-        this.chunkGridSprite = this.add.tileSprite(0, 0, width, height, 'chunk-texture')
-            .setOrigin(0, 0)
-            .setScrollFactor(0)
+        this.chunkGridSprite = this.add.tileSprite(
+            worldWidth / 2,
+            worldHeight / 2,
+            worldWidth,
+            worldHeight,
+            'chunk-texture'
+        )
+            .setOrigin(0.5, 0.5)
+            .setScrollFactor(1)
             .setDepth(-999)
             .setAlpha(0.2);
 
-        // Resize handler
+        // Resize handler (UI only, background is static world object now)
         this.scale.on('resize', this.resizeUI, this);
 
         // 7. Day/Night Overlay (V1.3)
-        // Correctly created here as UI element
-        this.dayNightOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000022) // Dark blueish
+        const screenWidth = this.scale.width;
+        const screenHeight = this.scale.height;
+        this.dayNightOverlay = this.add.rectangle(screenWidth / 2, screenHeight / 2, screenWidth, screenHeight, 0x000022)
             .setScrollFactor(0)
             .setDepth(20000)
             .setAlpha(0)
@@ -525,7 +496,7 @@ export class WorldScene extends Phaser.Scene {
         this.add.text(10, 10, 'TL (0,0)', { fontSize: '32px', color: '#ff0000' }).setDepth(10);
         this.add.text(worldWidth - 200, worldHeight - 50, 'BR', { fontSize: '32px', color: '#ff0000' }).setDepth(10);
 
-        // Force UI resize to set initial dimensions
+        // Force UI resize to set initial dimensions for Overlay
         this.resizeUI(this.scale.gameSize);
     }
 
@@ -554,15 +525,6 @@ export class WorldScene extends Phaser.Scene {
     resizeUI(gameSize: Phaser.Structs.Size) {
         const width = gameSize.width;
         const height = gameSize.height;
-
-        // Resize Screen-Space Backgrounds
-        // We set them to cover the screen. Scale is handled in update Loop.
-        if (this.gridSprite) {
-            this.gridSprite.setSize(width, height);
-        }
-        if (this.chunkGridSprite) {
-            this.chunkGridSprite.setSize(width, height);
-        }
 
         // Keep UI overlays centered and sized
         if (this.dayNightOverlay) {
@@ -599,56 +561,6 @@ export class WorldScene extends Phaser.Scene {
             }
         }
 
-        // --- BACKGROUND SYNC ---
-        // Inverse zoom sizing for the screen-space sprite to ensure it covers the visible area?
-        // Actually, if we setSize(width, height) and scrollFactor(0), it is STUCK to the specific screen pixels.
-        // It DOES NOT scale with camera zoom automatically?
-        // Camera Zoom affects everything rendered by the camera.
-        // So a 100x100 sprite becomes 200x200 onscreen if zoom=2.
-        // So we need to Inverse Scale the dimensions of the TileSprite so that after Zoom it matches Screen Size.
-        // Size = (ScreenWidth / Zoom, ScreenHeight / Zoom).
-        const invZoom = 1 / zoom;
-
-        if (this.gridSprite) {
-            this.gridSprite.setScale(invZoom); // Scale the sprite DOWN so zoom blows it back up to 1:1 screen ratio?
-            // Actually, simplest is just to make it HUGE or set width/height dynamic.
-            // If we use setScale(invZoom), the 32x32 texture becomes 16x16 visual? 
-            // NO. We want the texture pixels to match world pixels (zoomable).
-            // So we WANT the texture to get bigger when we zoom in.
-            // So we KEEP scale = 1 (or whatever helps matching pixel grid).
-            // But we need the Sprite Itself (the window) to cover the screen.
-            // If Zoom=2, Visual Viewport is Width/2.
-            // So we should set the Sprite Size to Width/2, Height/2.
-            // And position it at TopLeft of View relative to Camera Center?
-            // ScrollFactor(0) means Position 0,0 is Center of Screen or TopLeft? 
-            // Default origin 0.5,0.5 means center.
-            // Set Origin 0,0 means TopLeft of Camera view.
-
-            // It's tricky to mix ScrollFactor(0) with Zoom.
-            // Alternative: Don't use ScrollFactor 0 for the Background. 
-            // Position it at Camera.worldView.x, Camera.worldView.y every frame.
-            // Size it Camera.worldView.width, Camera.worldView.height.
-
-            const worldView = cam.worldView;
-            this.gridSprite.setPosition(worldView.x, worldView.y);
-            this.gridSprite.setSize(worldView.width + 32, worldView.height + 32); // +Buffer
-            this.gridSprite.setTilePosition(worldView.x, worldView.y);
-            this.gridSprite.setDepth(-1000);
-            this.gridSprite.setScrollFactor(1); // Normal world behavior for position, but we act like a "window"
-
-            // Wait, if it's world position, setScrollFactor needs to be 1.
-            // But tilePosition needs to be synced to world coordinate?
-            // Yes.
-
-            this.chunkGridSprite.setPosition(worldView.x, worldView.y);
-            this.chunkGridSprite.setSize(worldView.width + 32, worldView.height + 32);
-            this.chunkGridSprite.setTilePosition(worldView.x, worldView.y);
-            this.chunkGridSprite.setDepth(-999);
-            this.chunkGridSprite.setScrollFactor(1);
-
-            // Revert strict screen-space specific logic above for simplicity
-        }
-
         // Update Day/Night Overlay
         // Overlay IS Screen Space (should not zoom texture? just flat color).
         // Rectangle with ScrollFactor 0 and Zoom 2x => Rectangle appears 2x bigger.
@@ -657,10 +569,15 @@ export class WorldScene extends Phaser.Scene {
         // Overlay Size = ScreenWidth / Zoom.
         const stats = useGameStore.getState().stats;
         if (stats && this.dayNightOverlay) {
-            const time = stats.timeOfDay || 0;
-            const rad = (time - 0.25) * Math.PI * 2;
-            const intensity = (1 - Math.cos(rad)) / 2;
-            this.dayNightOverlay.setAlpha(intensity * 0.7);
+            // TODO: Night mode temporarily disabled by user request. 
+            // Uncomment logic below to re-enable day/night cycle visualization.
+
+            // const time = stats.timeOfDay || 0;
+            // const rad = (time - 0.25) * Math.PI * 2;
+            // const intensity = (1 - Math.cos(rad)) / 2;
+            // this.dayNightOverlay.setAlpha(intensity * 0.7);
+
+            this.dayNightOverlay.setAlpha(0); // Force Day Mode
 
             this.dayNightOverlay.setSize(width / zoom, height / zoom);
         }
@@ -677,18 +594,26 @@ export class WorldScene extends Phaser.Scene {
                 const newScrollX = this.cameraStart.x - dx;
                 const newScrollY = this.cameraStart.y - dy;
 
-                // Manual clamping to ensure drag doesn't pull camera out of bounds
-                // (Though setBounds usually handles this, direct assignment can sometimes bypass)
                 const cam = this.cameras.main;
-                // Visible world width at current zoom
                 const visibleWidth = cam.width / cam.zoom;
                 const visibleHeight = cam.height / cam.zoom;
 
                 const worldWidth = V1.defaultMapWidth * V1.tileSizePx;
                 const worldHeight = V1.defaultMapHeight * V1.tileSizePx;
 
-                this.cameras.main.scrollX = Phaser.Math.Clamp(newScrollX, 0, worldWidth - visibleWidth);
-                this.cameras.main.scrollY = Phaser.Math.Clamp(newScrollY, 0, worldHeight - visibleHeight);
+                // If visible area is larger than world, center it.
+                // Otherwise, clamp to bounds.
+                if (visibleWidth > worldWidth) {
+                    this.cameras.main.scrollX = (worldWidth - visibleWidth) / 2;
+                } else {
+                    this.cameras.main.scrollX = Phaser.Math.Clamp(newScrollX, 0, worldWidth - visibleWidth);
+                }
+
+                if (visibleHeight > worldHeight) {
+                    this.cameras.main.scrollY = (worldHeight - visibleHeight) / 2;
+                } else {
+                    this.cameras.main.scrollY = Phaser.Math.Clamp(newScrollY, 0, worldHeight - visibleHeight);
+                }
 
                 // Throttle worker updates for LOD if needed
                 if (this.game.loop.frame % 30 === 0) {
@@ -699,8 +624,17 @@ export class WorldScene extends Phaser.Scene {
 
         this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _: unknown, __: unknown, deltaY: number) => {
             const zoom = this.cameras.main.zoom;
+
+            // Calculate dynamic minZoom based on current viewport and world size
+            const worldWidth = V1.defaultMapWidth * V1.tileSizePx;
+            const worldHeight = V1.defaultMapHeight * V1.tileSizePx;
+            const minZoom = Math.max(
+                this.scale.width / worldWidth,
+                this.scale.height / worldHeight
+            );
+
             // Simple center zoom
-            const newZoom = Phaser.Math.Clamp(zoom - deltaY * 0.001, 0.2, 5);
+            const newZoom = Phaser.Math.Clamp(zoom - deltaY * 0.001, minZoom, 5);
             this.cameras.main.setZoom(newZoom);
 
             this.updateWorkerCamera();

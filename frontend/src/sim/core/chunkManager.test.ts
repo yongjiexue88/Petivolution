@@ -51,8 +51,9 @@ describe('ChunkManager (Fishbowl)', () => {
         it('should spawn initial animals', () => {
             cm.initializeWorld(sim);
 
-            // Should have called spawnEntity for rats and cats
-            const totalSpawns = V1.defaultSpawns.rat + V1.defaultSpawns.cat;
+            // Should have called spawnEntity for all configured animals
+            const animalKeys = ['rat', 'cat', 'chicken', 'smallBird', 'raccoon', 'crow', 'dog', 'fox', 'hawk', 'wolf', 'snake'];
+            const totalSpawns = animalKeys.reduce((sum, key) => sum + ((V1.defaultSpawns as any)[key] || 0), 0);
             expect(SpawnerModule.spawnEntity).toHaveBeenCalledTimes(totalSpawns);
         });
 
@@ -60,7 +61,8 @@ describe('ChunkManager (Fishbowl)', () => {
             cm.initializeWorld(sim);
             cm.initializeWorld(sim);
             // Counter for spawnEntity should not double
-            const totalSpawns = V1.defaultSpawns.rat + V1.defaultSpawns.cat;
+            const animalKeys = ['rat', 'cat', 'chicken', 'smallBird', 'raccoon', 'crow', 'dog', 'fox', 'hawk', 'wolf', 'snake'];
+            const totalSpawns = animalKeys.reduce((sum, key) => sum + ((V1.defaultSpawns as any)[key] || 0), 0);
             expect(SpawnerModule.spawnEntity).toHaveBeenCalledTimes(totalSpawns);
         });
     });

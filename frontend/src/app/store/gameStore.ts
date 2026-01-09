@@ -68,6 +68,7 @@ export interface GameState {
 
     showEventLog: boolean;
     showChallengePanel: boolean;
+    showHUD: boolean; // V1.3 UI Toggle
 
     // 世界规则
     rules: WorldRule;
@@ -92,6 +93,7 @@ export interface GameState {
     setSpawnPersonality: (personality: Personality) => void;
     setPlaceObjectType: (type: ObjectType) => void;
     togglePanel: (panel: 'spawn' | 'rules' | 'graveyard' | 'debug' | 'eventLog' | 'challenge') => void;
+    toggleHUD: () => void;
     setRules: (rules: Partial<WorldRule>) => void;
     setTimeScale: (scale: 0 | 1 | 2 | 4) => void;
 
@@ -156,8 +158,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     showRulesPanel: false,
     showGraveyardPanel: false,
     showDebugPanel: false,
-    showEventLog: true,
+    showEventLog: false,
     showChallengePanel: false,
+    showHUD: true, // V1.3 UI Toggle
 
     // V1.1 God Mode Init
     godPower: 60, // Start with 60
@@ -281,6 +284,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                 return {};
         }
     }),
+
+    toggleHUD: () => set((state) => ({ showHUD: !state.showHUD })),
 
     setRules: (rules) => set((state) => ({
         rules: { ...state.rules, ...rules },
