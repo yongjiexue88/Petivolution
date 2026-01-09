@@ -15,6 +15,15 @@ export const DEFAULT_RULES: WorldRule = {
     capPerChunk: {
         rat: 20,
         cat: 6,
+        chicken: 10,
+        smallBird: 15,
+        raccoon: 5,
+        crow: 8,
+        dog: 4,
+        fox: 4,
+        wolf: 2,
+        hawk: 3,
+        snake: 5,
     },
 
     trashSpawnsRats: true,
@@ -62,6 +71,15 @@ export const RULE_PRESETS: Record<'balanced' | 'wild' | 'abundant', WorldRule> =
         capPerChunk: {
             rat: 25,
             cat: 7,
+            chicken: 12,
+            smallBird: 20,
+            raccoon: 8,
+            crow: 10,
+            dog: 5,
+            fox: 5,
+            wolf: 3,
+            hawk: 4,
+            snake: 8,
         },
     },
 
@@ -75,6 +93,15 @@ export const RULE_PRESETS: Record<'balanced' | 'wild' | 'abundant', WorldRule> =
         capPerChunk: {
             rat: 16,
             cat: 6,
+            chicken: 15,
+            smallBird: 25,
+            raccoon: 4,
+            crow: 12,
+            dog: 3,
+            fox: 3,
+            wolf: 1,
+            hawk: 2,
+            snake: 4,
         },
     },
 };

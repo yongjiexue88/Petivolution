@@ -152,6 +152,15 @@ function getRandomName(species: SpeciesId, sim: SimulationState): string {
     const names = {
         cat: ['Tiger', 'Shadow', 'Luna', 'Simba', 'Oreo', 'Whiskers', 'Felix', 'Mittens'],
         rat: ['Squeaky', 'Pip', 'Cheese', 'Scurry', 'Nibbles', 'Dusty', 'Scout', 'Rustle'],
+        chicken: ['Clucky', 'Nugget', 'Peckers', 'Eggbert', 'Scratchy', 'Feathers'],
+        smallBird: ['Tweety', 'Sky', 'Blue', 'Chirp', 'Sunny', 'Cloud'],
+        raccoon: ['Bandit', 'Rocket', 'Sly', 'Meeko', 'Ziggy', 'Rigby'],
+        crow: ['Raven', 'Poe', 'Odin', 'Midnight', 'Onyx', 'Blackie'],
+        dog: ['Buddy', 'Max', 'Bella', 'Charlie', 'Daisy', 'Rocky'],
+        fox: ['Rusty', 'Red', 'Sly', 'Foxy', 'Vixen', 'Shadow'],
+        wolf: ['Fang', 'Ghost', 'Luna', 'Shadow', 'Grey', 'Spirit'],
+        hawk: ['Talon', 'Soar', 'Hunter', 'Sky', 'Wind', 'Eye'],
+        snake: ['Slither', 'Hiss', 'Fang', 'Venom', 'Coil', 'Noodle'],
     };
 
     const nameList = names[species] || ['Unknown'];

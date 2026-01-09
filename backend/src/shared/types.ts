@@ -333,6 +333,10 @@ export type SimStats = {
     raccoon: number;
     crow: number;
     dog: number;
+    fox: number;
+    wolf: number;
+    hawk: number;
+    snake: number;
     deathsLastMin: number;
     birthsLastMin: number;
     warning?: boolean;     // V1.1 SOS

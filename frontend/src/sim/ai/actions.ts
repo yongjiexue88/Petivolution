@@ -91,7 +91,7 @@ export function executeAction(entity: EntityRuntime, sim: SimulationState): void
 function executeWander(entity: EntityRuntime, sim: SimulationState): void {
     const config = SPECIES_CONFIGS[entity.species];
     const baseSpeed = config.move.speedTilesPerTick * V1.tileSizePx;
-    let speed = getMoveSpeed(entity, baseSpeed, sim);
+    const speed = getMoveSpeed(entity, baseSpeed, sim);
 
     // Flocking Logic
     if (config.flock && config.flock.enabled) {

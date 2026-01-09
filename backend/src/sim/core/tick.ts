@@ -501,6 +501,8 @@ function transitionToGoal(entity: EntityRuntime, goal: Goal, _sim: SimulationSta
         rest: 'sleep',
         flee: 'flee',
         wander: 'wander',
+        rummage: 'rummage',
+        forage: 'peck',
     };
 
     entity.state = goalToState[goal];
@@ -542,9 +544,12 @@ export function getSnapshot(sim: SimulationState): {
 
     let ratCount = 0;
     let catCount = 0;
+    const counts: Record<string, number> = {};
+
     for (const e of sim.entities.values()) {
         if (e.species === 'rat') ratCount++;
         else if (e.species === 'cat') catCount++;
+        counts[e.species] = (counts[e.species] || 0) + 1;
     }
 
     const events = sim.pendingEvents.splice(0);
@@ -568,8 +573,18 @@ export function getSnapshot(sim: SimulationState): {
         entities,
         objects: Array.from(sim.objects.values()),
         stats: {
+            timeOfDay: (sim.tick % 3600) / 3600,
             rat: ratCount,
             cat: catCount,
+            chicken: counts['chicken'] || 0,
+            smallBird: counts['smallBird'] || 0,
+            raccoon: counts['raccoon'] || 0,
+            crow: counts['crow'] || 0,
+            dog: counts['dog'] || 0,
+            fox: counts['fox'] || 0,
+            wolf: counts['wolf'] || 0,
+            hawk: counts['hawk'] || 0,
+            snake: counts['snake'] || 0,
             deathsLastMin: sim.stats.deathsThisMinute,
             birthsLastMin: sim.stats.birthsThisMinute,
             warning: sim.stats.warning,
