@@ -200,15 +200,12 @@ export class WorldScene extends Phaser.Scene {
         useGameStore.getState().setCameraFlyTo(null);
         useGameStore.getState().setFollowingEntityId(null);
 
-        // 1. Setup Camera FIRST (before background needs camera properties)
-        this.cameras.main.centerOn(worldWidth / 2, worldHeight / 2);
-        this.cameras.main.setZoom(2); // Default integer zoom
-        this.cameras.main.setRoundPixels(true);
-
-        // DEBUG: Contrast background to distinguish 'void' from 'black texture'
-        this.cameras.main.setBackgroundColor('#2f5a2f');
-        // If you keep fractional zoom levels, roundPixels can cause edge “unreachable” artifacts.
-        this.cameras.main.setRoundPixels(false);
+        // 1. Setup Camera using Phaser's built-in bounds (SIMPLE APPROACH)
+        const cam = this.cameras.main;
+        cam.setBounds(0, 0, worldWidth, worldHeight); // Phaser handles clamping!
+        cam.centerOn(worldWidth / 2, worldHeight / 2);
+        cam.setZoom(2); // Default integer zoom
+        cam.setBackgroundColor('#2f5a2f');
 
         // 2. World (background, animations, border, etc.)
         this.createBackground();
@@ -248,7 +245,6 @@ export class WorldScene extends Phaser.Scene {
         this.syncObjects(initialState.objects);
 
         // --- DEBUG LOGS FOR VIEWPORT/WORLD ---
-        const cam = this.cameras.main;
         console.log('--- MAP SIZE DEBUG ---');
         console.log('world:', worldWidth, worldHeight);
         console.log('scale:', this.scale.width, this.scale.height);
@@ -646,43 +642,29 @@ export class WorldScene extends Phaser.Scene {
                 const worldDx = screenDx / this.cameras.main.zoom;
                 const worldDy = screenDy / this.cameras.main.zoom;
 
-                // Calculate potential new position
-                const newScrollX = this.cameraStart.x - worldDx;
-                const newScrollY = this.cameraStart.y - worldDy;
-
+                // Set new scroll - Phaser's setBounds() handles clamping automatically!
                 const cam = this.cameras.main;
-                cam.scrollX = newScrollX;
-                cam.scrollY = newScrollY;
+                cam.scrollX = this.cameraStart.x - worldDx;
+                cam.scrollY = this.cameraStart.y - worldDy;
 
-                this.clampOrCenterCameraScroll();
-
-                // Throttle worker updates for LOD if needed
+                // Throttle worker updates for LOD
                 if (this.game.loop.frame % 30 === 0) {
                     this.updateWorkerCamera();
                 }
             }
         });
 
-        // ZOOM (Fixed)
+        // ZOOM - Simple approach: zoom around screen center
         this.input.on('wheel', (pointer: Phaser.Input.Pointer, _: unknown, __: unknown, deltaY: number) => {
-            // FIX: Pass SCREEN coordinates (pointer.x/y), not World coordinates.
-            // This ensures we anchor to exactly where the mouse is on the monitor.
             const direction = deltaY > 0 ? -1 : 1;
             this.stepZoom(direction, pointer.x, pointer.y);
         });
     }
 
-    // ---- ZOOM HELPERS ----
+    // ---- ZOOM HELPERS (SIMPLIFIED) ----
+    private readonly ZOOM_MIN = 1;   // Don't zoom out past 1x
     private readonly ZOOM_MAX = 4;
-
-    // If true, you can zoom out enough to see the whole map (may show margins outside the world)
-    private readonly ALLOW_OVERVIEW_OUTSIDE_WORLD = false;
-
-    // Base zoom ladder
-    private readonly ZOOM_LEVELS_BASE = [1, 2, 3, 4];
-
-    // Padding to allow scrolling slightly past the edge (e.g. to see bottom trees behind UI)
-    private readonly VIEW_PADDING = 200;
+    private readonly ZOOM_LEVELS = [1, 2, 3, 4]; // Simple fixed levels
 
     private getWorldSizePx() {
         return {
@@ -691,85 +673,25 @@ export class WorldScene extends Phaser.Scene {
         };
     }
 
-
-
     /**
-     * If ALLOW_OVERVIEW_OUTSIDE_WORLD:
-     *   minZoom = min(viewport/world) => whole map fits (with margins)
-     * Else:
-     *   minZoom = max(viewport/world) => no void, but can't see whole map at once (aspect mismatch)
+     * Compute the minimum zoom that prevents showing void outside the world.
+     * minZoom = max(viewportW/worldW, viewportH/worldH)
      */
     private getMinZoom(): number {
         const { worldWidth, worldHeight } = this.getWorldSizePx();
         const minZoomX = this.scale.width / worldWidth;
         const minZoomY = this.scale.height / worldHeight;
-
-        const raw = this.ALLOW_OVERVIEW_OUTSIDE_WORLD
-            ? Math.min(minZoomX, minZoomY)
-            : Math.max(minZoomX, minZoomY);
-
-        // avoid zero / crazy small
-        return Phaser.Math.Clamp(raw, 0.05, this.ZOOM_MAX);
+        // Use Math.max so viewport never exceeds world (no void)
+        return Math.max(minZoomX, minZoomY, this.ZOOM_MIN);
     }
 
     private getZoomLevels(): number[] {
         const minZoom = this.getMinZoom();
-
-        // Always include the computed fit zoom so you can "see most/all"
-        const levels = [minZoom, ...this.ZOOM_LEVELS_BASE]
-            .filter(z => z >= minZoom - 1e-6 && z <= this.ZOOM_MAX)
-            .sort((a, b) => a - b);
-
-        // unique (float-safe)
-        const unique: number[] = [];
-        for (const z of levels) {
-            if (unique.length === 0 || Math.abs(unique[unique.length - 1] - z) > 1e-4) unique.push(z);
-        }
-        return unique;
+        // Only include levels >= minZoom (no void)
+        return this.ZOOM_LEVELS.filter(z => z >= minZoom);
     }
 
-    private clampOrCenterCameraScroll() {
-        const cam = this.cameras.main;
-        const { worldWidth, worldHeight } = this.getWorldSizePx();
-
-        // Viewport size in world pixels
-        const viewW = cam.width / cam.zoom;
-        const viewH = cam.height / cam.zoom;
-
-        // 1. Horizontal Bounds
-        // Allow looking slightly outside the world (VIEW_PADDING)
-        const minX = -this.VIEW_PADDING;
-        const maxX = worldWidth + this.VIEW_PADDING - viewW;
-
-        // FIX: Allow dragging even if zoomed out (minX > maxX).
-        // We use Math.max to handle cases where viewport > world,
-        // effectively pinning the range or allowing a slight float.
-        if (minX > maxX) {
-            // If the view is wider than the world, allow panning within the padding difference
-            // or just clamp to the center area. 
-            // Here we simply clamp to the available range which effectively centers it 
-            // but doesn't "fight" the drag as aggressively if you want to pull to edges.
-            // Ideally, just ensure we don't drift too far.
-            const centerX = (worldWidth - viewW) / 2;
-            // Allow drifting by padding amount
-            cam.scrollX = Phaser.Math.Clamp(cam.scrollX, centerX - this.VIEW_PADDING, centerX + this.VIEW_PADDING);
-        } else {
-            cam.scrollX = Phaser.Math.Clamp(cam.scrollX, minX, maxX);
-        }
-
-        // 2. Vertical Bounds
-        const minY = -this.VIEW_PADDING;
-        const maxY = worldHeight + this.VIEW_PADDING - viewH;
-
-        if (minY > maxY) {
-            const centerY = (worldHeight - viewH) / 2;
-            cam.scrollY = Phaser.Math.Clamp(cam.scrollY, centerY - this.VIEW_PADDING, centerY + this.VIEW_PADDING);
-        } else {
-            cam.scrollY = Phaser.Math.Clamp(cam.scrollY, minY, maxY);
-        }
-    }
-
-    // UPDATED: Now uses robust "Before vs After" math
+    // Apply zoom anchored to a screen point (mouse position)
     private applyZoom(newZoom: number, screenAnchorX?: number, screenAnchorY?: number) {
         const cam = this.cameras.main;
         const minZoom = this.getMinZoom();
@@ -777,26 +699,24 @@ export class WorldScene extends Phaser.Scene {
 
         if (Math.abs(targetZoom - cam.zoom) < 1e-6) return;
 
-        // Default to center of screen if no mouse anchor provided
+        // Default to center of screen if no anchor
         const sx = screenAnchorX ?? (cam.width / 2);
         const sy = screenAnchorY ?? (cam.height / 2);
 
-        // 1. Get the World Point under the mouse cursor BEFORE zooming
-        const worldPointBefore = cam.getWorldPoint(sx, sy);
+        // Get world point BEFORE zoom
+        const worldBefore = cam.getWorldPoint(sx, sy);
 
-        // 2. Apply new Zoom
+        // Apply zoom
         cam.setZoom(targetZoom);
 
-        // 3. Get the World Point under the mouse cursor AFTER zooming
-        // (Because the zoom changed, the world coordinates under the mouse have shifted)
-        const worldPointAfter = cam.getWorldPoint(sx, sy);
+        // Get world point AFTER zoom (shifted due to zoom change)
+        const worldAfter = cam.getWorldPoint(sx, sy);
 
-        // 4. Adjust Camera Scroll to realign the world points
-        // We want 'worldPointAfter' to be exactly where 'worldPointBefore' was.
-        cam.scrollX += worldPointBefore.x - worldPointAfter.x;
-        cam.scrollY += worldPointBefore.y - worldPointAfter.y;
+        // Adjust scroll to keep anchor point stable
+        cam.scrollX += worldBefore.x - worldAfter.x;
+        cam.scrollY += worldBefore.y - worldAfter.y;
 
-        this.clampOrCenterCameraScroll();
+        // Phaser's setBounds() handles clamping automatically!
         this.updateWorkerCamera();
     }
 

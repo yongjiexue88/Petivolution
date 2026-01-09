@@ -196,7 +196,7 @@ export function calculateUtility(
         let restScore = uw.base.rest;
         restScore += uw.urgency.fatigue * uFatigue;
 
-        const time = sim.timeOfDay;
+        const time = (sim.tick % 3600) / 3600; // 0..1 day cycle
         const isNight = time >= 0.5;
 
         if (config.activityCycle === 'diurnal') {

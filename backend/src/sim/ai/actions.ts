@@ -36,7 +36,7 @@ function getMoveSpeed(entity: EntityRuntime, baseSpeed: number, sim: SimulationS
 
 export function executeAction(entity: EntityRuntime, sim: SimulationState): void {
     switch (entity.state) {
-        case 'idling':
+        case 'idle':
             // 空闲状态
             break;
         case 'wander':

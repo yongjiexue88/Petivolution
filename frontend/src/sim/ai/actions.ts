@@ -36,7 +36,7 @@ function getMoveSpeed(entity: EntityRuntime, baseSpeed: number, sim: SimulationS
 
 export function executeAction(entity: EntityRuntime, sim: SimulationState): void {
     switch (entity.state) {
-        case 'idling':
+        case 'idle':
             // 空闲状态
             break;
         case 'wander':
@@ -92,16 +92,16 @@ function executeWander(entity: EntityRuntime, sim: SimulationState): void {
     const baseSpeed = config.move.speedTilesPerTick * V1.tileSizePx;
     const speed = getMoveSpeed(entity, baseSpeed, sim);
 
-    let wanderVec = { x: 0, y: 0 };
+    const wanderVec = { x: 0, y: 0 };
 
     // Flocking Logic
     if (config.flock && config.flock.enabled) {
         const friends = entity.ai.recentStimuli.filter(s => s.type === 'friend' && s.dist < config.flock!.radiusTiles * V1.tileSizePx);
 
         if (friends.length > 0) {
-            let cohesion = { x: 0, y: 0 };
-            let alignment = { x: 0, y: 0 };
-            let separation = { x: 0, y: 0 };
+            const cohesion = { x: 0, y: 0 };
+            const alignment = { x: 0, y: 0 };
+            const separation = { x: 0, y: 0 };
 
             let friendCount = 0;
             for (const f of friends) {

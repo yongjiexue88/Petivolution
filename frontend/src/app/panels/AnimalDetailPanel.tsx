@@ -47,7 +47,9 @@ export function AnimalDetailPanel({ entity }: Props) {
             flee: '逃跑',
             wander: '闲逛',
             forage: '觅食',
-            rummage: '翻垃圾'
+            rummage: '翻垃圾',
+            bark: '吠叫',
+            patrol: '巡逻'
         };
         return map[goal];
     };
