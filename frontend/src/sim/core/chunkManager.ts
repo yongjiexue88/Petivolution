@@ -20,7 +20,7 @@ const CHUNK_SIZE_PX = V1.chunkSize * V1.tileSizePx;
 /**
  * ChunkManager for V1 Fishbowl (Finite World)
  * 
- * Simplified for 512×512 map (16×16 = 256 chunks total).
+ * Simplified for 256x256 map (8x8 = 64 chunks total).
  * No virtualization needed - all chunks stay in memory.
  * Main purpose: Organize object generation by region.
  */
@@ -56,6 +56,32 @@ export class ChunkManager {
         this.spawnInitialAnimals(sim);
 
         this.initialized = true;
+    }
+
+    /**
+     * DEBUG: Reset world logic
+     */
+    resetWorld(sim: SimulationState) {
+        // 1. Clear all entities
+        sim.entities.clear();
+        sim.objects.clear();
+
+        // 2. Clear all chunk stats (so they regenerate)
+        for (const chunk of this.chunks.values()) {
+            chunk.stats.counts = {};
+        }
+
+        // 3. Reset stats
+        this.activeChunks.clear();
+        this.semiActiveChunks.clear();
+
+        // 4. Respawn initial
+        this.spawnInitialAnimals(sim);
+
+        // 5. Force update LOD (will cause realizeChunk -> spawnWildAnimals)
+        this.updateLOD(sim);
+
+        console.log('🌍 World Reset Complete');
     }
 
     /**
@@ -210,26 +236,58 @@ export class ChunkManager {
         const startTx = cx * CHUNK_SIZE_TILES;
         const startTy = cy * CHUNK_SIZE_TILES;
 
-        // Spawn Rats based on resource level
-        const ratTarget = Math.floor(chunk.stats.resourceLevel * 3);
-        for (let i = 0; i < ratTarget; i++) {
-            if (sim.rng() > 0.7) {
-                spawnEntity(sim, 'rat', this.getRandomName('rat', sim), 'cautious', {
-                    tx: startTx + sim.rng() * CHUNK_SIZE_TILES,
-                    ty: startTy + sim.rng() * CHUNK_SIZE_TILES
-                });
+        // Resource-based spawns (Prey/Foragers)
+        const resourceRoll = sim.rng();
+        if (chunk.stats.resourceLevel > 0.3) {
+            // Rats (Common)
+            if (resourceRoll < 0.5) {
+                this.spawnGroup(sim, 'rat', 1, 3, startTx, startTy, 'cautious');
+            }
+            // Chickens (Occasional)
+            else if (resourceRoll < 0.7) {
+                this.spawnGroup(sim, 'chicken', 1, 2, startTx, startTy, 'cautious');
+            }
+            // Small Birds (Common)
+            else if (resourceRoll < 0.9) {
+                this.spawnGroup(sim, 'smallBird', 2, 4, startTx, startTy, 'cautious');
             }
         }
 
-        // Spawn Cats based on danger level
-        const catTarget = Math.floor(chunk.stats.dangerLevel * 1);
-        for (let i = 0; i < catTarget; i++) {
-            if (sim.rng() > 0.9) {
-                spawnEntity(sim, 'cat', this.getRandomName('cat', sim), 'brave', {
-                    tx: startTx + sim.rng() * CHUNK_SIZE_TILES,
-                    ty: startTy + sim.rng() * CHUNK_SIZE_TILES
-                });
+        // Danger-based spawns (Predators)
+        const dangerRoll = sim.rng();
+        if (chunk.stats.dangerLevel > 0.4) {
+            // Cats (Common)
+            if (dangerRoll < 0.4) {
+                this.spawnGroup(sim, 'cat', 1, 1, startTx, startTy, 'brave');
             }
+            // Foxes (Uncommon)
+            else if (dangerRoll < 0.6) {
+                this.spawnGroup(sim, 'fox', 1, 1, startTx, startTy, 'brave');
+            }
+            // Dogs (Rare)
+            else if (dangerRoll < 0.7) {
+                this.spawnGroup(sim, 'dog', 1, 1, startTx, startTy, 'brave');
+            }
+            // Wolf/Hawk (Very Rare)
+            else if (dangerRoll < 0.75) {
+                const predator = sim.rng() > 0.5 ? 'wolf' : 'hawk';
+                this.spawnGroup(sim, predator, 1, 1, startTx, startTy, 'brave');
+            }
+        }
+
+        // Raccoons (Scavengers - Random)
+        if (sim.rng() < 0.1) {
+            this.spawnGroup(sim, 'raccoon', 1, 1, startTx, startTy, 'curious');
+        }
+    }
+
+    private spawnGroup(sim: SimulationState, species: SpeciesId, min: number, max: number, startTx: number, startTy: number, personality: 'brave' | 'cautious' | 'curious') {
+        const count = min + Math.floor(sim.rng() * (max - min + 1));
+        for (let i = 0; i < count; i++) {
+            spawnEntity(sim, species, this.getRandomName(species, sim), personality, {
+                tx: startTx + sim.rng() * CHUNK_SIZE_TILES,
+                ty: startTy + sim.rng() * CHUNK_SIZE_TILES
+            });
         }
     }
 

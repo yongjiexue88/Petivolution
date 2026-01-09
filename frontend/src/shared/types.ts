@@ -34,11 +34,13 @@ export type SimState =
     | 'perch'   // V4: Bird resting
     | 'hop'     // V4: Bird movement
     | 'rummage' // V1.3 Raccoonrd movement
+    | 'bark'    // Dog guardian behavior
+    | 'patrol'  // Dog area guarding
     | 'dead';
 
 export type Facing = 'n' | 's' | 'e' | 'w';
 
-export type Goal = 'drink' | 'eat' | 'hunt' | 'rest' | 'flee' | 'wander' | 'forage' | 'rummage';
+export type Goal = 'drink' | 'eat' | 'hunt' | 'rest' | 'flee' | 'wander' | 'forage' | 'rummage' | 'bark' | 'patrol';
 
 // ============================================
 // Vitals (生命体征)
@@ -61,7 +63,9 @@ export type Stimulus =
     | { type: 'water'; objectId: ObjectId; dist: number }
     | { type: 'bush'; objectId: ObjectId; dist: number }
     | { type: 'trash'; objectId: ObjectId; dist: number }
-    | { type: 'perch'; objectId: ObjectId; dist: number };
+    | { type: 'perch'; objectId: ObjectId; dist: number }
+    | { type: 'friend'; entityId: EntityId; dist: number }
+    | { type: 'intruder'; entityId: EntityId; dist: number };
 
 // ============================================
 // Entity AI 状态 (可解释性)
@@ -318,6 +322,7 @@ export type SimEvent =
     | { type: 'HUNT'; tick: number; predatorId: EntityId; preyId: EntityId; importance?: EventImportance; tags?: string[]; location?: Vec2; subjectName?: string; targetName?: string }
     | { type: 'DRINK'; tick: number; entityId: EntityId; waterId: ObjectId; importance?: EventImportance; tags?: string[]; location?: Vec2; subjectName?: string; targetName?: string }
     | { type: 'EAT'; tick: number; entityId: EntityId; source: 'prey' | 'trash'; importance?: EventImportance; tags?: string[]; location?: Vec2; subjectName?: string; targetName?: string }
+    | { type: 'BARK'; tick: number; entityId: EntityId; importance?: EventImportance; tags?: string[]; location?: Vec2; subjectName?: string; targetName?: string }
     | { type: 'CHALLENGE_WIN'; tick: number; entityId: 'SYSTEM'; importance: 'S'; tags?: string[]; location?: Vec2; subjectName?: string; data?: any; targetName?: string }
     | { type: 'CHALLENGE_FAIL'; tick: number; entityId: 'SYSTEM'; importance: 'S'; tags?: string[]; location?: Vec2; subjectName?: string; data?: any; targetName?: string }
     | { type: 'GENERIC'; tick: number; message: string; importance: EventImportance; tags?: string[]; location?: Vec2; subjectName?: string; targetName?: string }; // For system events

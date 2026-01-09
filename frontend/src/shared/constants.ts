@@ -23,10 +23,10 @@ export const V1 = {
     // V1 Fishbowl World - 有限但"看起来很大"
     // ============================================
 
-    // 世界尺寸 (512×512 tiles = 8192×8192 px)
-    defaultMapWidth: 512,
-    defaultMapHeight: 512,
-    chunkSize: 32,              // 32×32 tiles per chunk = 16×16 chunks total
+    // 世界尺寸 (256×256 tiles = 4096×4096 px)
+    defaultMapWidth: 256,
+    defaultMapHeight: 256,
+    chunkSize: 32,              // 32×32 tiles per chunk = 8×8 chunks total
 
     // 活跃区 (摄像机中心为圆心的"戏剧区")
     activeZoneRadiusTiles: 50,  // 玩家主要观察的区域

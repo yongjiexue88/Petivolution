@@ -10,7 +10,6 @@ import type {
 import type { SimulationState } from '../core/tick';
 import { SPECIES_CONFIGS, clamp01 } from '@shared/species.config';
 import { V1 } from '@shared/constants';
-// import { distance } from './perception';
 
 // ============================================
 // Utility 计算
@@ -107,7 +106,6 @@ export function calculateUtility(
         if (personalityMod.nearTrash) eatScore += personalityMod.nearTrash;
 
         scores.eat = eatScore;
-        scores.eat = eatScore;
     }
 
     // -------- Forage (Chicken/Bird) --------
@@ -124,20 +122,17 @@ export function calculateUtility(
         if (personalityMod.forage) forageScore += personalityMod.forage;
 
         scores.forage = forageScore;
-
-        // Rat has a specific eat goal for trash, but can default to forage (scavenge) if configured
     }
 
     // -------- Rummage (Raccoon Only) --------
     if (entity.species === 'raccoon') {
-        let rummageScore = uw.base.eat; // Base eat drive
+        let rummageScore = uw.base.eat ?? 0;
         rummageScore += uw.urgency.hunger * uHunger;
 
         if (nearestTrash) {
             rummageScore += uw.bonuses.nearTrash;
             rummageScore -= uw.distancePenalty.trash * (nearestTrash.dist / V1.tileSizePx);
 
-            // Significant bonus if very hungry and near trash
             if (uHunger > 0.6) {
                 rummageScore += 20;
             }
@@ -149,7 +144,7 @@ export function calculateUtility(
     }
 
     // -------- Eat (Prey/Carrion) --------
-    if (entity.species === 'cat') {
+    if (entity.species === 'cat' || entity.species === 'fox' || entity.species === 'wolf' || entity.species === 'hawk' || entity.species === 'snake') {
         let huntScore = uw.base.hunt;
         huntScore += uw.urgency.hunger * uHunger;
 
@@ -157,7 +152,7 @@ export function calculateUtility(
             huntScore += uw.bonuses.seesPrey;
             huntScore -= uw.distancePenalty.prey * (nearestPrey.dist / V1.tileSizePx);
         } else {
-            huntScore -= 0.8; // 没看到猎物，大幅减分
+            huntScore -= 0.8;
         }
 
         const personalityMod = uw.personality[entity.personality];
@@ -167,24 +162,48 @@ export function calculateUtility(
         scores.hunt = huntScore;
     }
 
+    // -------- Bark (Dog Only) --------
+    if (entity.species === 'dog') {
+        const nearestIntruder = stimuli.find(s => s.type === 'intruder');
+        let barkScore = uw.base.bark ?? 0;
+
+        if (nearestIntruder) {
+            const senseRadiusPx = config.sense.radiusTiles * V1.tileSizePx;
+            const intruderUrgency = clamp01(1 - (nearestIntruder.dist / senseRadiusPx));
+            barkScore += uw.bonuses.nearIntruder * intruderUrgency;
+
+            if (intruderUrgency > 0.5) {
+                barkScore += 10;
+            }
+        } else {
+            barkScore -= 1.0;
+        }
+
+        scores.bark = barkScore;
+    }
+
+    // -------- Patrol (Dog Only) --------
+    if (entity.species === 'dog') {
+        let patrolScore = uw.base.patrol ?? 0;
+        if (entity.ai.currentGoal === 'patrol') {
+            patrolScore += 0.2;
+        }
+        scores.patrol = patrolScore;
+    }
+
     // -------- Rest (Sleep) --------
     {
         let restScore = uw.base.rest;
         restScore += uw.urgency.fatigue * uFatigue;
 
-        // Day/Night Cycle Sleep Pressure
-        // 0=Dawn(6am), 0.25=Noon, 0.5=Dusk(6pm), 0.75=Midnight
         const time = sim.timeOfDay;
-
-        const isNight = time >= 0.5; // 0.5..1.0 is nightd 0..0.25 is night (adjusting for 0.25 being noon, 0.5 dusk)
+        const isNight = time >= 0.5;
 
         if (config.activityCycle === 'diurnal') {
-            // Diurnal (Day active): Sleep at night
             if (isNight && uFatigue > 0.2) {
-                restScore += 50; // High pressure to sleep at night
+                restScore += 50;
             }
         } else if (config.activityCycle === 'nocturnal') {
-            // Nocturnal (Night active): Sleep during day
             if (!isNight && uFatigue > 0.2) {
                 restScore += 50;
             }
@@ -194,13 +213,10 @@ export function calculateUtility(
             restScore += uw.bonuses.nearBush * 0.5;
         }
 
-        // Small Birds love Perches
         if (entity.species === 'smallBird') {
             const nearestPerch = findNearest(stimuli, 'perch');
             if (nearestPerch) {
-                // Strong bonus for perch if tired
                 restScore += 0.3 + uFatigue * 0.2;
-                // Less penalty for distance effectively makes it "see" perches further
                 restScore -= (uw.distancePenalty.bush * 0.5) * (nearestPerch.dist / V1.tileSizePx);
             }
         }
@@ -214,12 +230,9 @@ export function calculateUtility(
     // -------- Wander --------
     {
         let wanderScore = uw.base.wander;
-
-        // curious 人格爱闲逛
         if (entity.personality === 'curious') {
             wanderScore += 0.02;
         }
-
         scores.wander = wanderScore;
     }
 

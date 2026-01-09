@@ -20,7 +20,7 @@ const CHUNK_SIZE_PX = V1.chunkSize * V1.tileSizePx;
 /**
  * ChunkManager for V1 Fishbowl (Finite World)
  * 
- * Simplified for 512×512 map (16×16 = 256 chunks total).
+ * Simplified for 256x256 map (8x8 = 64 chunks total).
  * No virtualization needed - all chunks stay in memory.
  * Main purpose: Organize object generation by region.
  */

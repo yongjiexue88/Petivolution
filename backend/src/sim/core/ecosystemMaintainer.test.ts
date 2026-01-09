@@ -20,10 +20,10 @@ describe('EcosystemMaintainer', () => {
         tick: 100,
         entities,
         objects: new Map([
-            ['trash1', { id: 'trash1', type: 'trash', pos: { tx: 256, ty: 256 } }],
-            ['water1', { id: 'water1', type: 'water', pos: { tx: 260, ty: 260 } }],
+            ['trash1', { id: 'trash1', type: 'trash', pos: { tx: 128, ty: 128 } }],
+            ['water1', { id: 'water1', type: 'water', pos: { tx: 132, ty: 132 } }],
         ]),
-        cameraCenter: { x: 256 * TILE_PX, y: 256 * TILE_PX }, // Center of 512x512 map
+        cameraCenter: { x: 128 * TILE_PX, y: 128 * TILE_PX }, // Center of 256x256 map
         cameraZoom: 1,
         rng: () => 0.5,
     });

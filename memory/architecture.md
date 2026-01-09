@@ -27,9 +27,10 @@ Petivolution uses a **Hybrid Simulation Architecture** controlled by the `useSer
 
 ### Mode B: Authoritative Server (V1.3)
 *   **Host**: Node.js Backend (`backend/src/world/WorldServer.ts`).
-*   **Mechanism**: Persistence server runs the logic.
-*   **Sync**: Client polls (`/api/world/snapshot`) at 10Hz to sync state.
-*   **Actions**: Client sends POST requests (`/api/actions/*`) to modify state (Spawn/Place).
+*   **Mechanism**: Authoritative simulation runs in a 30Hz tick loop on the server.
+*   **Sync (Polling)**: Client polls `/api/world/snapshot` at 10Hz. Optimized with **viewport-filtering** (sends `x, y, radius` to request only visible entities).
+*   **Sync (Real-time)**: Server pushes high-importance events (Birth, Death, Hunt) via **Server-Sent Events (SSE)**.
+*   **Actions**: Client sends POST requests (`/api/actions/*`) to modify world state.
 
 ```mermaid
 flowchart TD
@@ -166,17 +167,35 @@ The frontend (`WorldScene.ts`) handles rendering and user input, decoupled from 
 
 ---
 
-## 6. Backend API
+The backend is a Cloud-Native service designed for persistence and Authoritative Simulation.
 
-(Active only in Server Mode)
+### 6.1 Simulation Lifecycle
+- **Heartbeat**: A 30Hz loop driven by `WorldServer.ts` calls `simulateTick()` on the universal core.
+- **Procedural Map**: Map is generated at runtime (256x256 tiles) using deterministic **Perlin Noise**. No static map files are loaded; the world is born from the `seed`.
+- **Ecosystem Management**: An `ecosystemMaintainer.ts` runs periodically (5s) to ensure species counts stay within target densities.
 
-### Endpoints
-*   `GET /health`: Server heartbeat & tick count.
-*   `GET /api/world/snapshot`: Returns `SnapshotEntity[]` and `WorldObject[]`.
-*   `GET /api/world/entity/:id`: Returns full internal state (Utility Scores, Memory) for inspection.
-*   `POST /api/actions/spawn`: Request to spawn Entity.
-*   `POST /api/actions/place`: Request to place Object.
+### 6.2 Persistence Workflow
+To survive server restarts (e.g., on Cloud Run), the state is offloaded:
+1.  **Serialization**: Full in-memory state is converted to JSON.
+2.  **Compression**: JSON is GZIP compressed to minimize egress.
+3.  **Storage**: Uploaded to **Google Cloud Storage** as `<tick>.json.gz`.
+4.  **Metadata**: The latest snapshot URI and world seed are stored in **Firebase Firestore**.
+
+### 6.3 Real-time Events (SSE)
+Managed by `SSEManager.ts`:
+- **Protocol**: unidirectional stream to client.
+- **Clamping**: Events are filtered against a client's viewport before transmission to reduce noise.
+
+### 6.4 Primary Endpoints
+| Endpoint | Method | Description |
+| :--- | :--- | :--- |
+| `/health` | GET | Server status, version, and current tick. |
+| `/api/events` | GET | (SSE) Connect to real-time event stream. |
+| `/api/world/snapshot` | GET | Get entities/objects. Supports `x, y, r` query params for culling. |
+| `/api/world/entity/:id`| GET | Deep inspection of AI state (Utility scores, Memory). |
+| `/api/actions/spawn` | POST | Request animal spawn (Validates God Power). |
+| `/api/actions/place` | POST | Request object placement (Bush, Water, etc). |
 
 ---
 
-*Last Updated: 2026-01-08 (V4 Ecosystem Update)*
+*Last Updated: 2026-01-09 (V1.3 Authoritative Server Documentation)*

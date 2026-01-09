@@ -11,6 +11,22 @@ import { ServerClient } from '../../app/api/ServerClient';
 export class WorldScene extends Phaser.Scene {
     private entitySprites: Map<string, Phaser.GameObjects.Container> = new Map();
     private objectSprites: Map<string, Phaser.GameObjects.Container> = new Map();
+
+    // --- UI CAMERA ---
+    private uiCamera!: Phaser.Cameras.Scene2D.Camera;
+    private readonly BORDER_THICKNESS = 4;
+
+    // --- MINIMAP V1 PROPERTIES ---
+    private minimapContainer!: Phaser.GameObjects.Container;
+    private minimapGraphics!: Phaser.GameObjects.Graphics;
+    private minimapBg!: Phaser.GameObjects.Rectangle;
+    private minimapCoords!: Phaser.GameObjects.Text;
+    private lastMinimapUpdate: number = 0;
+    private isMinimapDragging: boolean = false;
+    private readonly MINIMAP_SIZE = 220;
+    private readonly MINIMAP_MARGIN = 12;
+    private readonly MINIMAP_REFRESH_RATE = 50; // 20Hz
+
     // V1.3 Day/Night
     private dayNightOverlay!: Phaser.GameObjects.Rectangle;
     private isDragging = false;
@@ -185,33 +201,37 @@ export class WorldScene extends Phaser.Scene {
         useGameStore.getState().setFollowingEntityId(null);
 
         // 1. Setup Camera FIRST (before background needs camera properties)
-        // Finite bounds for restricted world
-        this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
         this.cameras.main.centerOn(worldWidth / 2, worldHeight / 2);
         this.cameras.main.setZoom(2); // Default integer zoom
         this.cameras.main.setRoundPixels(true);
 
         // DEBUG: Contrast background to distinguish 'void' from 'black texture'
-        this.cameras.main.setBackgroundColor('#333333');
+        this.cameras.main.setBackgroundColor('#2f5a2f');
+        // If you keep fractional zoom levels, roundPixels can cause edge “unreachable” artifacts.
+        this.cameras.main.setRoundPixels(false);
 
-        // 2. Draw Background (now camera is configured)
+        // 2. World (background, animations, border, etc.)
         this.createBackground();
-
-        // 3. Create Animations
         this.createAnimations();
-
-        // 4. Create City
         this.createCity(worldWidth / 2, worldHeight / 2);
-
-        // 5. Create World Border Decoration
         this.createWorldBorder(worldWidth, worldHeight);
 
+        // 3. UI camera AFTER world exists (so it can ignore everything already created)
+        this.createUICamera();
 
+        // 4. UI elements rendered only by UI camera
+        this.createDayNightOverlayUI();
+        this.createMinimap();
 
-        // 4. Setup Controls
+        // minimap ONLY on UI camera
+        if (this.minimapContainer) {
+            this.cameras.main.ignore(this.minimapContainer);
+        }
+
+        // 5. Setup Controls
         this.setupCameraControls();
 
-        // 5. Input Events
+        // 6. Input Events
         this.input.on('pointerdown', this.handlePointerDown, this);
         this.input.on('pointerup', this.handlePointerUp, this);
 
@@ -246,11 +266,6 @@ export class WorldScene extends Phaser.Scene {
         }
 
         this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
-            // Keep overlay centered (dayNightOverlay is created in createBackground)
-            if (this.dayNightOverlay) {
-                this.dayNightOverlay.setPosition(gameSize.width / 2, gameSize.height / 2);
-            }
-
             // Re-check zoom on resize
             const newMinZoom = Math.max(
                 gameSize.width / (V1.defaultMapWidth * V1.tileSizePx),
@@ -260,6 +275,44 @@ export class WorldScene extends Phaser.Scene {
                 this.cameras.main.setZoom(newMinZoom);
             }
         });
+    }
+
+    private createUICamera() {
+        // UI camera overlays the world, never zooms
+        this.uiCamera = this.cameras.add(0, 0, this.scale.width, this.scale.height, false, 'UICamera');
+        this.uiCamera.setScroll(0, 0);
+        this.uiCamera.setZoom(1);
+
+        // IMPORTANT:
+        // Ignore everything that exists right now (world/background/borders/etc).
+        // We'll ensure any *future* world objects (entities/objects/debug gfx) also get ignored.
+        this.uiCamera.ignore(this.children.list);
+
+        // Keep UI camera sized on resize
+        this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
+            this.uiCamera.setSize(gameSize.width, gameSize.height);
+        });
+    }
+
+    private createDayNightOverlayUI() {
+        const screenWidth = this.scale.width;
+        const screenHeight = this.scale.height;
+
+        this.dayNightOverlay = this.add.rectangle(
+            screenWidth / 2,
+            screenHeight / 2,
+            screenWidth,
+            screenHeight,
+            0x000022
+        )
+            .setScrollFactor(0)
+            .setDepth(20000)
+            .setAlpha(0)
+            .setOrigin(0.5, 0.5)
+            .setBlendMode(Phaser.BlendModes.MULTIPLY);
+
+        // Render ONLY on UI camera (not the main camera)
+        this.cameras.main.ignore(this.dayNightOverlay);
     }
 
     createAnimations() {
@@ -375,18 +428,16 @@ export class WorldScene extends Phaser.Scene {
 
         // Top & Bottom
         for (let x = 0; x <= worldWidth; x += spacing) {
-            // Top (Move down so feet are inside, and tree body (growing up) is visible)
-            // Tree is approx 48px tall (scaled 1.5x of 32?). 
-            // If anchor is (0.5, 1), feet at 48 ensures top is at 0.
-            this.add.image(x, 48, 'city_tree')
+            // Top (Aligned to 0)
+            this.add.image(x, 0, 'city_tree')
                 .setOrigin(0.5, 1) // Anchor at bottom to sit on line
-                .setDepth(48) // Depth sort by Y
+                .setDepth(0) // Depth 0 is fine for top edge
                 .setScale(1.5);
 
-            // Bottom (DEBUG: Moved WAY up to -200 to check if they exist at all)
-            this.add.image(x, worldHeight - 200, 'city_tree')
+            // Bottom (Aligned to worldHeight)
+            this.add.image(x, worldHeight, 'city_tree')
                 .setOrigin(0.5, 1)
-                .setDepth(worldHeight - 200) // Depth sort correct
+                .setDepth(worldHeight) // Depth sort correct
                 .setScale(1.5);
         }
 
@@ -395,18 +446,18 @@ export class WorldScene extends Phaser.Scene {
         g.lineStyle(10, 0xff0000, 1);
         g.lineBetween(0, worldHeight, worldWidth, worldHeight);
         g.setDepth(20000); // On top of everything
-        console.log(`DEBUG: Bottom Border Y=${worldHeight}. Bottom Trees Y=${worldHeight - 200}`);
+        console.log(`DEBUG: Bottom Border Y=${worldHeight}.`);
 
         // Left & Right
         for (let y = 0; y <= worldHeight; y += spacing) {
-            // Left (Move in slightly)
-            this.add.image(16, y, 'city_tree')
-                .setOrigin(0.5, 1)
+            // Left (Aligned to 0)
+            this.add.image(0, y, 'city_tree')
+                .setOrigin(0.5, 1) // Anchor at bottom to sit on line
                 .setDepth(y)
                 .setScale(1.5);
 
-            // Right (Move in slightly)
-            this.add.image(worldWidth - 16, y, 'city_tree')
+            // Right (Aligned to worldWidth)
+            this.add.image(worldWidth, y, 'city_tree')
                 .setOrigin(0.5, 1)
                 .setDepth(y)
                 .setScale(1.5);
@@ -471,20 +522,14 @@ export class WorldScene extends Phaser.Scene {
         // Resize handler (UI only, background is static world object now)
         this.scale.on('resize', this.resizeUI, this);
 
-        // 7. Day/Night Overlay (V1.3)
-        const screenWidth = this.scale.width;
-        const screenHeight = this.scale.height;
-        this.dayNightOverlay = this.add.rectangle(screenWidth / 2, screenHeight / 2, screenWidth, screenHeight, 0x000022)
-            .setScrollFactor(0)
-            .setDepth(20000)
-            .setAlpha(0)
-            .setOrigin(0.5, 0.5)
-            .setBlendMode(Phaser.BlendModes.MULTIPLY);
-
         // MAP BOUNDARY (World Object - Stays in World)
         const border = this.add.graphics();
-        border.lineStyle(4, 0xff0000, 1); // Red, 4px thick
-        border.strokeRect(0, 0, worldWidth, worldHeight);
+        const t = this.BORDER_THICKNESS;
+        border.lineStyle(t, 0xff0000, 1);
+
+        // Draw INSIDE the world so stroke never sits outside the edge.
+        border.strokeRect(t / 2, t / 2, worldWidth - t, worldHeight - t);
+        border.setDepth(10);
         border.setDepth(10);
 
         // Corner markers
@@ -526,13 +571,25 @@ export class WorldScene extends Phaser.Scene {
             this.dayNightOverlay.setPosition(width / 2, height / 2);
             this.dayNightOverlay.setSize(width, height);
         }
+
+        // Reposition Minimap
+        if (this.minimapContainer) {
+            this.minimapContainer.setPosition(
+                width - this.MINIMAP_SIZE - this.MINIMAP_MARGIN,
+                this.MINIMAP_MARGIN
+            );
+        }
     }
 
-    update() {
+    update(time: number, _delta: number) {
         const cam = this.cameras.main;
         const zoom = cam.zoom;
         const width = this.scale.width;
         const height = this.scale.height;
+
+        // Update Minimap
+        this.updateMinimap(time);
+
 
         // V1.1 Camera Fly Request
         const store = useGameStore.getState();
@@ -581,34 +638,23 @@ export class WorldScene extends Phaser.Scene {
     setupCameraControls() {
         this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
             if (this.isDragging && pointer.isDown) {
-                // Adjust for zoom to make drag feel natural
-                const dx = (pointer.x - this.dragStart.x) / this.cameras.main.zoom;
-                const dy = (pointer.y - this.dragStart.y) / this.cameras.main.zoom;
+                // Use screen delta for stable dragging
+                const screenDx = pointer.position.x - this.dragStart.x;
+                const screenDy = pointer.position.y - this.dragStart.y;
+
+                // Adjust for zoom to get world delta
+                const worldDx = screenDx / this.cameras.main.zoom;
+                const worldDy = screenDy / this.cameras.main.zoom;
 
                 // Calculate potential new position
-                const newScrollX = this.cameraStart.x - dx;
-                const newScrollY = this.cameraStart.y - dy;
+                const newScrollX = this.cameraStart.x - worldDx;
+                const newScrollY = this.cameraStart.y - worldDy;
 
                 const cam = this.cameras.main;
-                const visibleWidth = cam.width / cam.zoom;
-                const visibleHeight = cam.height / cam.zoom;
+                cam.scrollX = newScrollX;
+                cam.scrollY = newScrollY;
 
-                const worldWidth = V1.defaultMapWidth * V1.tileSizePx;
-                const worldHeight = V1.defaultMapHeight * V1.tileSizePx;
-
-                // If visible area is larger than world, center it.
-                // Otherwise, clamp to bounds.
-                if (visibleWidth > worldWidth) {
-                    this.cameras.main.scrollX = (worldWidth - visibleWidth) / 2;
-                } else {
-                    this.cameras.main.scrollX = Phaser.Math.Clamp(newScrollX, 0, worldWidth - visibleWidth);
-                }
-
-                if (visibleHeight > worldHeight) {
-                    this.cameras.main.scrollY = (worldHeight - visibleHeight) / 2;
-                } else {
-                    this.cameras.main.scrollY = Phaser.Math.Clamp(newScrollY, 0, worldHeight - visibleHeight);
-                }
+                this.clampOrCenterCameraScroll();
 
                 // Throttle worker updates for LOD if needed
                 if (this.game.loop.frame % 30 === 0) {
@@ -617,48 +663,157 @@ export class WorldScene extends Phaser.Scene {
             }
         });
 
-        this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _: unknown, __: unknown, deltaY: number) => {
-            const cam = this.cameras.main;
-            const oldZoom = cam.zoom;
-
-            // Integer Zoom Steps: 1, 2, 3, 4
-            // DeltaY > 0 means zoom OUT (Mouse wheel down) -> decrease zoom
-            // DeltaY < 0 means zoom IN (Mouse wheel up) -> increase zoom
-
-            let newZoom = oldZoom;
-            if (deltaY > 0) {
-                newZoom = Math.max(1, oldZoom - 1);
-            } else if (deltaY < 0) {
-                newZoom = Math.min(4, oldZoom + 1);
-            }
-
-            if (newZoom !== oldZoom) {
-                // ZOOM TO CURSOR LOGIC:
-                // 1. Get world position under pointer BEFORE zoom
-                const pointerWorldX = cam.scrollX + this.input.activePointer.x / oldZoom;
-                const pointerWorldY = cam.scrollY + this.input.activePointer.y / oldZoom;
-
-                // 2. Set new zoom
-                cam.setZoom(newZoom);
-
-                // 3. Adjust scroll so that the world point remains under the pointer
-                // New World View Left = PointerWorld - (PointerScreen / NewZoom)
-
-                const newScrollX = pointerWorldX - (this.input.activePointer.x / newZoom);
-                const newScrollY = pointerWorldY - (this.input.activePointer.y / newZoom);
-
-                // 4. Clamp to bounds
-                const worldWidth = V1.defaultMapWidth * V1.tileSizePx;
-                const worldHeight = V1.defaultMapHeight * V1.tileSizePx;
-                const visibleWidth = cam.width / newZoom;
-                const visibleHeight = cam.height / newZoom;
-
-                cam.scrollX = Phaser.Math.Clamp(newScrollX, 0, Math.max(0, worldWidth - visibleWidth));
-                cam.scrollY = Phaser.Math.Clamp(newScrollY, 0, Math.max(0, worldHeight - visibleHeight));
-
-                this.updateWorkerCamera();
-            }
+        // ZOOM (Fixed)
+        this.input.on('wheel', (pointer: Phaser.Input.Pointer, _: unknown, __: unknown, deltaY: number) => {
+            // FIX: Pass SCREEN coordinates (pointer.x/y), not World coordinates.
+            // This ensures we anchor to exactly where the mouse is on the monitor.
+            const direction = deltaY > 0 ? -1 : 1;
+            this.stepZoom(direction, pointer.x, pointer.y);
         });
+    }
+
+    // ---- ZOOM HELPERS ----
+    private readonly ZOOM_MAX = 4;
+
+    // If true, you can zoom out enough to see the whole map (may show margins outside the world)
+    private readonly ALLOW_OVERVIEW_OUTSIDE_WORLD = false;
+
+    // Base zoom ladder
+    private readonly ZOOM_LEVELS_BASE = [1, 2, 3, 4];
+
+    // Padding to allow scrolling slightly past the edge (e.g. to see bottom trees behind UI)
+    private readonly VIEW_PADDING = 200;
+
+    private getWorldSizePx() {
+        return {
+            worldWidth: V1.defaultMapWidth * V1.tileSizePx,
+            worldHeight: V1.defaultMapHeight * V1.tileSizePx,
+        };
+    }
+
+
+
+    /**
+     * If ALLOW_OVERVIEW_OUTSIDE_WORLD:
+     *   minZoom = min(viewport/world) => whole map fits (with margins)
+     * Else:
+     *   minZoom = max(viewport/world) => no void, but can't see whole map at once (aspect mismatch)
+     */
+    private getMinZoom(): number {
+        const { worldWidth, worldHeight } = this.getWorldSizePx();
+        const minZoomX = this.scale.width / worldWidth;
+        const minZoomY = this.scale.height / worldHeight;
+
+        const raw = this.ALLOW_OVERVIEW_OUTSIDE_WORLD
+            ? Math.min(minZoomX, minZoomY)
+            : Math.max(minZoomX, minZoomY);
+
+        // avoid zero / crazy small
+        return Phaser.Math.Clamp(raw, 0.05, this.ZOOM_MAX);
+    }
+
+    private getZoomLevels(): number[] {
+        const minZoom = this.getMinZoom();
+
+        // Always include the computed fit zoom so you can "see most/all"
+        const levels = [minZoom, ...this.ZOOM_LEVELS_BASE]
+            .filter(z => z >= minZoom - 1e-6 && z <= this.ZOOM_MAX)
+            .sort((a, b) => a - b);
+
+        // unique (float-safe)
+        const unique: number[] = [];
+        for (const z of levels) {
+            if (unique.length === 0 || Math.abs(unique[unique.length - 1] - z) > 1e-4) unique.push(z);
+        }
+        return unique;
+    }
+
+    private clampOrCenterCameraScroll() {
+        const cam = this.cameras.main;
+        const { worldWidth, worldHeight } = this.getWorldSizePx();
+
+        // Viewport size in world pixels
+        const viewW = cam.width / cam.zoom;
+        const viewH = cam.height / cam.zoom;
+
+        // 1. Horizontal Bounds
+        // Allow looking slightly outside the world (VIEW_PADDING)
+        const minX = -this.VIEW_PADDING;
+        const maxX = worldWidth + this.VIEW_PADDING - viewW;
+
+        // FIX: Allow dragging even if zoomed out (minX > maxX).
+        // We use Math.max to handle cases where viewport > world,
+        // effectively pinning the range or allowing a slight float.
+        if (minX > maxX) {
+            // If the view is wider than the world, allow panning within the padding difference
+            // or just clamp to the center area. 
+            // Here we simply clamp to the available range which effectively centers it 
+            // but doesn't "fight" the drag as aggressively if you want to pull to edges.
+            // Ideally, just ensure we don't drift too far.
+            const centerX = (worldWidth - viewW) / 2;
+            // Allow drifting by padding amount
+            cam.scrollX = Phaser.Math.Clamp(cam.scrollX, centerX - this.VIEW_PADDING, centerX + this.VIEW_PADDING);
+        } else {
+            cam.scrollX = Phaser.Math.Clamp(cam.scrollX, minX, maxX);
+        }
+
+        // 2. Vertical Bounds
+        const minY = -this.VIEW_PADDING;
+        const maxY = worldHeight + this.VIEW_PADDING - viewH;
+
+        if (minY > maxY) {
+            const centerY = (worldHeight - viewH) / 2;
+            cam.scrollY = Phaser.Math.Clamp(cam.scrollY, centerY - this.VIEW_PADDING, centerY + this.VIEW_PADDING);
+        } else {
+            cam.scrollY = Phaser.Math.Clamp(cam.scrollY, minY, maxY);
+        }
+    }
+
+    // UPDATED: Now uses robust "Before vs After" math
+    private applyZoom(newZoom: number, screenAnchorX?: number, screenAnchorY?: number) {
+        const cam = this.cameras.main;
+        const minZoom = this.getMinZoom();
+        const targetZoom = Phaser.Math.Clamp(newZoom, minZoom, this.ZOOM_MAX);
+
+        if (Math.abs(targetZoom - cam.zoom) < 1e-6) return;
+
+        // Default to center of screen if no mouse anchor provided
+        const sx = screenAnchorX ?? (cam.width / 2);
+        const sy = screenAnchorY ?? (cam.height / 2);
+
+        // 1. Get the World Point under the mouse cursor BEFORE zooming
+        const worldPointBefore = cam.getWorldPoint(sx, sy);
+
+        // 2. Apply new Zoom
+        cam.setZoom(targetZoom);
+
+        // 3. Get the World Point under the mouse cursor AFTER zooming
+        // (Because the zoom changed, the world coordinates under the mouse have shifted)
+        const worldPointAfter = cam.getWorldPoint(sx, sy);
+
+        // 4. Adjust Camera Scroll to realign the world points
+        // We want 'worldPointAfter' to be exactly where 'worldPointBefore' was.
+        cam.scrollX += worldPointBefore.x - worldPointAfter.x;
+        cam.scrollY += worldPointBefore.y - worldPointAfter.y;
+
+        this.clampOrCenterCameraScroll();
+        this.updateWorkerCamera();
+    }
+
+    private stepZoom(direction: 1 | -1, screenAnchorX?: number, screenAnchorY?: number) {
+        const cam = this.cameras.main;
+        const levels = this.getZoomLevels();
+
+        let idx = 0;
+        let best = Infinity;
+
+        for (let i = 0; i < levels.length; i++) {
+            const d = Math.abs(levels[i] - cam.zoom);
+            if (d < best) { best = d; idx = i; }
+        }
+
+        const newIdx = Phaser.Math.Clamp(idx + direction, 0, levels.length - 1);
+        this.applyZoom(levels[newIdx], screenAnchorX, screenAnchorY);
     }
 
     updateWorkerCamera() {
@@ -695,6 +850,25 @@ export class WorldScene extends Phaser.Scene {
     }
 
     handlePointerDown(pointer: Phaser.Input.Pointer) {
+        // --- MINIMAP INTERACTION START ---
+        if (this.minimapContainer) {
+            // Check if pointer is within minimap bounds
+            // Use pointer.position (Screen Coords) not pointer.x (World Coords)
+            const x = pointer.position.x;
+            const y = pointer.position.y;
+            const mx = this.minimapContainer.x;
+            const my = this.minimapContainer.y;
+
+            if (x >= mx && x <= mx + this.MINIMAP_SIZE &&
+                y >= my && y <= my + this.MINIMAP_SIZE) {
+
+                this.isMinimapDragging = true;
+                this.handleMinimapClick(pointer);
+                return; // BLOCK World Tools
+            }
+        }
+        // --- MINIMAP INTERACTION END ---
+
         const store = useGameStore.getState();
         const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
 
@@ -742,7 +916,7 @@ export class WorldScene extends Phaser.Scene {
 
             // Always allow drag for navigation
             this.isDragging = true;
-            this.dragStart = { x: pointer.x, y: pointer.y };
+            this.dragStart = { x: pointer.position.x, y: pointer.position.y }; // Use Screen Space
             this.cameraStart = {
                 x: this.cameras.main.scrollX,
                 y: this.cameras.main.scrollY
@@ -762,6 +936,7 @@ export class WorldScene extends Phaser.Scene {
 
     handlePointerUp() {
         this.isDragging = false;
+        this.isMinimapDragging = false;
         this.updateWorkerCamera();
     }
 
@@ -1063,8 +1238,9 @@ export class WorldScene extends Phaser.Scene {
         });
         stateText.setOrigin(0.5);
         stateText.setName('stateText');
-        container.add(stateText);
         */
+
+        if (this.uiCamera) this.uiCamera.ignore(container);
 
         return container;
     }
@@ -1131,6 +1307,8 @@ export class WorldScene extends Phaser.Scene {
         // Background layer
         container.setDepth(-100);
 
+        if (this.uiCamera) this.uiCamera.ignore(container);
+
         return container;
     }
 
@@ -1144,6 +1322,7 @@ export class WorldScene extends Phaser.Scene {
         if (!this.debugGraphics) {
             this.debugGraphics = this.add.graphics();
             this.debugGraphics.setDepth(9999);
+            if (this.uiCamera) this.uiCamera.ignore(this.debugGraphics);
         }
 
         this.debugGraphics.clear();
@@ -1160,6 +1339,7 @@ export class WorldScene extends Phaser.Scene {
                 if (!this.debugGraphics) {
                     this.debugGraphics = this.add.graphics();
                     this.debugGraphics.setDepth(9999);
+                    if (this.uiCamera) this.uiCamera.ignore(this.debugGraphics);
                 }
                 // this.drawOffscreenArrow(entity);
             }
@@ -1244,5 +1424,204 @@ export class WorldScene extends Phaser.Scene {
                 }
             }
         }
+    }
+
+    // ============================================
+    // MINIMAP IMPL (V1)
+    // ============================================
+
+    createMinimap() {
+        if (!this.scale) return; // Guard against early call
+        const x = this.scale.width - this.MINIMAP_SIZE - this.MINIMAP_MARGIN;
+        const y = this.MINIMAP_MARGIN;
+
+        this.minimapContainer = this.add.container(x, y).setScrollFactor(0).setDepth(30000);
+
+        // 1. Background
+        this.minimapBg = this.add.rectangle(0, 0, this.MINIMAP_SIZE, this.MINIMAP_SIZE, 0x000000, 0.6)
+            .setOrigin(0, 0)
+            .setInteractive(); // Blocks input if handled correctly, but we handle in Scene PointerDown
+
+        // 2. Border
+        const border = this.add.rectangle(0, 0, this.MINIMAP_SIZE, this.MINIMAP_SIZE, 0x000000, 0)
+            .setStrokeStyle(2, 0x444444)
+            .setOrigin(0, 0);
+
+        // 3. Graphics Layer (Content)
+        this.minimapGraphics = this.add.graphics();
+
+        // 4. Coords Text (Bottom Right)
+        this.minimapCoords = this.add.text(this.MINIMAP_SIZE - 6, this.MINIMAP_SIZE - 6, '0,0', {
+            fontSize: '11px',
+            color: '#dddddd',
+            fontFamily: 'monospace'
+        }).setOrigin(1, 1);
+
+        // 5. Zoom Buttons (Top Left)
+        this.createMinimapZoomButtons();
+
+        this.minimapContainer.add([this.minimapBg, this.minimapGraphics, border, this.minimapCoords]);
+
+        // Drag Handler
+        this.input.on('pointermove', this.handleMinimapDrag, this);
+    }
+
+    createMinimapZoomButtons() {
+        const size = 18;
+        const pad = 6;
+        const color = 0x333333;
+        const hoverColor = 0x555555;
+
+        // Helper to create simple button
+        const createBtn = (lx: number, label: string, onClick: () => void) => {
+            const bg = this.add.rectangle(lx, pad, size, size, color)
+                .setOrigin(0, 0)
+                .setInteractive({ useHandCursor: true });
+
+            const txt = this.add.text(lx + size / 2, pad + size / 2, label, {
+                fontSize: '14px', color: '#ffffff', fontStyle: 'bold'
+            }).setOrigin(0.5, 0.5);
+
+            bg.on('pointerdown', (p: any) => {
+                p.event.stopPropagation(); // Prevent propagation
+                onClick();
+            });
+            bg.on('pointerover', () => bg.setFillStyle(hoverColor));
+            bg.on('pointerout', () => bg.setFillStyle(color));
+
+            this.minimapContainer.add([bg, txt]);
+        };
+
+        createBtn(pad, '+', () => this.changeZoom(1));
+        createBtn(pad + size + 4, '-', () => this.changeZoom(-1));
+    }
+
+    changeZoom(delta: number) {
+        // delta = +1 => zoom IN, delta = -1 => zoom OUT
+        const dir = delta > 0 ? 1 : -1;
+        // zoom around screen center for minimap buttons
+        this.stepZoom(dir, this.scale.width / 2, this.scale.height / 2);
+    }
+
+    updateMinimap(time: number) {
+        // Guard if minimap not ready
+        if (!this.minimapGraphics) return;
+
+        if (time - this.lastMinimapUpdate < this.MINIMAP_REFRESH_RATE) return;
+        this.lastMinimapUpdate = time;
+
+        const g = this.minimapGraphics;
+        g.clear();
+
+        // Constants
+        const worldW = V1.defaultMapWidth * V1.tileSizePx;
+        const worldH = V1.defaultMapHeight * V1.tileSizePx;
+        const scaleX = this.MINIMAP_SIZE / worldW;
+        const scaleY = this.MINIMAP_SIZE / worldH;
+
+        // Helper: World -> Minimap
+        const toMini = (wx: number, wy: number) => ({
+            x: wx * scaleX,
+            y: wy * scaleY
+        });
+
+        // 1. Draw Entities (White dots)
+        g.fillStyle(0xffffff, 1);
+        const entities = useGameStore.getState().entities;
+        for (const e of entities) {
+            // Optimization: Skip if off-world (shouldn't happen but safe)
+            if (e.x < 0 || e.x > worldW) continue;
+            const p = toMini(e.x, e.y);
+            g.fillRect(p.x, p.y, 2, 2);
+        }
+
+        // 2. Draw Objects (Gray dots)
+        g.fillStyle(0xaaaaaa, 0.8);
+        const objects = useGameStore.getState().objects;
+        for (const o of objects) {
+            const wx = o.pos.tx * V1.tileSizePx;
+            const wy = o.pos.ty * V1.tileSizePx;
+            const p = toMini(wx, wy);
+            g.fillRect(p.x, p.y, 2, 2);
+        }
+
+        // 3. Viewport Rect
+        const cam = this.cameras.main;
+        // worldView is correct rect
+        const vw = cam.worldView;
+
+        const vPos = toMini(vw.x, vw.y);
+        const vSize = { w: vw.width * scaleX, h: vw.height * scaleY };
+
+        g.lineStyle(1, 0xffffff, 1);
+        g.strokeRect(vPos.x, vPos.y, vSize.w, vSize.h);
+
+        // 4. Update Coords (Tile X,Y)
+        const cx = Math.floor(cam.midPoint.x / V1.tileSizePx);
+        const cy = Math.floor(cam.midPoint.y / V1.tileSizePx);
+        this.minimapCoords.setText(`${cx},${cy}`);
+    }
+
+    handleMinimapClick(pointer: Phaser.Input.Pointer) {
+        // Local x/y within container (Using Screen Coords)
+        const localX = pointer.position.x - this.minimapContainer.x;
+        const localY = pointer.position.y - this.minimapContainer.y;
+
+        this.moveCameraToMinimapPos(localX, localY);
+        this.showClickFeedback(localX, localY);
+    }
+
+    handleMinimapDrag(pointer: Phaser.Input.Pointer) {
+        if (!this.isMinimapDragging || !pointer.isDown) return;
+
+        const localX = pointer.position.x - this.minimapContainer.x;
+        const localY = pointer.position.y - this.minimapContainer.y;
+
+        // Clamp to minimap area
+        const clampedX = Phaser.Math.Clamp(localX, 0, this.MINIMAP_SIZE);
+        const clampedY = Phaser.Math.Clamp(localY, 0, this.MINIMAP_SIZE);
+
+        this.moveCameraToMinimapPos(clampedX, clampedY);
+    }
+
+    moveCameraToMinimapPos(mx: number, my: number) {
+        const worldW = V1.defaultMapWidth * V1.tileSizePx;
+        const worldH = V1.defaultMapHeight * V1.tileSizePx;
+
+        const scaleX = worldW / this.MINIMAP_SIZE;
+        const scaleY = worldH / this.MINIMAP_SIZE;
+
+        const targetX = mx * scaleX;
+        const targetY = my * scaleY;
+
+        this.cameras.main.centerOn(targetX, targetY);
+
+        // Ensure bounds logic if centerOn doesn't clamp automatically (it does partly but let's be safe)
+        // this.cameras.main.setBounds(...) already set in create.
+
+        // Trigger updates
+        this.updateWorkerCamera();
+    }
+
+    showClickFeedback(mx: number, my: number) {
+        const ring = this.add.graphics();
+        this.minimapContainer.add(ring);
+
+        ring.lineStyle(2, 0xffff00, 1);
+        ring.strokeCircle(0, 0, 10);
+        ring.setPosition(mx, my);
+
+        this.tweens.add({
+            targets: ring,
+            scale: 2,
+            alpha: 0,
+            duration: 500,
+            onComplete: () => {
+                ring.destroy();
+            }
+        });
+
+        // Debug Log
+        console.log(`Minimap Jump: ${mx.toFixed(1)}, ${my.toFixed(1)}`);
     }
 }

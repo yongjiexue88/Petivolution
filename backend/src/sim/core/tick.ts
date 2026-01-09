@@ -503,6 +503,8 @@ function transitionToGoal(entity: EntityRuntime, goal: Goal, _sim: SimulationSta
         wander: 'wander',
         rummage: 'rummage',
         forage: 'peck',
+        bark: 'bark',
+        patrol: 'patrol'
     };
 
     entity.state = goalToState[goal];

@@ -10,7 +10,6 @@ import type {
 import type { SimulationState } from '../core/tick';
 import { SPECIES_CONFIGS, clamp01 } from '@shared/species.config';
 import { V1 } from '@shared/constants';
-// import { distance } from './perception';
 
 // ============================================
 // Utility 计算
@@ -18,7 +17,7 @@ import { V1 } from '@shared/constants';
 
 export function calculateUtility(
     entity: EntityRuntime,
-    _sim: SimulationState
+    sim: SimulationState
 ): Partial<Record<Goal, number>> {
     const config = SPECIES_CONFIGS[entity.species];
     const uw = config.utility;
@@ -54,7 +53,7 @@ export function calculateUtility(
     const scores: Partial<Record<Goal, number>> = {};
 
     // -------- Flee --------
-    if (entity.species === 'rat') {
+    if (entity.species === 'rat' || entity.species === 'chicken' || entity.species === 'smallBird') {
         let fleeScore = uw.base.flee;
         fleeScore += uw.urgency.fear * uFear;
 
@@ -109,8 +108,43 @@ export function calculateUtility(
         scores.eat = eatScore;
     }
 
-    // -------- Hunt (猫用) --------
-    if (entity.species === 'cat') {
+    // -------- Forage (Chicken/Bird) --------
+    if (entity.species === 'chicken' || entity.species === 'smallBird' || entity.species === 'rat') {
+        let forageScore = uw.base.forage ?? 0;
+        forageScore += uw.urgency.hunger * uHunger;
+
+        // Chickens like bushes
+        if (nearestBush && entity.species === 'chicken') {
+            forageScore += uw.bonuses.nearBush * 0.5;
+        }
+
+        const personalityMod = uw.personality[entity.personality];
+        if (personalityMod.forage) forageScore += personalityMod.forage;
+
+        scores.forage = forageScore;
+    }
+
+    // -------- Rummage (Raccoon Only) --------
+    if (entity.species === 'raccoon') {
+        let rummageScore = uw.base.eat ?? 0;
+        rummageScore += uw.urgency.hunger * uHunger;
+
+        if (nearestTrash) {
+            rummageScore += uw.bonuses.nearTrash;
+            rummageScore -= uw.distancePenalty.trash * (nearestTrash.dist / V1.tileSizePx);
+
+            if (uHunger > 0.6) {
+                rummageScore += 20;
+            }
+        } else {
+            rummageScore -= 5;
+        }
+
+        scores.rummage = rummageScore;
+    }
+
+    // -------- Eat (Prey/Carrion) --------
+    if (entity.species === 'cat' || entity.species === 'fox' || entity.species === 'wolf' || entity.species === 'hawk' || entity.species === 'snake') {
         let huntScore = uw.base.hunt;
         huntScore += uw.urgency.hunger * uHunger;
 
@@ -118,7 +152,7 @@ export function calculateUtility(
             huntScore += uw.bonuses.seesPrey;
             huntScore -= uw.distancePenalty.prey * (nearestPrey.dist / V1.tileSizePx);
         } else {
-            huntScore -= 0.8; // 没看到猎物，大幅减分
+            huntScore -= 0.8;
         }
 
         const personalityMod = uw.personality[entity.personality];
@@ -128,14 +162,67 @@ export function calculateUtility(
         scores.hunt = huntScore;
     }
 
-    // -------- Rest --------
+    // -------- Bark (Dog Only) --------
+    if (entity.species === 'dog') {
+        const nearestIntruder = stimuli.find(s => s.type === 'intruder');
+        let barkScore = uw.base.bark ?? 0;
+
+        if (nearestIntruder) {
+            const senseRadiusPx = config.sense.radiusTiles * V1.tileSizePx;
+            const intruderUrgency = clamp01(1 - (nearestIntruder.dist / senseRadiusPx));
+            barkScore += uw.bonuses.nearIntruder * intruderUrgency;
+
+            if (intruderUrgency > 0.5) {
+                barkScore += 10;
+            }
+        } else {
+            barkScore -= 1.0;
+        }
+
+        scores.bark = barkScore;
+    }
+
+    // -------- Patrol (Dog Only) --------
+    if (entity.species === 'dog') {
+        let patrolScore = uw.base.patrol ?? 0;
+        if (entity.ai.currentGoal === 'patrol') {
+            patrolScore += 0.2;
+        }
+        scores.patrol = patrolScore;
+    }
+
+    // -------- Rest (Sleep) --------
     {
         let restScore = uw.base.rest;
         restScore += uw.urgency.fatigue * uFatigue;
 
+        const time = sim.timeOfDay;
+        const isNight = time >= 0.5;
+
+        if (config.activityCycle === 'diurnal') {
+            if (isNight && uFatigue > 0.2) {
+                restScore += 50;
+            }
+        } else if (config.activityCycle === 'nocturnal') {
+            if (!isNight && uFatigue > 0.2) {
+                restScore += 50;
+            }
+        }
+
         if (nearestBush) {
             restScore += uw.bonuses.nearBush * 0.5;
         }
+
+        if (entity.species === 'smallBird') {
+            const nearestPerch = findNearest(stimuli, 'perch');
+            if (nearestPerch) {
+                restScore += 0.3 + uFatigue * 0.2;
+                restScore -= (uw.distancePenalty.bush * 0.5) * (nearestPerch.dist / V1.tileSizePx);
+            }
+        }
+
+        const personalityMod = uw.personality[entity.personality];
+        if (personalityMod.rest) restScore += personalityMod.rest;
 
         scores.rest = restScore;
     }
@@ -143,12 +230,9 @@ export function calculateUtility(
     // -------- Wander --------
     {
         let wanderScore = uw.base.wander;
-
-        // curious 人格爱闲逛
         if (entity.personality === 'curious') {
             wanderScore += 0.02;
         }
-
         scores.wander = wanderScore;
     }
 

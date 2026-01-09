@@ -22,6 +22,7 @@ export interface PerceptionResult {
     nearestWater: { objectId: string; dist: number } | null;
     nearestBush: { objectId: string; dist: number } | null;
     nearestTrash: { objectId: string; dist: number } | null;
+    nearestIntruder: { entityId: string; dist: number } | null;
 }
 
 // ============================================
@@ -39,6 +40,7 @@ export function perceive(entity: EntityRuntime, sim: SimulationState): Perceptio
     let nearestWater: { objectId: string; dist: number } | null = null;
     let nearestBush: { objectId: string; dist: number } | null = null;
     let nearestTrash: { objectId: string; dist: number } | null = null;
+    let nearestIntruder: { entityId: string; dist: number } | null = null;
 
     // 检测其他实体
     for (const other of sim.entities.values()) {
@@ -46,6 +48,11 @@ export function perceive(entity: EntityRuntime, sim: SimulationState): Perceptio
 
         const dist = distance(entity.pos, other.pos);
         if (dist > senseRadius) continue;
+
+        // Flocking: All species see their own kind as friends
+        if (other.species === entity.species) {
+            stimuli.push({ type: 'friend', entityId: other.id, dist });
+        }
 
         // 鼠视角: 猫、狗、浣熊是捕食者
         if (entity.species === 'rat') {
@@ -69,6 +76,12 @@ export function perceive(entity: EntityRuntime, sim: SimulationState): Perceptio
 
         // 狗视角: 鼠、浣熊、狐狸(future)是猎物/威胁
         if (entity.species === 'dog') {
+            const isIntruder = ['rat', 'raccoon', 'cat', 'wolf', 'fox', 'crow', 'hawk'].includes(other.species);
+            if (isIntruder) {
+                stimuli.push({ type: 'intruder', entityId: other.id, dist });
+                if (!nearestIntruder || dist < nearestIntruder.dist) nearestIntruder = { entityId: other.id, dist };
+            }
+
             if (['rat', 'raccoon', 'cat', 'wolf', 'fox'].includes(other.species)) {
                 stimuli.push({ type: 'prey', entityId: other.id, dist });
                 if (!nearestPrey || dist < nearestPrey.dist) nearestPrey = { entityId: other.id, dist };
@@ -87,11 +100,10 @@ export function perceive(entity: EntityRuntime, sim: SimulationState): Perceptio
             }
         }
 
-        // 鸡/鸟视角: 猫、浣熊、狗是威胁
+        // 鸡/鸟视角: 猫、浣熊、狗、狐狸、狼、鹰是威胁
         if (['chicken', 'smallBird'].includes(entity.species)) {
-            if (['cat', 'raccoon', 'dog', 'rat'].includes(other.species)) {
+            if (['cat', 'raccoon', 'dog', 'rat', 'wolf', 'fox', 'hawk'].includes(other.species)) {
                 stimuli.push({ type: 'predator', entityId: other.id, dist });
-                // Small birds fear cats more, logic in utility?
                 if (!nearestPredator || dist < nearestPredator.dist) nearestPredator = { entityId: other.id, dist };
             }
         }
@@ -124,6 +136,10 @@ export function perceive(entity: EntityRuntime, sim: SimulationState): Perceptio
                     nearestTrash = { objectId: obj.id, dist };
                 }
                 break;
+
+            case 'perch':
+                stimuli.push({ type: 'perch', objectId: obj.id, dist });
+                break;
         }
     }
 
@@ -137,6 +153,7 @@ export function perceive(entity: EntityRuntime, sim: SimulationState): Perceptio
         nearestWater,
         nearestBush,
         nearestTrash,
+        nearestIntruder,
     };
 }
 

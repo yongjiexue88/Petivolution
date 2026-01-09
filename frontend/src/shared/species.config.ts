@@ -18,6 +18,7 @@ export type UtilityWeights = {
         nearWater: number;
         nearBush: number;
         nearPerch: number; // Added V4
+        nearIntruder: number; // Added for Dog
     };
     distancePenalty: {
         water: number;
@@ -145,6 +146,8 @@ export const RAT_CONFIG: SpeciesConfig = {
             hunt: -999,
             forage: 0.1, // V4
             rummage: 0,
+            bark: 0,
+            patrol: 0,
         },
         urgency: {
             fear: 2.8,
@@ -158,6 +161,7 @@ export const RAT_CONFIG: SpeciesConfig = {
             nearTrash: 0.22,
             seesPrey: 0,
             nearPerch: 0,
+            nearIntruder: 0,
         },
         distancePenalty: {
             bush: 0.06,
@@ -190,11 +194,11 @@ export const CAT_CONFIG: SpeciesConfig = {
     },
     // Chickens flock together
     flock: {
-        enabled: true,
-        cohesionWeight: 0.5,
-        alignmentWeight: 0.1,
-        separationWeight: 0.8,
-        radiusTiles: 5,
+        enabled: false,
+        cohesionWeight: 0,
+        alignmentWeight: 0,
+        separationWeight: 0,
+        radiusTiles: 0,
     },
     sense: {
         radiusTiles: 12,
@@ -226,6 +230,8 @@ export const CAT_CONFIG: SpeciesConfig = {
             flee: -999,
             forage: -999,
             rummage: 0,
+            bark: -999,
+            patrol: -999,
         },
         urgency: {
             hunger: 1.5,
@@ -239,6 +245,7 @@ export const CAT_CONFIG: SpeciesConfig = {
             nearTrash: 0.08,
             nearBush: 0.02,
             nearPerch: 0,
+            nearIntruder: 0,
         },
         distancePenalty: {
             prey: 0.05,
@@ -292,6 +299,8 @@ export const CHICKEN_CONFIG: SpeciesConfig = {
             eat: 0.0,
             hunt: -999,
             rummage: 0,
+            bark: -999,
+            patrol: -999,
         },
         urgency: {
             fear: 2.5,
@@ -305,6 +314,7 @@ export const CHICKEN_CONFIG: SpeciesConfig = {
             nearTrash: 0.0,
             seesPrey: 0,
             nearPerch: 0,
+            nearIntruder: 0,
         },
         distancePenalty: {
             bush: 0.04,
@@ -338,6 +348,13 @@ export const SMALL_BIRD_CONFIG: SpeciesConfig = {
     sense: {
         radiusTiles: 14,
     },
+    flock: {
+        enabled: true,
+        cohesionWeight: 0.5,
+        alignmentWeight: 0.3,
+        separationWeight: 0.3,
+        radiusTiles: 8,
+    },
     vitals: {
         hungerDecayPerTick: 0.0004,
         thirstDecayPerTick: 0.0005,
@@ -359,6 +376,8 @@ export const SMALL_BIRD_CONFIG: SpeciesConfig = {
             eat: 0.0,
             hunt: -999,
             rummage: 0,
+            bark: -999,
+            patrol: -999,
         },
         urgency: {
             fear: 3.0,
@@ -372,6 +391,7 @@ export const SMALL_BIRD_CONFIG: SpeciesConfig = {
             nearTrash: 0.0,
             seesPrey: 0,
             nearPerch: 0.4, // Likes perching
+            nearIntruder: 0,
         },
         distancePenalty: {
             bush: 0.03,
@@ -439,7 +459,7 @@ export const RACCOON_CONFIG: SpeciesConfig = {
     },
     utility: {
         base: {
-            drink: 1.0, eat: 1.2, hunt: 0.5, rest: 0.8, flee: 5.0, wander: 0.3, forage: 0.5, rummage: 2.0
+            drink: 1.0, eat: 1.2, hunt: 0.5, rest: 0.8, flee: 5.0, wander: 0.3, forage: 0.5, rummage: 2.0, bark: -999, patrol: -999
         },
         urgency: {
             hunger: 3.5, thirst: 3.0, fatigue: 2.5, fear: 4.0
@@ -449,7 +469,8 @@ export const RACCOON_CONFIG: SpeciesConfig = {
             nearTrash: 4.0,
             nearWater: 1.5,
             nearBush: 1.0,
-            nearPerch: 0.0
+            nearPerch: 0.0,
+            nearIntruder: 0.0,
         },
         distancePenalty: {
             water: 0.1, bush: 0.0, prey: 0.2, trash: 0.05, perch: 0.0
@@ -505,7 +526,7 @@ export const CROW_CONFIG: SpeciesConfig = {
     },
     utility: {
         base: {
-            drink: 1.0, eat: 1.5, hunt: 0.1, rest: 0.8, flee: 6.0, wander: 0.4, forage: 0.2, rummage: 0
+            drink: 1.0, eat: 1.5, hunt: 0.1, rest: 0.8, flee: 6.0, wander: 0.4, forage: 0.2, rummage: 0, bark: -999, patrol: -999
         },
         urgency: {
             hunger: 4.0, thirst: 3.0, fatigue: 3.0, fear: 5.0
@@ -515,7 +536,8 @@ export const CROW_CONFIG: SpeciesConfig = {
             nearTrash: 2.0,
             nearWater: 1.0,
             nearBush: 0.5,
-            nearPerch: 2.0
+            nearPerch: 2.0,
+            nearIntruder: 0.5,
         },
         distancePenalty: {
             water: 0.05, bush: 0.05, prey: 0.1, trash: 0.1, perch: 0.05
@@ -570,9 +592,9 @@ export const DOG_CONFIG: SpeciesConfig = {
         probabilityPerSecond: 0,
     },
     utility: {
-        base: { drink: 1, eat: 1, hunt: 1, rest: 1, flee: 1, wander: 0.5, forage: 0, rummage: 0 },
+        base: { drink: 1, eat: 1, hunt: 1, rest: 1, flee: 1, wander: 0.5, forage: 0, rummage: 0, bark: 0.2, patrol: 0.5 },
         urgency: { hunger: 3, thirst: 3, fatigue: 3, fear: 2 },
-        bonuses: { seesPrey: 3, nearTrash: 0, nearWater: 1, nearBush: 0, nearPerch: 0 },
+        bonuses: { seesPrey: 3, nearTrash: 0, nearWater: 1, nearBush: 0, nearPerch: 0, nearIntruder: 2.5 },
         distancePenalty: { water: 0.1, bush: 0, prey: 0.1, trash: 0, perch: 0 },
         personality: {
             curious: {}, cautious: {}, brave: {}
