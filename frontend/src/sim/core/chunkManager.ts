@@ -540,6 +540,8 @@ export class ChunkManager {
             x,
             y,
             stats: {
+                ratCount: 0,
+                catCount: 0,
                 counts: {}, // Handled by initial spawn or virtualization
                 resourceLevel,
                 dangerLevel,
