@@ -55,7 +55,6 @@ export class SnapshotService {
             await file.save(compressed, {
                 contentType: 'application/gzip',
                 metadata: {
-                    contentEncoding: 'gzip',
                     tick: tick.toString(),
                     uncompressedSize: jsonString.length.toString(),
                 },

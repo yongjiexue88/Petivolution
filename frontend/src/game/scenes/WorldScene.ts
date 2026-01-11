@@ -33,6 +33,14 @@ export class WorldScene extends Phaser.Scene {
     private dragStart = { x: 0, y: 0 };
     private cameraStart = { x: 0, y: 0 };
     private unsubscribeStore: () => void = () => { };
+    private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+
+    // --- P0 DEBUG OVERLAY ---
+    private debugOverlayEnabled: boolean = false;
+    private debugZoneGraphics!: Phaser.GameObjects.Graphics;
+    private debugCountsText!: Phaser.GameObjects.Text;
+    private spawnPointMarkers: { x: number; y: number; time: number }[] = [];
+    private readonly SPAWN_MARKER_DURATION = 2000; // ms
 
     constructor() {
         super({ key: 'WorldScene' });
@@ -204,7 +212,7 @@ export class WorldScene extends Phaser.Scene {
         const cam = this.cameras.main;
         cam.setBounds(0, 0, worldWidth, worldHeight); // Phaser handles clamping!
         cam.centerOn(worldWidth / 2, worldHeight / 2);
-        cam.setZoom(2); // Default integer zoom
+        cam.setZoom(1); // Default integer zoom
         cam.setBackgroundColor('#2f5a2f');
 
         // 2. World (background, animations, border, etc.)
@@ -227,6 +235,9 @@ export class WorldScene extends Phaser.Scene {
 
         // 5. Setup Controls
         this.setupCameraControls();
+
+        // 5.5. Setup Debug Overlay (P0)
+        this.setupDebugOverlay();
 
         // 6. Input Events
         this.input.on('pointerdown', this.handlePointerDown, this);
@@ -528,10 +539,6 @@ export class WorldScene extends Phaser.Scene {
         border.setDepth(10);
         border.setDepth(10);
 
-        // Corner markers
-        this.add.text(10, 10, 'TL (0,0)', { fontSize: '32px', color: '#ff0000' }).setDepth(10);
-        this.add.text(worldWidth - 200, worldHeight - 50, 'BR', { fontSize: '32px', color: '#ff0000' }).setDepth(10);
-
         // Force UI resize to set initial dimensions for Overlay
         this.resizeUI(this.scale.gameSize);
     }
@@ -586,6 +593,8 @@ export class WorldScene extends Phaser.Scene {
         // Update Minimap
         this.updateMinimap(time);
 
+        // P0: Update Debug Overlay
+        this.updateDebugOverlay();
 
         // V1.1 Camera Fly Request
         const store = useGameStore.getState();
@@ -627,11 +636,45 @@ export class WorldScene extends Phaser.Scene {
 
             this.dayNightOverlay.setAlpha(0); // Force Day Mode
 
+            // --- KEYBOARD PANNING ---
+            if (this.cursors) {
+                const speed = 20 / zoom; // Constant screen speed -> World speed adjusts with zoom
+                if (this.cursors.left.isDown) {
+                    cam.scrollX -= speed;
+                    this.updateWorkerCamera();
+                } else if (this.cursors.right.isDown) {
+                    cam.scrollX += speed;
+                    this.updateWorkerCamera();
+                }
+
+                if (this.cursors.up.isDown) {
+                    cam.scrollY -= speed;
+                    this.updateWorkerCamera();
+                } else if (this.cursors.down.isDown) {
+                    cam.scrollY += speed;
+                    this.updateWorkerCamera();
+                }
+            }
+
             this.dayNightOverlay.setSize(width / zoom, height / zoom);
         }
     }
 
     setupCameraControls() {
+        // Initialize Cursor Keys
+        this.cursors = this.input.keyboard!.createCursorKeys();
+
+        // ZOOM - Keyboard Hotkeys
+        this.input.keyboard!.on('keydown-MINUS', () => {
+            this.stepZoom(-1, this.scale.width / 2, this.scale.height / 2);
+        });
+        this.input.keyboard!.on('keydown-PLUS', () => { // Numpad +
+            this.stepZoom(1, this.scale.width / 2, this.scale.height / 2);
+        });
+        this.input.keyboard!.on('keydown-EQUALS', () => { // Standard =/+ key
+            this.stepZoom(1, this.scale.width / 2, this.scale.height / 2);
+        });
+
         this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
             if (this.isDragging && pointer.isDown) {
                 // Use screen delta for stable dragging
@@ -659,6 +702,128 @@ export class WorldScene extends Phaser.Scene {
             const direction = deltaY > 0 ? -1 : 1;
             this.stepZoom(direction, pointer.x, pointer.y);
         });
+    }
+
+    // ============================================
+    // P0 DEBUG OVERLAY - Zone Visualization
+    // ============================================
+
+    private setupDebugOverlay() {
+        // Create graphics object for drawing zones (world space)
+        this.debugZoneGraphics = this.add.graphics();
+        this.debugZoneGraphics.setDepth(15000);
+        this.debugZoneGraphics.setVisible(false);
+
+        // Create text for species counts (screen space)
+        this.debugCountsText = this.add.text(10, 50, '', {
+            fontSize: '14px',
+            fontFamily: 'monospace',
+            color: '#00ff00',
+            backgroundColor: '#000000aa',
+            padding: { x: 8, y: 8 },
+        });
+        this.debugCountsText.setScrollFactor(0);
+        this.debugCountsText.setDepth(20001);
+        this.debugCountsText.setVisible(false);
+
+        // Main camera should ignore the text (it's UI)
+        this.cameras.main.ignore(this.debugCountsText);
+
+        // Shift+Z to toggle
+        this.input.keyboard!.on('keydown-Z', (event: KeyboardEvent) => {
+            if (event.shiftKey) {
+                this.debugOverlayEnabled = !this.debugOverlayEnabled;
+                this.debugZoneGraphics.setVisible(this.debugOverlayEnabled);
+                this.debugCountsText.setVisible(this.debugOverlayEnabled);
+                console.log(`🔧 Debug Overlay: ${this.debugOverlayEnabled ? 'ON' : 'OFF'}`);
+            }
+        });
+
+        // Shift+A to Reset World (with confirmation)
+        this.input.keyboard!.on('keydown-A', (event: KeyboardEvent) => {
+            if (event.shiftKey) {
+                const confirmed = window.confirm('⚠️ RESET WORLD? This will clear all entities and sync to a fresh state.');
+                if (confirmed) {
+                    console.log('🔄 Requesting World Reset...');
+
+                    // Call API to reset backend
+                    import('../../app/api/ServerClient').then(({ ServerClient }) => {
+                        ServerClient.getInstance().resetWorld().then(res => {
+                            if (res.ok) {
+                                console.log('✅ World Reset Successful');
+                                // Force reload to get fresh state
+                                window.location.reload();
+                            } else {
+                                console.error('❌ Reset Failed:', res.error);
+                                alert('Reset Failed: ' + res.error);
+                            }
+                        });
+                    });
+                }
+            }
+        });
+    }
+
+    private updateDebugOverlay() {
+        if (!this.debugOverlayEnabled) return;
+
+        const cam = this.cameras.main;
+        const centerX = cam.midPoint.x;
+        const centerY = cam.midPoint.y;
+        const activeRadiusPx = V1.activeZoneRadiusTiles * V1.tileSizePx;
+
+        // Clear previous frame
+        this.debugZoneGraphics.clear();
+
+        // Draw Active Zone (green circle)
+        this.debugZoneGraphics.lineStyle(3, 0x00ff00, 0.8);
+        this.debugZoneGraphics.strokeCircle(centerX, centerY, activeRadiusPx);
+
+        // Draw Spawn Ring (60%-100% of active zone - where animals spawn)
+        const ringMinRadius = activeRadiusPx * 0.6;
+        this.debugZoneGraphics.lineStyle(2, 0xffff00, 0.5);
+        this.debugZoneGraphics.strokeCircle(centerX, centerY, ringMinRadius);
+
+        // Draw small + at center
+        this.debugZoneGraphics.lineStyle(2, 0x00ff00, 1);
+        this.debugZoneGraphics.lineBetween(centerX - 10, centerY, centerX + 10, centerY);
+        this.debugZoneGraphics.lineBetween(centerX, centerY - 10, centerX, centerY + 10);
+
+        // Draw spawn point markers (fade out over time)
+        const now = Date.now();
+        this.spawnPointMarkers = this.spawnPointMarkers.filter(m => now - m.time < this.SPAWN_MARKER_DURATION);
+        for (const marker of this.spawnPointMarkers) {
+            const age = now - marker.time;
+            const alpha = 1 - (age / this.SPAWN_MARKER_DURATION);
+            this.debugZoneGraphics.fillStyle(0xff6600, alpha);
+            this.debugZoneGraphics.fillCircle(marker.x, marker.y, 8);
+        }
+
+        // Update species count text
+        const stats = useGameStore.getState().stats;
+        if (stats) {
+            const lines = [
+                '🔧 DEBUG OVERLAY (Shift+Z to hide)',
+                '─'.repeat(30),
+                `📍 Camera: (${Math.floor(centerX)}, ${Math.floor(centerY)})`,
+                `🔍 Zoom: ${cam.zoom.toFixed(2)}x`,
+                `🟢 Active Zone: ${V1.activeZoneRadiusTiles} tiles`,
+                '─'.repeat(30),
+                `🐭 Rats: ${stats.rat ?? 0}`,
+                `🐱 Cats: ${stats.cat ?? 0}`,
+                `🐔 Chickens: ${stats.chicken ?? 0}`,
+                `🐦 Birds: ${stats.smallBird ?? 0}`,
+                `🦝 Raccoons: ${stats.raccoon ?? 0}`,
+                `🐦‍⬛ Crows: ${stats.crow ?? 0}`,
+                `🐕 Dogs: ${stats.dog ?? 0}`,
+            ];
+            this.debugCountsText.setText(lines.join('\n'));
+        }
+    }
+
+    // Helper to add spawn markers (called from sync if we detect new spawns)
+    public addSpawnMarker(x: number, y: number) {
+        this.spawnPointMarkers.push({ x, y, time: Date.now() });
     }
 
     // ---- ZOOM HELPERS (SIMPLIFIED) ----
@@ -772,15 +937,16 @@ export class WorldScene extends Phaser.Scene {
     handlePointerDown(pointer: Phaser.Input.Pointer) {
         // --- MINIMAP INTERACTION START ---
         if (this.minimapContainer) {
-            // Check if pointer is within minimap bounds
-            // Use pointer.position (Screen Coords) not pointer.x (World Coords)
-            const x = pointer.position.x;
-            const y = pointer.position.y;
+            // Use pointer.x/y as they are transformed by the camera (uiCamera is 1:1)
+            const x = pointer.x;
+            const y = pointer.y;
             const mx = this.minimapContainer.x;
             const my = this.minimapContainer.y;
 
             if (x >= mx && x <= mx + this.MINIMAP_SIZE &&
                 y >= my && y <= my + this.MINIMAP_SIZE) {
+
+                // Removed Zoom Button Logic
 
                 this.isMinimapDragging = true;
                 this.handleMinimapClick(pointer);
@@ -1377,50 +1543,12 @@ export class WorldScene extends Phaser.Scene {
             fontFamily: 'monospace'
         }).setOrigin(1, 1);
 
-        // 5. Zoom Buttons (Top Left)
-        this.createMinimapZoomButtons();
+        // 5. Zoom Buttons (Top Left) - REMOVED
 
         this.minimapContainer.add([this.minimapBg, this.minimapGraphics, border, this.minimapCoords]);
 
         // Drag Handler
         this.input.on('pointermove', this.handleMinimapDrag, this);
-    }
-
-    createMinimapZoomButtons() {
-        const size = 18;
-        const pad = 6;
-        const color = 0x333333;
-        const hoverColor = 0x555555;
-
-        // Helper to create simple button
-        const createBtn = (lx: number, label: string, onClick: () => void) => {
-            const bg = this.add.rectangle(lx, pad, size, size, color)
-                .setOrigin(0, 0)
-                .setInteractive({ useHandCursor: true });
-
-            const txt = this.add.text(lx + size / 2, pad + size / 2, label, {
-                fontSize: '14px', color: '#ffffff', fontStyle: 'bold'
-            }).setOrigin(0.5, 0.5);
-
-            bg.on('pointerdown', (p: any) => {
-                p.event.stopPropagation(); // Prevent propagation
-                onClick();
-            });
-            bg.on('pointerover', () => bg.setFillStyle(hoverColor));
-            bg.on('pointerout', () => bg.setFillStyle(color));
-
-            this.minimapContainer.add([bg, txt]);
-        };
-
-        createBtn(pad, '+', () => this.changeZoom(1));
-        createBtn(pad + size + 4, '-', () => this.changeZoom(-1));
-    }
-
-    changeZoom(delta: number) {
-        // delta = +1 => zoom IN, delta = -1 => zoom OUT
-        const dir = delta > 0 ? 1 : -1;
-        // zoom around screen center for minimap buttons
-        this.stepZoom(dir, this.scale.width / 2, this.scale.height / 2);
     }
 
     updateMinimap(time: number) {

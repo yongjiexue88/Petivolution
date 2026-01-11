@@ -363,6 +363,7 @@ function executeChase(entity: EntityRuntime, sim: SimulationState): void {
         } else {
             entity.state = 'wander';
             entity.ai.currentGoal = 'wander';
+            entity.ai.lastFailReason = 'prey_lost';
             return;
         }
     }

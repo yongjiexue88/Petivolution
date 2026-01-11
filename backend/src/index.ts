@@ -14,6 +14,14 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
+// DEBUG LOGGER
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+});
+
+
+
 // Initialize Firebase on startup
 try {
     initializeFirebase();
@@ -40,12 +48,7 @@ app.get('/api/world/summary', (req, res) => {
     res.json(world.getSummary());
 });
 
-// API: Snapshot (Polling)
-app.get('/api/world/snapshot', (req, res) => {
-    // TODO: Parse query params for viewport/radius
-    const snapshot = world.getSnapshot();
-    res.json(snapshot);
-});
+// API: Snapshot (Polling) - MOVED to line 329 with viewport filtering support
 
 // API: Actions (Spawn)
 app.post('/api/actions/spawn', (req, res) => {
@@ -67,6 +70,17 @@ app.post('/api/actions/place-object', (req, res) => {
         res.json({ ok: true, objectId: result.objectId });
     } else {
         res.status(400).json({ ok: false, error: 'Failed to place object' });
+    }
+});
+
+// API: Reset World (Shift+A)
+app.post('/api/world/reset', async (req, res) => {
+    // TODO: Require admin auth
+    const result = await world.reset();
+    if (result.success) {
+        res.json({ ok: true });
+    } else {
+        res.status(500).json({ ok: false, error: result.error });
     }
 });
 
@@ -410,14 +424,14 @@ app.get('/api/events/status', (req, res) => {
 const server = app.listen(PORT, () => {
     console.log(`🌍 World Server running on port ${PORT}`);
     console.log(`Tick Rate: ${30}Hz (approx)`);
+    console.log('✅ Endpoint active: POST /api/world/reset');
 });
 
-// Graceful shutdown for Cloud Run
-// Cloud Run sends SIGTERM when stopping a container
-process.on('SIGTERM', () => {
-    console.log('🛑 SIGTERM received, shutting down gracefully...');
+// Graceful shutdown for Cloud Run (SIGTERM) and Local Dev (SIGINT)
+const gracefulShutdown = () => {
+    console.log('🛑 Shutting down gracefully...');
 
-    // Stop the world simulation tick loop
+    // Stop the world simulation tick loop (triggers auto-save)
     world.stop();
 
     // Close the HTTP server
@@ -431,5 +445,15 @@ process.on('SIGTERM', () => {
         console.error('⚠️ Forced shutdown after timeout');
         process.exit(1);
     }, 30000);
+};
+
+process.on('SIGTERM', () => {
+    console.log('🛑 SIGTERM received');
+    gracefulShutdown();
+});
+
+process.on('SIGINT', () => {
+    console.log('🛑 SIGINT received (Ctrl+C)');
+    gracefulShutdown();
 });
 

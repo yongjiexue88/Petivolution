@@ -41,7 +41,7 @@ describe('Perception System', () => {
 
         it('should detect nearby entities within sense radius', () => {
             const me = createEntity('me', 'rat', 0);
-            const cat = createEntity('cat1', 'cat', 100); // 100px away. Rat sense is 320px (10 tiles)
+            const cat = createEntity('cat1', 'cat', 50); // 50px away. Rat sense is 96px (6 tiles)
 
             const entities = new Map();
             entities.set('me', me);

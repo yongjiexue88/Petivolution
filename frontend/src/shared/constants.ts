@@ -40,10 +40,11 @@ export const V1 = {
         raccoon: { min: 2, max: 5 },
         crow: { min: 5, max: 10 },
         dog: { min: 1, max: 2 },
-        fox: { min: 2, max: 4 },
+        fox: { min: 1, max: 2 },
         hawk: { min: 1, max: 2 },
-        wolf: { min: 2, max: 5 },
-        snake: { min: 3, max: 6 },
+        wolf: { min: 1, max: 3 },
+        snake: { min: 2, max: 4 },
+
     },
 
     // 每个chunk的密度上限 (防止局部过密)
@@ -74,10 +75,10 @@ export const V1 = {
         hawk: 1,
         wolf: 1,
         snake: 1,
-        water: 1,
-        trash: 1,
-        bush: 12,
-        perch: 5,
+        water: 4,
+        trash: 3,
+        bush: 18,
+        perch: 10,
     },
 
     // 生态维护器

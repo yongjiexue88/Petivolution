@@ -16,7 +16,7 @@ interface ActionResponse {
     error?: string;
 }
 
-const SERVER_URL = 'http://localhost:3000';
+const SERVER_URL = import.meta.env.VITE_API_URL || '';
 
 export class ServerClient {
     private static instance: ServerClient;
@@ -90,6 +90,10 @@ export class ServerClient {
 
     public async placeObject(type: ObjectType, x: number, y: number): Promise<ActionResponse> {
         return this.postAction('/api/actions/place-object', { type, x, y });
+    }
+
+    public async resetWorld(): Promise<ActionResponse> {
+        return this.postAction('/api/world/reset', {});
     }
 
     private async postAction(endpoint: string, payload: any): Promise<ActionResponse> {

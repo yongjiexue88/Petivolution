@@ -149,6 +149,10 @@ export type EntityRuntime = {
         reason: 'starvation' | 'dehydration' | 'killed' | 'unknown';
         killedBy?: EntityId;
     };
+
+    // P0: Spawn metadata for migration feel
+    spawnReason?: 'migration' | 'reproduction' | 'ring_fallback' | 'near_resource' | 'initial';
+    spawnDirection?: Vec2; // Initial velocity toward a target
 };
 
 // ============================================
@@ -165,6 +169,7 @@ export type WorldObject = {
         regenRate?: number;    // 每tick恢复量
         resources?: number;    // 当前资源量
         maxResources?: number; // 最大资源量
+        indestructible?: boolean; // V4: Resource Anchor
     };
 };
 

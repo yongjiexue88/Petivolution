@@ -47,8 +47,8 @@ export class ChunkManager {
      * Initialize all chunks for the finite world
      * Called once on world creation
      */
-    initializeWorld(sim: SimulationState) {
-        if (this.initialized) return;
+    initializeWorld(sim: SimulationState, force = false) {
+        if (this.initialized && !force) return;
 
         console.log(`🌍 Initializing Infinite World`);
 
@@ -84,36 +84,72 @@ export class ChunkManager {
         console.log('🌍 World Reset Complete');
     }
 
-    /**
-     * Spawn initial animals in the center of the map
-     */
     private spawnInitialAnimals(sim: SimulationState) {
-        const centerX = V1.defaultMapWidth / 2;
-        const centerY = V1.defaultMapHeight / 2;
-        const spawnRadius = 30; // Spawn within 30 tiles of center
+        // Decentralized Spawning: Place animals in their relevant zones
+        // Pond (3,3) - Water Hub
+        // Urban (4,4) - Trash Hub
+        // Forest/Grove (2,3; 2,4 etc) - Trees
 
-        // Generic Spawner for all animals in config
-        const animals = ['rat', 'cat', 'chicken', 'smallBird', 'raccoon', 'crow', 'dog', 'fox', 'hawk', 'wolf', 'snake'] as const;
+        const chunkSize = CHUNK_SIZE_TILES; // 32
 
-        animals.forEach(species => {
-            const count = (V1.defaultSpawns as any)[species] || 0;
-            for (let i = 0; i < count; i++) {
-                const offsetX = (sim.rng() - 0.5) * spawnRadius * 2;
-                const offsetY = (sim.rng() - 0.5) * spawnRadius * 2;
+        // Helper to get random tile in a specific chunk
+        const getPosInChunk = (cx: number, cy: number) => {
+            return {
+                x: cx * chunkSize + Math.floor(sim.rng() * chunkSize),
+                y: cy * chunkSize + Math.floor(sim.rng() * chunkSize)
+            };
+        };
 
-                // Assign personality based on species role? Defaulting for now.
-                let personality: 'brave' | 'cautious' | 'curious' = 'curious';
-                if (['rat', 'chicken', 'smallBird'].includes(species)) personality = 'cautious';
-                if (['cat', 'dog', 'wolf', 'hawk', 'fox'].includes(species)) personality = 'brave';
+        // 1. Urban Dwellers (Rat, Raccoon, Crow) -> Spawn near Urban (4,4)
+        // 2. Water Dependent / Predators (Cat, Dog, Fox) -> Spawn near Pond (3,3)
+        // 3. Birds / Forest Dwellers (smallBird, Hawk, Chicken, Snake) -> Spawn in Grove (2,3) or Forest Edge
+        // 4. Pack / Wild (Wolf) -> Spawn in Wild/Brush (1,1)
 
-                spawnEntity(sim, species, this.getRandomName(species, sim), personality, {
-                    tx: centerX + offsetX,
-                    ty: centerY + offsetY,
+        const spawnList: { species: SpeciesId, count: number, zoneCx: number, zoneCy: number }[] = [
+            // Urban
+            { species: 'rat', count: V1.defaultSpawns.rat, zoneCx: 4, zoneCy: 4 },
+            { species: 'raccoon', count: V1.defaultSpawns.raccoon, zoneCx: 4, zoneCy: 4 },
+            { species: 'crow', count: V1.defaultSpawns.crow, zoneCx: 3, zoneCy: 4 }, // Fringe
+
+            // Pond / Central
+            { species: 'cat', count: V1.defaultSpawns.cat, zoneCx: 3, zoneCy: 3 },
+            { species: 'dog', count: V1.defaultSpawns.dog, zoneCx: 3, zoneCy: 3 },
+            { species: 'fox', count: V1.defaultSpawns.fox, zoneCx: 3, zoneCy: 3 },
+
+            // Grove / Forest
+            { species: 'smallBird', count: V1.defaultSpawns.smallBird, zoneCx: 2, zoneCy: 3 },
+            { species: 'chicken', count: V1.defaultSpawns.chicken, zoneCx: 2, zoneCy: 4 },
+            { species: 'hawk', count: V1.defaultSpawns.hawk, zoneCx: 2, zoneCy: 3 },
+            { species: 'snake', count: V1.defaultSpawns.snake, zoneCx: 6, zoneCy: 2 }, // East Forest
+
+            // Wild / Brush
+            { species: 'wolf', count: V1.defaultSpawns.wolf, zoneCx: 1, zoneCy: 1 },
+        ];
+
+        for (const entry of spawnList) {
+            for (let i = 0; i < entry.count; i++) {
+                const pos = getPosInChunk(entry.zoneCx, entry.zoneCy);
+                // Determine personality
+                let personality: 'curious' | 'cautious' | 'brave' = 'curious';
+                const pRoll = sim.rng();
+                if (pRoll < 0.33) personality = 'cautious';
+                else if (pRoll < 0.66) personality = 'brave';
+
+                // Basic default personalities based on species type
+                if (['rat', 'chicken', 'smallBird'].includes(entry.species)) {
+                    personality = sim.rng() > 0.5 ? 'cautious' : 'curious';
+                } else if (['cat', 'dog', 'wolf', 'hawk', 'fox'].includes(entry.species)) {
+                    personality = sim.rng() > 0.5 ? 'brave' : 'curious';
+                }
+
+                spawnEntity(sim, entry.species, `${entry.species}_${i}`, personality, {
+                    tx: pos.x / V1.tileSizePx, // spawnEntity takes tiles, getPosInChunk returns tiles*tileSize? Wait.
+                    ty: pos.y / V1.tileSizePx
                 });
             }
-        });
+        }
 
-        console.log(`🌍 Spawned initial animals based on config`);
+        console.log(`🌍 Spawned decentralized initial animals`);
     }
 
     private getRandomName(species: string, sim: SimulationState): string {
@@ -345,53 +381,121 @@ export class ChunkManager {
     }
 
     /**
-     * Generate objects for a chunk (water, bush, trash)
+     * Zone types for resource distribution
+     * Based on 8x8 chunk grid (256 tiles / 32 tiles per chunk = 8 chunks)
+     */
+    private getZoneForChunk(cx: number, cy: number): 'wild' | 'brush' | 'forestEdge' | 'grove' | 'urbanFringe' | 'urban' | 'pond' {
+        // Wild: outer edges
+        if (cx === 0 || cy === 0 || cx === 7 || cy === 7) {
+            return 'wild';
+        }
+        // Brush: second ring (corners and some edges)
+        if ((cx === 1 || cx === 6) && (cy === 1 || cy === 6)) {
+            return 'brush';
+        }
+        // Forest Edge: rows 1 and 6 (excluding corners)
+        if ((cy === 1 || cy === 6) && cx > 1 && cx < 6) {
+            return 'forestEdge';
+        }
+        if ((cx === 1 || cx === 6) && cy > 1 && cy < 6) {
+            return 'forestEdge';
+        }
+        // Grove: chunks (2,3) and (2,4)
+        if (cx === 2 && (cy === 3 || cy === 4)) {
+            return 'grove';
+        }
+        // Pond: chunk (3,3) - primary water source
+        if (cx === 3 && cy === 3) {
+            return 'pond';
+        }
+        // Urban: chunk (4,4) - trash/activity hub
+        if (cx === 4 && cy === 4) {
+            return 'urban';
+        }
+        // Urban Fringe: (3,4) and (4,3)
+        if ((cx === 3 && cy === 4) || (cx === 4 && cy === 3)) {
+            return 'urbanFringe';
+        }
+        // Default to brush for remaining inner chunks
+        return 'brush';
+    }
+
+    /**
+     * Generate objects for a chunk based on zone type
      */
     generateObjects(chunk: ChunkData, sim: SimulationState) {
         const [cx, cy] = chunk.id.split(',').map(Number);
         const startTx = cx * CHUNK_SIZE_TILES;
         const startTy = cy * CHUNK_SIZE_TILES;
+        const zone = this.getZoneForChunk(cx, cy);
 
-        // For infinite world, we define a "prime center" for initial resources.
-        // Current center is based on (256, 256) tiles.
-        const centerChunkX = Math.floor((V1.defaultMapWidth / 2) / CHUNK_SIZE_TILES);
-        const centerChunkY = Math.floor((V1.defaultMapHeight / 2) / CHUNK_SIZE_TILES);
+        // Refined Density to avoid "food everywhere" and encourage movement
+        switch (zone) {
+            case 'pond': // (3,3)
+                // Primary water source - 2 water pools
+                for (let i = 0; i < 2; i++) {
+                    this.spawnObject(sim, 'water', startTx, startTy);
+                }
+                break;
 
-        const distFromCenter = Math.max(
-            Math.abs(cx - centerChunkX),
-            Math.abs(cy - centerChunkY)
-        );
+            case 'urban': // (4,4)
+                // Trash and activity hub - 2 trash, 1 bush (reduced bush to kept urban feel)
+                for (let i = 0; i < 2; i++) {
+                    this.spawnObject(sim, 'trash', startTx, startTy);
+                }
+                this.spawnObject(sim, 'bush', startTx, startTy);
+                break;
 
-        // Core zone: center 4 chunks
-        if (distFromCenter <= 2) {
-            // Water source in very center
-            if (cx === centerChunkX && cy === centerChunkY) {
-                this.spawnObject(sim, 'water', startTx, startTy);
-            }
-
-            // Trash near center
-            if (distFromCenter <= 1 && sim.rng() > 0.5) {
+            case 'urbanFringe': // (3,4), (4,3)
+                // Urban spillover - 1 trash each
                 this.spawnObject(sim, 'trash', startTx, startTy);
+                this.spawnObject(sim, 'bush', startTx, startTy);
+                break;
+
+            case 'grove': // (2,3), (2,4)
+                // Dense vegetation - 4 bushes (reduced from 6), 2 perches (reduced from 4)
+                for (let i = 0; i < 4; i++) {
+                    this.spawnObject(sim, 'bush', startTx, startTy);
+                }
+                for (let i = 0; i < 2; i++) {
+                    this.spawnObject(sim, 'perch', startTx, startTy);
+                }
+                break;
+
+            case 'forestEdge': // Rows 1,6
+                // Transition zone - 3 bushes (reduced from 4), 2 perches (reduced from 4)
+                for (let i = 0; i < 3; i++) {
+                    this.spawnObject(sim, 'bush', startTx, startTy);
+                }
+                for (let i = 0; i < 2; i++) {
+                    this.spawnObject(sim, 'perch', startTx, startTy);
+                }
+                break;
+
+            case 'brush': { // Ring / Corners
+                // Second ring - 1 water at corners, 2 bushes (reduced from 4 to create open space)
+                const isCorner = (cx === 1 || cx === 6) && (cy === 1 || cy === 6);
+                if (isCorner) {
+                    this.spawnObject(sim, 'water', startTx, startTy);
+                }
+                for (let i = 0; i < 2; i++) {
+                    this.spawnObject(sim, 'bush', startTx, startTy);
+                }
+                break;
             }
 
-            // Bushes in core zone
-            const bushCount = 2 + Math.floor(sim.rng() * 3);
-            for (let i = 0; i < bushCount; i++) {
-                this.spawnObject(sim, 'bush', startTx, startTy);
-            }
+            case 'wild': // Outer
+                // Sparse - only occasional bushes (30% chance)
+                if (sim.rng() > 0.7) {
+                    this.spawnObject(sim, 'bush', startTx, startTy);
+                }
+                break;
         }
-        // Buffer zone: some scattered bushes
-        else if (distFromCenter <= 4) {
-            if (sim.rng() > 0.6) {
-                this.spawnObject(sim, 'bush', startTx, startTy);
-            }
-        }
-        // Outer zone: sparse
     }
 
-    spawnObject(sim: SimulationState, type: 'water' | 'bush' | 'trash', startTx: number, startTy: number) {
-        const offsetX = Math.floor(Math.random() * CHUNK_SIZE_TILES);
-        const offsetY = Math.floor(Math.random() * CHUNK_SIZE_TILES);
+    spawnObject(sim: SimulationState, type: 'water' | 'bush' | 'trash' | 'perch', startTx: number, startTy: number) {
+        const offsetX = Math.floor(sim.rng() * CHUNK_SIZE_TILES);
+        const offsetY = Math.floor(sim.rng() * CHUNK_SIZE_TILES);
         const tx = startTx + offsetX;
         const ty = startTy + offsetY;
 
@@ -406,12 +510,16 @@ export class ChunkManager {
             obj.data!.resources = OBJECT_CONFIGS.water.maxResources;
             obj.data!.maxResources = OBJECT_CONFIGS.water.maxResources;
             obj.data!.regenRate = OBJECT_CONFIGS.water.regenRatePerTick;
+            obj.data!.indestructible = OBJECT_CONFIGS.water.indestructible;
         } else if (type === 'trash') {
             obj.data!.resources = OBJECT_CONFIGS.trash.maxResources;
             obj.data!.maxResources = OBJECT_CONFIGS.trash.maxResources;
             obj.data!.regenRate = OBJECT_CONFIGS.trash.regenRatePerTick;
+            obj.data!.indestructible = OBJECT_CONFIGS.trash.indestructible;
         } else if (type === 'bush') {
             obj.data!.strength01 = OBJECT_CONFIGS.bush.strengthDefault || 1;
+        } else if (type === 'perch') {
+            obj.data!.strength01 = OBJECT_CONFIGS.perch.strengthDefault || 1;
         }
 
         sim.objects.set(obj.id, obj);

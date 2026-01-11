@@ -17,7 +17,7 @@ import { V1 } from '@shared/constants';
 
 export function calculateUtility(
     entity: EntityRuntime,
-    sim: SimulationState
+    _sim: SimulationState
 ): Partial<Record<Goal, number>> {
     const config = SPECIES_CONFIGS[entity.species];
     const uw = config.utility;
@@ -196,18 +196,7 @@ export function calculateUtility(
         let restScore = uw.base.rest;
         restScore += uw.urgency.fatigue * uFatigue;
 
-        const time = sim.timeOfDay;
-        const isNight = time >= 0.5;
-
-        if (config.activityCycle === 'diurnal') {
-            if (isNight && uFatigue > 0.2) {
-                restScore += 50;
-            }
-        } else if (config.activityCycle === 'nocturnal') {
-            if (!isNight && uFatigue > 0.2) {
-                restScore += 50;
-            }
-        }
+        // Day/night cycle removed - rest is now purely based on fatigue
 
         if (nearestBush) {
             restScore += uw.bonuses.nearBush * 0.5;

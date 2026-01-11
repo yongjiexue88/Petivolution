@@ -4,13 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "build": "tsc && tsc-alias",
     "start:prod": "node dist/index.js",
     "docker:build": "docker build -t petivolution-backend .",
     "docker:run": "docker run -p 8080:3000 petivolution-backend",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "verify": "tsx src/scripts/verify_ecosystem.ts"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +24,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "firebase-admin": "^13.6.0",
+    "seedrandom": "^3.0.5",
     "simplex-noise": "^4.0.3",
     "uuid": "^11.1.0"
   },
@@ -30,6 +32,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^25.0.3",
+    "@types/seedrandom": "^3.0.8",
     "tsc-alias": "^1.8.10",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"

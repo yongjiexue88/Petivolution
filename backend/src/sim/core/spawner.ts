@@ -1,20 +1,28 @@
-
 import {
     EntityRuntime,
     SpeciesId,
     Personality,
     TilePos,
+    Vec2,
 } from '@shared/types';
 import { V1 } from '@shared/constants';
 import { v4 as uuid } from 'uuid';
 import { SimulationState } from './tick';
+
+export type SpawnReason = 'migration' | 'reproduction' | 'ring_fallback' | 'near_resource' | 'initial';
+
+export interface SpawnOptions {
+    spawnReason?: SpawnReason;
+    spawnDirection?: Vec2; // Initial velocity toward a target (normalized direction)
+}
 
 export function spawnEntity(
     sim: SimulationState,
     species: SpeciesId,
     name: string,
     personality: Personality,
-    pos: TilePos
+    pos: TilePos,
+    options?: SpawnOptions
 ): EntityRuntime | null {
     // 检查人口上限 (per-chunk density)
     if (!canSpawn(species, sim, pos)) {
@@ -49,7 +57,17 @@ export function spawnEntity(
         generation: 1, // V2 Default
         history: [], // V1.1
         path: [],    // V1.1
+        // P0: Migration feel
+        spawnReason: options?.spawnReason,
+        spawnDirection: options?.spawnDirection,
     };
+
+    // If spawn direction is set, give initial velocity in that direction
+    if (options?.spawnDirection) {
+        const speed = 0.5; // Initial speed toward target
+        entity.vel.x = options.spawnDirection.x * speed;
+        entity.vel.y = options.spawnDirection.y * speed;
+    }
 
     sim.entities.set(entity.id, entity);
     sim.stats.birthsThisMinute++;

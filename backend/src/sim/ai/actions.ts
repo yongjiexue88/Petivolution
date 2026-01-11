@@ -267,6 +267,18 @@ function executeRummage(entity: EntityRuntime, sim: SimulationState): void {
         return;
     }
 
+    // Resource Consumption
+    if (trash.data) {
+        if (!trash.data.indestructible) {
+            if ((trash.data.resources || 0) <= 0) {
+                // Empty
+                entity.state = 'idle' as any;
+                return;
+            }
+            trash.data.resources = (trash.data.resources || 0) - 0.5; // Consume
+        }
+    }
+
     entity.vitals.hunger01 = Math.min(1, entity.vitals.hunger01 + 0.05);
 
     if (sim.tick % 60 === 0) {
@@ -293,6 +305,21 @@ function executeRummage(entity: EntityRuntime, sim: SimulationState): void {
 
 function executeDrink(entity: EntityRuntime, sim: SimulationState): void {
     const config = SPECIES_CONFIGS[entity.species];
+
+    // Resource Consumption
+    if (entity.targetObjectId) {
+        const water = sim.objects.get(entity.targetObjectId);
+        if (water && water.data) {
+            if (!water.data.indestructible) {
+                if ((water.data.resources || 0) <= 0) {
+                    entity.state = 'idle' as any;
+                    return;
+                }
+                water.data.resources = (water.data.resources || 0) - 0.2;
+            }
+        }
+    }
+
     entity.vitals.thirst01 = clamp01(entity.vitals.thirst01 + config.vitals.drinkGainPerTick);
 
     if (entity.targetObjectId) {
@@ -324,6 +351,21 @@ function executeDrink(entity: EntityRuntime, sim: SimulationState): void {
 
 function executeEat(entity: EntityRuntime, sim: SimulationState): void {
     const config = SPECIES_CONFIGS[entity.species];
+
+    // Resource Consumption (for Trash)
+    if (entity.targetObjectId) {
+        const obj = sim.objects.get(entity.targetObjectId);
+        if (obj && obj.type === 'trash' && obj.data) {
+            if (!obj.data.indestructible) {
+                if ((obj.data.resources || 0) <= 0) {
+                    entity.state = 'idle' as any;
+                    return;
+                }
+                obj.data.resources = (obj.data.resources || 0) - 0.5;
+            }
+        }
+    }
+
     entity.vitals.hunger01 = clamp01(entity.vitals.hunger01 + config.vitals.eatGainPerTick);
 
     if (sim.tick % 60 === 0) {

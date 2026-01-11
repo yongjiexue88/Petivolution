@@ -99,7 +99,7 @@ describe('Actions System', () => {
             ent.targetObjectId = 'w1';
 
             const sim: any = {
-                tick: 123,
+                tick: 120,
                 pendingEvents: [],
                 rng: () => 0.5
             };

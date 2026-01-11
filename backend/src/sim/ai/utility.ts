@@ -196,18 +196,7 @@ export function calculateUtility(
         let restScore = uw.base.rest;
         restScore += uw.urgency.fatigue * uFatigue;
 
-        const time = (sim.tick % 3600) / 3600; // 0..1 day cycle
-        const isNight = time >= 0.5;
-
-        if (config.activityCycle === 'diurnal') {
-            if (isNight && uFatigue > 0.2) {
-                restScore += 50;
-            }
-        } else if (config.activityCycle === 'nocturnal') {
-            if (!isNight && uFatigue > 0.2) {
-                restScore += 50;
-            }
-        }
+        // Day/night cycle removed - rest is now purely based on fatigue
 
         if (nearestBush) {
             restScore += uw.bonuses.nearBush * 0.5;
