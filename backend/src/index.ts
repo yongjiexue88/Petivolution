@@ -421,39 +421,45 @@ app.get('/api/events/status', (req, res) => {
     });
 });
 
-const server = app.listen(PORT, () => {
-    console.log(`🌍 World Server running on port ${PORT}`);
-    console.log(`Tick Rate: ${30}Hz (approx)`);
-    console.log('✅ Endpoint active: POST /api/world/reset');
-});
+// Export app and world for testing
+export { app, world };
 
-// Graceful shutdown for Cloud Run (SIGTERM) and Local Dev (SIGINT)
-const gracefulShutdown = () => {
-    console.log('🛑 Shutting down gracefully...');
-
-    // Stop the world simulation tick loop (triggers auto-save)
-    world.stop();
-
-    // Close the HTTP server
-    server.close(() => {
-        console.log('✅ HTTP server closed');
-        process.exit(0);
+// Only start server if running directly
+if (require.main === module) {
+    const server = app.listen(PORT, () => {
+        console.log(`🌍 World Server running on port ${PORT}`);
+        console.log(`Tick Rate: ${30}Hz (approx)`);
+        console.log('✅ Endpoint active: POST /api/world/reset');
     });
 
-    // Force shutdown after 30 seconds if graceful shutdown fails
-    setTimeout(() => {
-        console.error('⚠️ Forced shutdown after timeout');
-        process.exit(1);
-    }, 30000);
-};
+    // Graceful shutdown for Cloud Run (SIGTERM) and Local Dev (SIGINT)
+    const gracefulShutdown = () => {
+        console.log('🛑 Shutting down gracefully...');
 
-process.on('SIGTERM', () => {
-    console.log('🛑 SIGTERM received');
-    gracefulShutdown();
-});
+        // Stop the world simulation tick loop (triggers auto-save)
+        world.stop();
 
-process.on('SIGINT', () => {
-    console.log('🛑 SIGINT received (Ctrl+C)');
-    gracefulShutdown();
-});
+        // Close the HTTP server
+        server.close(() => {
+            console.log('✅ HTTP server closed');
+            process.exit(0);
+        });
+
+        // Force shutdown after 30 seconds if graceful shutdown fails
+        setTimeout(() => {
+            console.error('⚠️ Forced shutdown after timeout');
+            process.exit(1);
+        }, 30000);
+    };
+
+    process.on('SIGTERM', () => {
+        console.log('🛑 SIGTERM received');
+        gracefulShutdown();
+    });
+
+    process.on('SIGINT', () => {
+        console.log('🛑 SIGINT received (Ctrl+C)');
+        gracefulShutdown();
+    });
+}
 

@@ -272,7 +272,8 @@ export type WorldSaveData = {
 export type ChunkState = 'active' | 'semi_active' | 'far';
 
 export type ChunkStats = {
-    counts: Partial<Record<SpeciesId, number>>;
+    ratCount: number;
+    catCount: number;
     resourceLevel: number; // 0..1 generic resource index
     dangerLevel: number;   // 0..1 generic danger index
     lastTick: number;      // Last time this chunk was updated
@@ -301,7 +302,7 @@ export type WorkerCommand =
     | { type: 'PLACE_OBJECT'; payload: { object: WorldObject } }
     | { type: 'REMOVE_OBJECT'; payload: { objectId: ObjectId } }
     | { type: 'SELECT_ENTITY'; payload: { entityId?: EntityId } }
-    | { type: 'UPDATE_CAMERA'; payload: { centerX: number; centerY: number; zoom: number; viewRectTiles?: { leftTx: number; topTy: number; rightTx: number; bottomTy: number } } }
+    | { type: 'UPDATE_CAMERA'; payload: { centerX: number; centerY: number; zoom: number } }
     | { type: 'REQUEST_SAVE'; payload: { saveName: string } }
     | { type: 'RESET_WORLD'; payload: { seed?: number } };
 
@@ -343,8 +344,8 @@ export type SimStats = {
     crow: number;
     dog: number;
     fox: number;
-    hawk: number;
     wolf: number;
+    hawk: number;
     snake: number;
     deathsLastMin: number;
     birthsLastMin: number;

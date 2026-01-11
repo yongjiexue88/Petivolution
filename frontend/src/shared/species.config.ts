@@ -854,10 +854,9 @@ export const OBJECT_CONFIGS: Record<string, ObjectInteractConfig> = {
     trash: {
         type: 'trash',
         maxResources: 80,
-        regenRatePerTick: 0.002,
+        regenRatePerTick: 0.002, // Regenerating anchor
         interactRangeTiles: 1.5,
         strengthDefault: 1.0,
-        indestructible: true,
     },
     perch: {
         type: 'perch',

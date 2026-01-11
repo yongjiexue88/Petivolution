@@ -7,7 +7,7 @@ export const V1 = {
 
     // 时间
     simTickHz: 15,              // 固定步长模拟 (10~20都行，推荐15)
-    snapshotHz: 5,              // worker -> main 快照频率 (5Hz / 200ms)
+    snapshotHz: 10,             // worker -> main 快照频率
     perceptionEveryNTicks: 5,   // 感知频率
     decisionEveryNTicks: 10,    // 决策频率
 
