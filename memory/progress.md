@@ -1,8 +1,15 @@
 # V1 AI System Implementation Progress Report
-**Date:** 2026-01-08
-**Status:** In Progress (City & Sprites Integrated)
+**Date:** 2026-01-11
+**Status:** In Progress (AI Enhancements Completed)
 
-### 🚀 Latest Updates (2026-01-08)
+### 🚀 Latest Updates (2026-01-11)
+#### 🧠 Advanced Animal AI
+- [x] **Perception Ranges**: Calibrated for 256x256 map (e.g., Hawk 20, Snake 4).
+- [x] **Social Behaviors**: Implemented flocking for Birds/Wolves/Chickens; solitary logic for others.
+- [x] **Enhanced Personalities**: distinct `Brave`, `Cautious`, `Curious` behaviors per species.
+- [x] **Config Refactor**: Created standalone configs for Fox, Hawk, Wolf, Snake.
+- [x] **Day/Night Cycle**: Removed AI logic per user request (Rest is now purely fatigue-based).
+
 #### 🏙️ World Building
 - [x] **City Construction**: Built a central city with Town Hall, roads, fences, gardens, and localized attributes.
 - [x] **New Background**: Replaced dark grid with a tiling grass texture from `Tileset Spring.png`.
@@ -560,7 +567,7 @@ Successfully implemented and integrated the new V1 AI system for Petivolution. T
 
 #### 📦 Content Pack 2: City Scavengers（城市清道夫）
 - [x] 🦝 浣熊 + 🐦‍⬛ 乌鸦 + 垃圾箱 (Implemented Raccoon + Rummage)
-- [x] 新系统：昼夜（夜行性显著）(Implemented Day/Night Cycle + Sleep Activity)
+- [x] 新系统：昼夜（夜行性显著）(REMOVED per user request)
 - [ ] 新挑战：控制垃圾导致的鼠增长
 
 #### 📦 Content Pack 3: Guardian Mode（管理与驱赶）
