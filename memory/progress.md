@@ -3,6 +3,11 @@
 **Status:** In Progress (AI Enhancements Completed)
 
 ### 🚀 Latest Updates (2026-01-11)
+#### 🐛 Bug Fixes & Stability
+- [x] **Connection Refused Fix**: Resolved `net::ERR_CONNECTION_REFUSED` by ensuring backend server (port 3000) is actively listening and cleaning up zombie processes.
+- [x] **Configurable API URL**: Updated `ServerClient.ts` to support `VITE_API_URL`, improving deployment flexibility.
+- [x] **Robust Backend Startup**: Verified backend startup sequence and port binding.
+
 #### 🧠 Advanced Animal AI
 - [x] **Perception Ranges**: Calibrated for 256x256 map (e.g., Hawk 20, Snake 4).
 - [x] **Social Behaviors**: Implemented flocking for Birds/Wolves/Chickens; solitary logic for others.
@@ -21,13 +26,16 @@
 - [x] **Display Scaling**: Configured `WorldScene.ts` to render new sprites at **32x32px** (0.5 scale).
 - [x] **Animations**: Implemented Idle, Walk, Run, Attack, Eat, Sleep, Dead states for all new species.
 
+#### ⚠️ Known Issues
+- **Frontend Tests**: 3 tests failing in `actions.test.ts` and `perception.test.ts` related to AI perception radius and thirst restoration. These appear unrelated to recent connectivity fixes but need attention.
+
 #### 🎨 Pixel Art Standards (NEW)
 - [x] Switch to **2x integer zoom** (40 tiles visible)
 - [x] Main actors: **32×32** | Small critters: **16×16**
 - [x] Enable `roundPixels: true` in Phaser
 
 ## Overview
-Successfully implemented and integrated the new V1 AI system for Petivolution. The system replaces the legacy logic with a robust Goal-Action architecture, compliant with the provided specifications.
+Successfully implemented and integrated the new V1 AI system for Petivolution. The system replaces the legacy logic with a robust Goal-Action architecture, compliant with the provided specifications. Recently addressed critical stability issues ensuring reliable backend connectivity.
 
 ## Key Accomplishments
 

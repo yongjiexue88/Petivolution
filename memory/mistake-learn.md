@@ -34,3 +34,8 @@
 - **Mistake**: Generated 16x16 pixel art sprites but scaled them by `0.09` in-game, resulting in invisible micro-sprites (1-2px). This happened because I blindly copied the scaling factor from existing sprites (which were 1024x1024 placeholders) without checking the source resolution.
 - **Correction**: Re-sliced the sprite sheets to **64x64px** and updated the in-game scale to **0.5**, resulting in a clear **32x32px** display size.
 - **Lesson**: Always check the source resolution of assets before defining scale factors. For pixel art, aim for integer scaling relative to the game's tile size (e.g. 16px tile -> 32px or 48px sprite).
+
+### Backend Process Management
+- **Mistake**: The backend failed to bind to port 3000 because a zombie process from a previous session was holding the port, leading to `net::ERR_CONNECTION_REFUSED`.
+- **Correction**: Used `lsof -i :3000` to identify the PID and `kill -9` to terminate it before restarting.
+- **Lesson**: When a server fails to start or connect, always verify if the port is already in use by a stale process.
