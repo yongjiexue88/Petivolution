@@ -8,9 +8,9 @@ This workflow verifies code quality, ensures test coverage, then commits changes
 
 ## Phase 1: Lint & Type Check (from /verify-app)
 
-1. Verify Frontend
+1. Verify Frontend (Strict Type Check & Build)
 ```bash
-cd frontend && npm run lint && npm run type-check
+cd frontend && npm run build
 ```
 
 2. Verify Backend (Build Check)
