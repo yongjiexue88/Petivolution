@@ -1,5 +1,5 @@
 // ============================================
-// V1 AI - Utility 决策系统
+// V1 AI - Utility Decision System
 // ============================================
 
 import type {
@@ -12,7 +12,7 @@ import { SPECIES_CONFIGS, clamp01 } from '@shared/species.config';
 import { V1 } from '@shared/constants';
 
 // ============================================
-// Utility 计算
+// Utility Calculation
 // ============================================
 
 export function calculateUtility(
@@ -25,13 +25,13 @@ export function calculateUtility(
     const stimuli = entity.ai.recentStimuli;
 
     // ========================================
-    // 计算紧急度 (0..1, 越高越急)
+    // Calculate Urgency (0..1, higher = more urgent)
     // ========================================
     const uHunger = clamp01(1 - v.hunger01);
     const uThirst = clamp01(1 - v.thirst01);
     const uFatigue = clamp01(1 - v.fatigue01);
 
-    // 恐惧: 看到捕食者
+    // Fear: Seeing a predator
     let uFear = 0;
     const predatorStimulus = stimuli.find(s => s.type === 'predator');
     if (predatorStimulus) {
@@ -40,7 +40,7 @@ export function calculateUtility(
     }
 
     // ========================================
-    // 获取最近资源
+    // Get Nearest Resources
     // ========================================
     const nearestWater = findNearest(stimuli, 'water');
     const nearestBush = findNearest(stimuli, 'bush');
@@ -48,7 +48,7 @@ export function calculateUtility(
     const nearestPrey = findNearest(stimuli, 'prey');
 
     // ========================================
-    // 计算每个 Goal 的分数
+    // Calculate Score for Each Goal
     // ========================================
     const scores: Partial<Record<Goal, number>> = {};
 
@@ -62,16 +62,16 @@ export function calculateUtility(
             fleeScore -= uw.distancePenalty.bush * (nearestBush.dist / V1.tileSizePx);
         }
 
-        // 性格加成
+        // Personality bonus
         const personalityMod = uw.personality[entity.personality];
         if (personalityMod.fear) fleeScore += personalityMod.fear * uFear;
         if (personalityMod.nearBush) fleeScore += personalityMod.nearBush;
 
         scores.flee = fleeScore;
 
-        // 强制逃跑规则: 恐惧度 > 0.2 时强制逃跑
+        // Force flee rule: Flee when fear > 0.2
         if (uFear > 0.2) {
-            scores.flee = 100; // 最高优先级
+            scores.flee = 100; // Highest priority
         }
     }
 
@@ -84,13 +84,13 @@ export function calculateUtility(
             drinkScore += uw.bonuses.nearWater;
             drinkScore -= uw.distancePenalty.water * (nearestWater.dist / V1.tileSizePx);
         } else {
-            drinkScore -= 0.5; // 没看到水，减分
+            drinkScore -= 0.5; // No water visible, reduce score
         }
 
         scores.drink = drinkScore;
     }
 
-    // -------- Eat (从垃圾堆，鼠用) --------
+    // -------- Eat (from trash pile, for rats) --------
     if (entity.species === 'rat') {
         let eatScore = uw.base.eat;
         eatScore += uw.urgency.hunger * uHunger;
@@ -225,11 +225,40 @@ export function calculateUtility(
         scores.wander = wanderScore;
     }
 
+    // -------- Reproduce --------
+    {
+        const rep = config.reproduction;
+        if (rep?.enabled) {
+            let reproduceScore = uw.base.reproduce ?? 0.1;
+
+            // Only consider reproduction if basic needs are met
+            const needsMet = v.hunger01 > rep.minHunger && v.thirst01 > 0.4 && v.fatigue01 > 0.3;
+            const matureEnough = entity.ageTicks >= rep.minAgeTicks;
+            const cooldownOk = !entity.lastReproductionTick ||
+                (_sim.tick - entity.lastReproductionTick) >= rep.cooldownTicks;
+
+            if (needsMet && matureEnough && cooldownOk) {
+                // Boost reproduce score when ready
+                reproduceScore += 0.5;
+
+                // Higher score when very well-fed
+                if (v.hunger01 > 0.8 && v.thirst01 > 0.7) {
+                    reproduceScore += 0.3;
+                }
+            } else {
+                // Not ready to reproduce
+                reproduceScore = -999;
+            }
+
+            scores.reproduce = reproduceScore;
+        }
+    }
+
     return scores;
 }
 
 // ============================================
-// Goal 选择
+// Goal Selection
 // ============================================
 
 export function selectGoal(scores: Partial<Record<Goal, number>>): Goal {
@@ -247,7 +276,7 @@ export function selectGoal(scores: Partial<Record<Goal, number>>): Goal {
 }
 
 // ============================================
-// 辅助函数
+// Helper Functions
 // ============================================
 
 function findNearest(

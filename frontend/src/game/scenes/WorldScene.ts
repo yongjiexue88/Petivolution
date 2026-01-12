@@ -1387,7 +1387,11 @@ export class WorldScene extends Phaser.Scene {
         }
 
         const sprite = this.add.image(0, 0, textureKey);
-        sprite.setScale(0.1); // 204px frame -> ~20px fits tile nicely
+        // Target display size: 32px (matching standard entity size)
+        // Original assets are likely large (e.g. ~200px+), so we scale dynamically
+        const targetSize = 32;
+        const scale = targetSize / sprite.width;
+        sprite.setScale(scale);
         container.add(sprite);
 
         // Background layer

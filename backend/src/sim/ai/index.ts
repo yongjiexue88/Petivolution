@@ -1,8 +1,8 @@
 // ============================================
-// AI 模块导出
+// AI Module Exports
 // ============================================
 
-// 感知系统
+// Perception System
 export {
     perceive,
     distance,
@@ -10,13 +10,13 @@ export {
     type PerceptionResult,
 } from './perception';
 
-// Utility 决策系统
+// Utility Decision System
 export {
     calculateUtility,
     selectGoal,
 } from './utility';
 
-// 动作系统
+// Action System
 export {
     executeAction,
 } from './actions';

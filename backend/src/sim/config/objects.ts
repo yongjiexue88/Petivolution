@@ -1,23 +1,23 @@
 // ============================================
-// V1 世界对象配置
+// V1 World Object Configuration
 // ============================================
 
 import type { ObjectId, TilePos, WorldObject, ObjectType } from '../../shared/types';
 
 // ============================================
-// ID 生成器
+// ID Generator
 // ============================================
 
 const mkId = (prefix: string, n: number): ObjectId => `${prefix}_${n}`;
 
 // ============================================
-// 可放置对象模板
+// Placeable Object Templates
 // ============================================
 
 export type PlaceableTemplate = {
     type: ObjectType;
-    label: string;              // UI 显示用
-    footprint: { w: number; h: number };    // V1 用单格
+    label: string;              // For UI display
+    footprint: { w: number; h: number };    // V1 uses single grid
     defaultData?: WorldObject['data'];
 };
 
@@ -25,30 +25,30 @@ export const PLACEABLE_TEMPLATES: Record<ObjectType, PlaceableTemplate> = {
     water: {
         type: 'water',
         label: 'Water Source',
-        footprint: { w: 1, h: 1 },
+        footprint: { w: 2, h: 2 },
     },
     bush: {
         type: 'bush',
         label: 'Bush (Cover)',
-        footprint: { w: 1, h: 1 },
+        footprint: { w: 2, h: 2 },
         defaultData: { strength01: 0.8 },
     },
     trash: {
         type: 'trash',
         label: 'Trash Pile (Food/Spawn)',
-        footprint: { w: 1, h: 1 },
+        footprint: { w: 2, h: 2 },
         defaultData: { regenRate: 1 },
     },
     perch: {
         type: 'perch',
-        label: 'Perch (Bird Rest)',
-        footprint: { w: 1, h: 1 },
+        label: 'Perch Point (Bird Rest)',
+        footprint: { w: 2, h: 2 },
         defaultData: { strength01: 1.0 },
     },
 };
 
 // ============================================
-// 每张地图的默认对象
+// Default Objects Per Map
 // ============================================
 
 export const DEFAULT_OBJECTS_BY_MAP: Record<string, WorldObject[]> = {
@@ -69,7 +69,7 @@ export const DEFAULT_OBJECTS_BY_MAP: Record<string, WorldObject[]> = {
         },
     ],
 
-    // 默认地图
+    // Default Map
     default: [
         { id: mkId('obj_water', 1), type: 'water', pos: { tx: 50, ty: 50 } },
         { id: mkId('obj_trash', 1), type: 'trash', pos: { tx: 30, ty: 30 } },
@@ -90,7 +90,7 @@ export const DEFAULT_OBJECTS_BY_MAP: Record<string, WorldObject[]> = {
 };
 
 // ============================================
-// 对象交互配置
+// Object Interaction Configuration
 // ============================================
 
 export type ObjectInteractConfig = {
@@ -111,7 +111,7 @@ export const OBJECT_CONFIGS: Record<ObjectType, ObjectInteractConfig> = {
     },
     bush: {
         type: 'bush',
-        maxResources: 0,            // 灌木没有资源
+        maxResources: 0,            // Bushes have no resources
         regenRatePerTick: 0,
         interactRangeTiles: 2.0,
         strengthDefault: 0.8,
@@ -133,13 +133,13 @@ export const OBJECT_CONFIGS: Record<ObjectType, ObjectInteractConfig> = {
 };
 
 // ============================================
-// 工厂函数
+// Factory Functions
 // ============================================
 
 let objectIdCounter = 0;
 
 /**
- * 创建放置对象
+ * Create object for placement
  */
 export function createObjectForPlacement(
     type: ObjectType,
@@ -158,11 +158,11 @@ export function createObjectForPlacement(
 }
 
 /**
- * 获取地图默认对象列表
+ * Get default object list for map
  */
 export function getDefaultObjectsForMap(mapId: string): WorldObject[] {
     const objects = DEFAULT_OBJECTS_BY_MAP[mapId] ?? DEFAULT_OBJECTS_BY_MAP.default;
-    // 返回深拷贝
+    // Return deep copy
     return objects.map(obj => ({
         ...obj,
         data: obj.data ? { ...obj.data } : undefined,
@@ -170,7 +170,7 @@ export function getDefaultObjectsForMap(mapId: string): WorldObject[] {
 }
 
 /**
- * 重置对象 ID 计数器
+ * Reset object ID counter
  */
 export function resetObjectIdCounter(value: number = 0): void {
     objectIdCounter = value;

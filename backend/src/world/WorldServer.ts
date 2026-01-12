@@ -62,7 +62,12 @@ export class WorldServer {
                 this.sim.tick = snapshot.tick || 0;
                 this.lastAutoSaveTick = this.sim.tick;
 
-                console.log(`✅ Restored from snapshot: tick ${snapshot.tick}, ${snapshot.entities.length} entities, ${snapshot.objects?.length || 0} objects`);
+                // Restore graveyard from snapshot
+                if (snapshot.graveyard) {
+                    this.sim.graveyard = snapshot.graveyard;
+                }
+
+                console.log(`✅ Restored from snapshot: tick ${snapshot.tick}, ${snapshot.entities.length} entities, ${snapshot.objects?.length || 0} objects, ${snapshot.graveyard?.length || 0} graveyard`);
             } else {
                 console.log('📦 No snapshot found, starting fresh simulation');
             }
@@ -84,6 +89,7 @@ export class WorldServer {
                 species: data.species,
                 name: data.name || 'Unknown',
                 personality: data.personality || 'curious',
+                sex: data.sex || (Math.random() > 0.5 ? 'male' : 'female'), // Restore or assign random
                 pos: { x: data.x || data.pos?.x || 0, y: data.y || data.pos?.y || 0 },
                 vel: { x: 0, y: 0 },
                 facing: data.facing || 'e',
@@ -173,7 +179,7 @@ export class WorldServer {
                 entities: snapshot.entities,
                 objects: snapshot.objects || [],
                 chunks: {},
-                graveyard: [],
+                graveyard: this.sim.graveyard, // Persist graveyard
             };
 
             await SnapshotService.saveSnapshot(worldData);
@@ -297,7 +303,7 @@ export class WorldServer {
                 entities: snapshot.entities,
                 objects: snapshot.objects || [],
                 chunks: {},
-                graveyard: [],
+                graveyard: this.sim.graveyard, // Persist graveyard
             };
 
             const path = await SnapshotService.saveSnapshot(worldData);
@@ -322,6 +328,7 @@ export class WorldServer {
             this.sim.entities.clear();
             this.sim.objects.clear();
             this.sim.tick = 0;
+            this.sim.graveyard = []; // Clear graveyard on reset
             this.lastAutoSaveTick = -1;
 
             // 3. Re-initialize World (Spawns & Resources)

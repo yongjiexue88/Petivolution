@@ -50,9 +50,24 @@ export class ChunkManager {
     initializeWorld(sim: SimulationState, force = false) {
         if (this.initialized && !force) return;
 
-        console.log(`🌍 Initializing Infinite World`);
+        console.log(`🌍 Initializing World - Generating all 64 chunks upfront`);
 
-        // Spawn initial animals in center area
+        // Generate ALL chunks with their objects at world creation
+        // This ensures all animals have access to resources regardless of camera position
+        for (let cy = 0; cy < 8; cy++) {
+            for (let cx = 0; cx < 8; cx++) {
+                const id = this.getChunkId(cx, cy);
+                if (!this.chunks.has(id)) {
+                    this.generateChunk(id, sim);
+                    const chunk = this.chunks.get(id)!;
+                    this.generateObjects(chunk, sim);
+                }
+                // Mark all chunks as active so they all get updates
+                this.activeChunks.add(id);
+            }
+        }
+
+        // Spawn initial animals across the map
         this.spawnInitialAnimals(sim);
 
         this.initialized = true;
@@ -62,94 +77,70 @@ export class ChunkManager {
      * DEBUG: Reset world logic
      */
     resetWorld(sim: SimulationState) {
-        // 1. Clear all entities
+        // 1. Clear all entities and objects
         sim.entities.clear();
         sim.objects.clear();
+        sim.graveyard = []; // Clear graveyard on reset
 
-        // 2. Clear all chunk stats (so they regenerate)
-        for (const chunk of this.chunks.values()) {
-            chunk.stats.counts = {};
-        }
-
-        // 3. Reset stats
+        // 2. Clear all chunk data so they regenerate
+        this.chunks.clear();
         this.activeChunks.clear();
         this.semiActiveChunks.clear();
 
-        // 4. Respawn initial
+        // 3. Regenerate ALL 64 chunks with objects
+        for (let cy = 0; cy < 8; cy++) {
+            for (let cx = 0; cx < 8; cx++) {
+                const id = this.getChunkId(cx, cy);
+                this.generateChunk(id, sim);
+                const chunk = this.chunks.get(id)!;
+                this.generateObjects(chunk, sim);
+                // Mark all chunks as active
+                this.activeChunks.add(id);
+            }
+        }
+
+        // 4. Respawn initial animals
         this.spawnInitialAnimals(sim);
 
-        // 5. Force update LOD (will cause realizeChunk -> spawnWildAnimals)
-        this.updateLOD(sim);
-
-        console.log('🌍 World Reset Complete');
+        console.log('🌍 World Reset Complete - All 64 chunks regenerated');
     }
 
     private spawnInitialAnimals(sim: SimulationState) {
-        // Decentralized Spawning: Place animals in their relevant zones
-        // Pond (3,3) - Water Hub
-        // Urban (4,4) - Trash Hub
-        // Forest/Grove (2,3; 2,4 etc) - Trees
+        console.log('🌍 Spawning animals randomly across the map');
 
-        const chunkSize = CHUNK_SIZE_TILES; // 32
-
-        // Helper to get random tile in a specific chunk
-        const getPosInChunk = (cx: number, cy: number) => {
-            return {
-                x: cx * chunkSize + Math.floor(sim.rng() * chunkSize),
-                y: cy * chunkSize + Math.floor(sim.rng() * chunkSize)
-            };
-        };
-
-        // 1. Urban Dwellers (Rat, Raccoon, Crow) -> Spawn near Urban (4,4)
-        // 2. Water Dependent / Predators (Cat, Dog, Fox) -> Spawn near Pond (3,3)
-        // 3. Birds / Forest Dwellers (smallBird, Hawk, Chicken, Snake) -> Spawn in Grove (2,3) or Forest Edge
-        // 4. Pack / Wild (Wolf) -> Spawn in Wild/Brush (1,1)
-
-        const spawnList: { species: SpeciesId, count: number, zoneCx: number, zoneCy: number }[] = [
-            // Urban
-            { species: 'rat', count: V1.defaultSpawns.rat, zoneCx: 4, zoneCy: 4 },
-            { species: 'raccoon', count: V1.defaultSpawns.raccoon, zoneCx: 4, zoneCy: 4 },
-            { species: 'crow', count: V1.defaultSpawns.crow, zoneCx: 3, zoneCy: 4 }, // Fringe
-
-            // Pond / Central
-            { species: 'cat', count: V1.defaultSpawns.cat, zoneCx: 3, zoneCy: 3 },
-            { species: 'dog', count: V1.defaultSpawns.dog, zoneCx: 3, zoneCy: 3 },
-            { species: 'fox', count: V1.defaultSpawns.fox, zoneCx: 3, zoneCy: 3 },
-
-            // Grove / Forest
-            { species: 'smallBird', count: V1.defaultSpawns.smallBird, zoneCx: 2, zoneCy: 3 },
-            { species: 'chicken', count: V1.defaultSpawns.chicken, zoneCx: 2, zoneCy: 4 },
-            { species: 'hawk', count: V1.defaultSpawns.hawk, zoneCx: 2, zoneCy: 3 },
-            { species: 'snake', count: V1.defaultSpawns.snake, zoneCx: 6, zoneCy: 2 }, // East Forest
-
-            // Wild / Brush
-            { species: 'wolf', count: V1.defaultSpawns.wolf, zoneCx: 1, zoneCy: 1 },
+        const animalSpecies: SpeciesId[] = [
+            'rat', 'cat', 'chicken', 'smallBird', 'raccoon', 'crow',
+            'dog', 'fox', 'hawk', 'wolf', 'snake'
         ];
 
-        for (const entry of spawnList) {
-            for (let i = 0; i < entry.count; i++) {
-                const pos = getPosInChunk(entry.zoneCx, entry.zoneCy);
+        for (const species of animalSpecies) {
+            // Accessing dynamic property on V1.defaultSpawns
+            const count = (V1.defaultSpawns as any)[species] || 0;
+
+            for (let i = 0; i < count; i++) {
+                // Random position across the entire map
+                const tx = Math.floor(sim.rng() * V1.defaultMapWidth);
+                const ty = Math.floor(sim.rng() * V1.defaultMapHeight);
+
                 // Determine personality
                 let personality: 'curious' | 'cautious' | 'brave' = 'curious';
                 const pRoll = sim.rng();
                 if (pRoll < 0.33) personality = 'cautious';
                 else if (pRoll < 0.66) personality = 'brave';
 
-                // Basic default personalities based on species type
-                if (['rat', 'chicken', 'smallBird'].includes(entry.species)) {
+                // Basic default personalities based on species type override
+                if (['rat', 'chicken', 'smallBird'].includes(species)) {
                     personality = sim.rng() > 0.5 ? 'cautious' : 'curious';
-                } else if (['cat', 'dog', 'wolf', 'hawk', 'fox'].includes(entry.species)) {
+                } else if (['cat', 'dog', 'wolf', 'hawk', 'fox'].includes(species)) {
                     personality = sim.rng() > 0.5 ? 'brave' : 'curious';
                 }
 
-                spawnEntity(sim, entry.species, `${entry.species}_${i}`, personality, {
-                    tx: pos.x / V1.tileSizePx, // spawnEntity takes tiles, getPosInChunk returns tiles*tileSize? Wait.
-                    ty: pos.y / V1.tileSizePx
+                spawnEntity(sim, species, `${species}_${i}`, personality, {
+                    tx: tx,
+                    ty: ty
                 });
             }
         }
-
-        console.log(`🌍 Spawned decentralized initial animals`);
     }
 
     private getRandomName(species: string, sim: SimulationState): string {
@@ -173,76 +164,25 @@ export class ChunkManager {
 
     /**
      * Update LOD based on camera position and zoom
-     * Dynamically realize chunks as they come into view
-     */
-    /**
-     * Update LOD based on ViewRect (Hot/Warm/Cold)
+     * SIMPLIFIED: Keep all chunks active at all times for a finite world
      */
     updateLOD(sim: SimulationState) {
-        if (!sim.viewRectTiles) {
-            // Fallback if viewRect not set (e.g. init)
-            return;
-        }
-
-        const view = sim.viewRectTiles;
-        const C_TILES = CHUNK_SIZE_TILES;
-
-        // Calculate Chunk Rect visible
-        const minCx = Math.floor(view.leftTx / C_TILES);
-        const minCy = Math.floor(view.topTy / C_TILES);
-        const maxCx = Math.floor(view.rightTx / C_TILES);
-        const maxCy = Math.floor(view.bottomTy / C_TILES);
-
-
-
-        const newActive = new Set<ChunkId>();
-        const newSemi = new Set<ChunkId>();
-
-        // Hot Padding = 1 (Chunks strictly needed + 1 ring)
-        const hotPadding = 1;
-        // Warm Padding = 2 (Chunks preloaded)
-        const warmPadding = 2;
-
-        for (let cy = minCy - warmPadding; cy <= maxCy + warmPadding; cy++) {
-            for (let cx = minCx - warmPadding; cx <= maxCx + warmPadding; cx++) {
-                // Bounds check
-                if (cx < 0 || cy < 0 || cx >= 8 || cy >= 8) continue; // 256/32 = 8x8 grid
-
-                const id = this.getChunkId(cx, cy);
-
-                // Is Hot?
-                if (cx >= minCx - hotPadding && cx <= maxCx + hotPadding &&
-                    cy >= minCy - hotPadding && cy <= maxCy + hotPadding) {
-                    newActive.add(id);
-                } else {
-                    newSemi.add(id);
+        // For a finite 8x8 world, keep ALL chunks active
+        // No virtualization - all animals remain in memory and fully simulated
+        if (this.activeChunks.size < 64) {
+            for (let cy = 0; cy < 8; cy++) {
+                for (let cx = 0; cx < 8; cx++) {
+                    const id = this.getChunkId(cx, cy);
+                    if (!this.chunks.has(id)) {
+                        this.generateChunk(id, sim);
+                        const chunk = this.chunks.get(id)!;
+                        this.generateObjects(chunk, sim);
+                    }
+                    this.activeChunks.add(id);
                 }
             }
         }
-
-        // Handle State Transitions
-        // 1. Virtualize chunks that are no longer in semi-active radius
-        const currentAll = new Set([...this.activeChunks, ...this.semiActiveChunks]);
-        for (const id of currentAll) {
-            if (!newActive.has(id) && !newSemi.has(id)) {
-                this.virtualizeChunk(id, sim);
-            }
-        }
-
-        // 2. Realize new active/semi chunks
-        for (const id of newActive) {
-            if (!this.activeChunks.has(id)) {
-                this.realizeChunk(id, sim);
-            }
-        }
-        for (const id of newSemi) {
-            if (!this.semiActiveChunks.has(id) && !this.activeChunks.has(id)) {
-                this.realizeChunk(id, sim);
-            }
-        }
-
-        this.activeChunks = newActive;
-        this.semiActiveChunks = newSemi;
+        // No virtualization - entities persist across the entire map
     }
 
     /**

@@ -1,11 +1,11 @@
 // ============================================
-// V1 世界规则配置
+// V1 World Rules Configuration
 // ============================================
 
 import type { WorldRule } from '../../shared/types';
 
 // ============================================
-// 默认规则
+// Default Rules
 // ============================================
 
 export const DEFAULT_RULES: WorldRule = {
@@ -18,12 +18,12 @@ export const DEFAULT_RULES: WorldRule = {
         chicken: 10,
         smallBird: 15,
         raccoon: 5,
-        crow: 8,
-        dog: 4,
-        fox: 4,
-        wolf: 2,
-        hawk: 3,
-        snake: 5,
+        crow: 10,
+        dog: 2,
+        fox: 3,
+        hawk: 2,
+        wolf: 4,
+        snake: 5
     },
 
     trashSpawnsRats: true,
@@ -54,14 +54,14 @@ export const DEFAULT_RULES: WorldRule = {
 };
 
 // ============================================
-// 预设规则（三档生态系统）
+// Preset Rules (Ecosystem Tiers)
 // ============================================
 
-export const RULE_PRESETS: Record<'balanced' | 'wild' | 'abundant', WorldRule> = {
-    // 平衡模式：默认设置
+export const RULE_PRESETS: Record<'balanced' | 'wild' | 'abundant' | 'chaos' | 'challenge_backyard', WorldRule> = {
+    // Balanced Mode: Default settings
     balanced: { ...DEFAULT_RULES },
 
-    // 狂野模式：更多老鼠，更多猫
+    // Wild Mode: More rats, more cats
     wild: {
         ...DEFAULT_RULES,
         ratSpawn: {
@@ -69,21 +69,21 @@ export const RULE_PRESETS: Record<'balanced' | 'wild' | 'abundant', WorldRule> =
             probability: 0.55,
         },
         capPerChunk: {
-            rat: 25,
-            cat: 7,
-            chicken: 12,
-            smallBird: 20,
-            raccoon: 8,
+            rat: 20,
+            cat: 6,
+            chicken: 10,
+            smallBird: 15,
+            raccoon: 5,
             crow: 10,
-            dog: 5,
-            fox: 5,
-            wolf: 3,
-            hawk: 4,
-            snake: 8,
+            dog: 2,
+            fox: 4,
+            hawk: 3,
+            wolf: 5,
+            snake: 6
         },
     },
 
-    // 丰饶模式：更少老鼠繁殖，更稳定
+    // Abundant Mode: Fewer rat spawns, more stable
     abundant: {
         ...DEFAULT_RULES,
         ratSpawn: {
@@ -93,21 +93,86 @@ export const RULE_PRESETS: Record<'balanced' | 'wild' | 'abundant', WorldRule> =
         capPerChunk: {
             rat: 16,
             cat: 6,
-            chicken: 15,
-            smallBird: 25,
+            chicken: 10,
+            smallBird: 15,
             raccoon: 4,
-            crow: 12,
-            dog: 3,
+            crow: 8,
+            dog: 2,
             fox: 3,
-            wolf: 1,
             hawk: 2,
-            snake: 4,
+            wolf: 3,
+            snake: 4
+        },
+    },
+
+    // Chaos Mode: Lots of rats, lots of cats, high reproduction rate
+    chaos: {
+        ...DEFAULT_RULES,
+        ratSpawn: {
+            ...DEFAULT_RULES.ratSpawn,
+            probability: 0.75, // Higher reproduction probability
+            minRatsNearbyToStop: 15, // More rats needed to stop spawning
+            maxRatsNearby: 20, // Allows more rats
+        },
+        capPerChunk: {
+            rat: 50,
+            cat: 10,
+            chicken: 20,
+            smallBird: 30,
+            raccoon: 10,
+            crow: 20,
+            dog: 5,
+            fox: 10,
+            hawk: 5,
+            wolf: 8,
+            snake: 10
+        },
+        timeScale: 2, // Faster time flow
+        ai: {
+            ...DEFAULT_RULES.ai,
+            chaseTimeoutTicks: 60, // Crazy chase
+        },
+    },
+
+    // Challenge: Backyard Balance
+    challenge_backyard: {
+        ...DEFAULT_RULES,
+        trashSpawnsRats: true,
+        ratSpawn: {
+            ...DEFAULT_RULES.ratSpawn,
+            probability: 0.4,
+        },
+        capPerChunk: {
+            rat: 20,
+            cat: 6,
+            chicken: 10,
+            smallBird: 15,
+            raccoon: 5,
+            crow: 10,
+            dog: 2,
+            fox: 3,
+            hawk: 2,
+            wolf: 4,
+            snake: 5
+        },
+        challenge: {
+            enabled: true,
+            title: 'Backyard Harmony',
+            description: 'Maintain Chicken & Bird population > 5 for 2 minutes while keeping Rats < 30.',
+            targetDurationTicks: 15 * 120, // 2 minutes
+            minPopulation: {
+                chicken: 5,
+                smallBird: 5,
+            },
+            maxPopulation: {
+                rat: 30,
+            },
         },
     },
 };
 
 // ============================================
-// 辅助函数
+// Helper Functions
 // ============================================
 
 export function getRulePreset(preset: keyof typeof RULE_PRESETS): WorldRule {

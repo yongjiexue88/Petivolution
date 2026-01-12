@@ -1,93 +1,93 @@
 # 🐾 Petivolution
 
-生态模拟沙盒游戏 - 观察动物行为、调整生态平衡
+Ecological Simulation Sandbox Game - Observe animal behaviors, adjust ecological balance
 
-## ✨ 核心玩法
+## ✨ Core Gameplay
 
-**投放动物** → **观察行为** → **发现问题** → **环境干预** → **生态稳定**
+**Spawn Animals** → **Observe Behaviors** → **Identify Issues** → **Environmental Intervention** → **Ecological Stability**
 
-- 🐱 **猫**：捕食者，通过捕猎老鼠获取食物
-- 🐭 **鼠**：食腐者，在垃圾堆中觅食
+- 🐱 **Cat**: Predator, obtains food by hunting mice
+- 🐭 **Rat**: Scavenger, forages in trash piles
 
-## 🎯 V1 验收标准
+## 🎯 V1 Acceptance Criteria
 
-| 标准 | 描述 |
-|------|------|
-| **稳定性** | 10只鼠 + 2只猫，持续运行≥5分钟不崩溃 |
-| **可解释性** | 点选动物可见：当前状态、原因、需求值 |
-| **干预有效** | 放置水源/灌木/垃圾点能明显改变种群走向 |
-| **性能** | 200-300个实体不掉帧 |
+| Criteria | Description |
+|----------|-------------|
+| **Stability** | 10 rats + 2 cats, runs continuously ≥5 minutes without crashing |
+| **Explainability** | Click on animals to see: current state, reason, needs values |
+| **Effective Intervention** | Placing water/bushes/trash visibly changes population trends |
+| **Performance** | 200-300 entities without frame drops |
 
-## 🛠️ 技术栈
+## 🛠️ Tech Stack
 
-- **前端框架**: React + TypeScript + Vite
-- **游戏引擎**: Phaser 3
-- **状态管理**: Zustand
-- **模拟层**: Web Worker (独立线程)
-- **存档**: IndexedDB
+- **Frontend Framework**: React + TypeScript + Vite
+- **Game Engine**: Phaser 3
+- **State Management**: Zustand
+- **Simulation Layer**: Web Worker (independent thread)
+- **Save System**: IndexedDB
 
-## 📁 项目结构
+## 📁 Project Structure
 
 ```
 src/
-├── app/         # React UI (面板、工具栏)
-├── game/        # Phaser 场景和渲染
-├── sim/         # 纯逻辑模拟层 (AI、生态)
-├── worker/      # Web Worker 入口
-├── storage/     # IndexedDB 存档
-└── shared/      # 共享类型和配置
+├── app/         # React UI (panels, toolbar)
+├── game/        # Phaser scenes and rendering
+├── sim/         # Pure logic simulation layer (AI, ecology)
+├── worker/      # Web Worker entry point
+├── storage/     # IndexedDB saves
+└── shared/      # Shared types and config
 ```
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
 ```bash
-# 安装依赖
+# Install dependencies
 npm install
 
-# 启动开发服务器
+# Start development server
 npm run dev
 
-# 构建生产版本
+# Build for production
 npm run build
 ```
 
-## 🎮 操作指南
+## 🎮 Controls Guide
 
-| 操作 | 说明 |
-|------|------|
-| **拖拽** | 拖动画布移动视角 |
-| **滚轮** | 缩放视角 |
-| **点击动物** | 查看详情 |
-| **投放模式** | 点击地图投放动物 |
-| **放置模式** | 点击地图放置资源 |
+| Control | Description |
+|---------|-------------|
+| **Drag** | Drag canvas to move viewport |
+| **Scroll** | Zoom viewport |
+| **Click Animal** | View details |
+| **Spawn Mode** | Click map to spawn animals |
+| **Place Mode** | Click map to place resources |
 
-## 🌿 环境对象
+## 🌿 Environment Objects
 
-| 对象 | 图标 | 作用 |
-|------|------|------|
-| 水源 | 💧 | 动物喝水恢复"口渴"值 |
-| 灌木 | 🌿 | 提供庇护所和休息地点 |
-| 垃圾堆 | 🗑️ | 老鼠的主要食物来源 |
+| Object | Icon | Function |
+|--------|------|----------|
+| Water | 💧 | Animals drink to restore thirst value |
+| Bush | 🌿 | Provides shelter and resting spots |
+| Trash Pile | 🗑️ | Primary food source for rats |
 
-## 🧠 AI 系统
+## 🧠 AI System
 
-动物使用 **Utility AI** 决策系统：
+Animals use a **Utility AI** decision system:
 
-1. 评估各种需求（饥饿、口渴、疲劳、威胁）
-2. 计算每个行动的效用分数
-3. 选择得分最高的行动执行
+1. Evaluate various needs (hunger, thirst, fatigue, threats)
+2. Calculate utility score for each action
+3. Execute the highest-scoring action
 
-### 行为状态
+### Behavior States
 
-| 状态 | 描述 |
-|------|------|
-| Idle | 发呆，无事可做 |
-| Wander | 闲逛探索 |
-| Chase | 追逐猎物（猫） |
-| Flee | 逃离威胁（鼠） |
-| Eat | 进食 |
-| Drink | 喝水 |
-| Sleep | 休息恢复疲劳 |
+| State | Description |
+|-------|-------------|
+| Idle | Idle, nothing to do |
+| Wander | Wandering around |
+| Chase | Chasing prey (cat) |
+| Flee | Fleeing from threats (rat) |
+| Eat | Eating |
+| Drink | Drinking water |
+| Sleep | Resting to recover fatigue |
 
 ## 📄 License
 

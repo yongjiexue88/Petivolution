@@ -1,5 +1,5 @@
 // ============================================
-// V1 工具栏
+// V1 Toolbar
 // ============================================
 
 import { useGameStore, getSimWorker } from '../store/gameStore';
@@ -48,41 +48,41 @@ export function Toolbar() {
             </div>
 
 
-            {/* 工具选择 */}
+            {/* Tool Selection */}
             <div className="toolbar-section">
                 <button
                     className={`tool-btn ${currentTool === 'select' ? 'active' : ''}`}
                     onClick={() => setCurrentTool('select')}
-                    title="选择工具"
+                    title="Select Tool"
                 >
-                    👆 选择
+                    👆 Select
                 </button>
                 <button
                     className={`tool-btn ${currentTool === 'spawn' ? 'active' : ''}`}
                     onClick={() => setCurrentTool('spawn')}
-                    title="投放动物"
+                    title="Spawn Animals"
                 >
-                    🐾 投放
+                    🐾 Spawn
                 </button>
                 <button
                     className={`tool-btn ${currentTool === 'place' ? 'active' : ''}`}
                     onClick={() => setCurrentTool('place')}
-                    title="放置物品"
+                    title="Place Objects"
                 >
-                    🌿 放置
+                    🌿 Place
                 </button>
                 <button
                     className={`tool-btn ${currentTool === 'delete' ? 'active' : ''}`}
                     onClick={() => setCurrentTool('delete')}
-                    title="删除"
+                    title="Delete"
                 >
-                    🗑️ 删除
+                    🗑️ Delete
                 </button>
             </div>
 
-            {/* 时间控制 */}
+            {/* Time Controls */}
             <div className="toolbar-section time-controls">
-                <span className="section-label">速度</span>
+                <span className="section-label">Speed</span>
                 <button
                     className={`speed-btn ${rules.timeScale === 0 ? 'active' : ''}`}
                     onClick={() => handleTimeScale(0)}
@@ -109,40 +109,40 @@ export function Toolbar() {
                 </button>
             </div>
 
-            {/* 面板切换 */}
+            {/* Panel Toggles */}
             <div className="toolbar-group">
                 <button
                     className={`tool-btn ${showSpawnPanel ? 'active' : ''}`}
                     onClick={() => togglePanel('spawn')}
-                    title="投放面板"
+                    title="Spawn Panel"
                 >
                     📦
                 </button>
                 <button
                     className={`tool-btn ${showRulesPanel ? 'active' : ''}`}
                     onClick={() => togglePanel('rules')}
-                    title="世界规则"
+                    title="World Rules"
                 >
                     ⚙️
                 </button>
                 <button
                     className={`tool-btn ${showGraveyardPanel ? 'active' : ''}`}
                     onClick={() => togglePanel('graveyard')}
-                    title="墓碑"
+                    title="Graveyard"
                 >
                     🪦
                 </button>
                 <button
                     className={`tool-btn ${showEventLog ? 'active' : ''}`}
                     onClick={() => togglePanel('eventLog')}
-                    title="事件日志"
+                    title="Event Log"
                 >
                     📜
                 </button>
                 <button
                     className={`tool-btn ${useGameStore().showChallengePanel ? 'active' : ''}`}
                     onClick={() => togglePanel('challenge')}
-                    title="挑战"
+                    title="Challenge"
                 >
                     🏆
                 </button>
@@ -150,7 +150,7 @@ export function Toolbar() {
                     className={`panel-btn ${showDebugPanel ? 'active' : ''}`}
                     onClick={() => togglePanel('debug')}
                 >
-                    🔧 调试
+                    🔧 Debug
                 </button>
             </div>
         </div>

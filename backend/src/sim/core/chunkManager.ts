@@ -5,12 +5,11 @@ import {
     Vec2,
     WorldObject,
     SpeciesId,
-    EntityRuntime,
 } from '@shared/types';
 import { V1 } from '@shared/constants';
 import { SimulationState } from './tick';
 import { v4 as uuid } from 'uuid';
-import { OBJECT_CONFIGS, getSpeciesConfig } from '@shared/species.config';
+import { OBJECT_CONFIGS } from '@shared/species.config';
 import { createNoise2D } from 'simplex-noise';
 import { spawnEntity } from './spawner';
 
@@ -51,46 +50,281 @@ export class ChunkManager {
     initializeWorld(sim: SimulationState, force = false) {
         if (this.initialized && !force) return;
 
-        const chunksX = Math.ceil(V1.defaultMapWidth / CHUNK_SIZE_TILES);
-        const chunksY = Math.ceil(V1.defaultMapHeight / CHUNK_SIZE_TILES);
+        console.log(`🌍 Initializing World - Generating all 64 chunks upfront`);
 
-        console.log(`🌍 Initializing ${chunksX}×${chunksY} = ${chunksX * chunksY} chunks`);
-
-        // Generate all chunks
-        for (let y = 0; y < chunksY; y++) {
-            for (let x = 0; x < chunksX; x++) {
-                const id = this.getChunkId(x, y);
-                this.generateChunk(id, sim);
+        // Generate ALL chunks with their objects at world creation
+        // This ensures all animals have access to resources regardless of camera position
+        for (let cy = 0; cy < 8; cy++) {
+            for (let cx = 0; cx < 8; cx++) {
+                const id = this.getChunkId(cx, cy);
+                if (!this.chunks.has(id)) {
+                    this.generateChunk(id, sim);
+                    const chunk = this.chunks.get(id)!;
+                    this.generateObjects(chunk, sim);
+                }
+                // Mark all chunks as active so they all get updates
                 this.activeChunks.add(id);
             }
         }
 
-        // Spawn objects in all chunks
-        for (const chunk of this.chunks.values()) {
-            this.generateObjects(chunk, sim);
-        }
-
-        // Spawn initial animals in center area
+        // Spawn initial animals across the map
         this.spawnInitialAnimals(sim);
 
         this.initialized = true;
     }
 
     /**
-     * Update LOD based on camera position
-     * For finite world, this is mostly a no-op since all chunks are active
-     * Kept for compatibility
+     * DEBUG: Reset world logic
      */
-    updateLOD(_sim: SimulationState) {
-        // For finite world, all chunks are always active
-        // No virtualization needed
+    resetWorld(sim: SimulationState) {
+        // 1. Clear all entities and objects
+        sim.entities.clear();
+        sim.objects.clear();
+        sim.graveyard = []; // Clear graveyard on reset
+
+        // 2. Clear all chunk data so they regenerate
+        this.chunks.clear();
+        this.activeChunks.clear();
+        this.semiActiveChunks.clear();
+
+        // 3. Regenerate ALL 64 chunks with objects
+        for (let cy = 0; cy < 8; cy++) {
+            for (let cx = 0; cx < 8; cx++) {
+                const id = this.getChunkId(cx, cy);
+                this.generateChunk(id, sim);
+                const chunk = this.chunks.get(id)!;
+                this.generateObjects(chunk, sim);
+                // Mark all chunks as active
+                this.activeChunks.add(id);
+            }
+        }
+
+        // 4. Respawn initial animals
+        this.spawnInitialAnimals(sim);
+
+        console.log('🌍 World Reset Complete - All 64 chunks regenerated');
+    }
+
+    private spawnInitialAnimals(sim: SimulationState) {
+        console.log('🌍 Spawning animals randomly across the map');
+
+        const animalSpecies: SpeciesId[] = [
+            'rat', 'cat', 'chicken', 'smallBird', 'raccoon', 'crow',
+            'dog', 'fox', 'hawk', 'wolf', 'snake'
+        ];
+
+        for (const species of animalSpecies) {
+            // Accessing dynamic property on V1.defaultSpawns
+            const count = (V1.defaultSpawns as any)[species] || 0;
+
+            for (let i = 0; i < count; i++) {
+                // Random position across the entire map
+                const tx = Math.floor(sim.rng() * V1.defaultMapWidth);
+                const ty = Math.floor(sim.rng() * V1.defaultMapHeight);
+
+                // Determine personality
+                let personality: 'curious' | 'cautious' | 'brave' = 'curious';
+                const pRoll = sim.rng();
+                if (pRoll < 0.33) personality = 'cautious';
+                else if (pRoll < 0.66) personality = 'brave';
+
+                // Basic default personalities based on species type override
+                if (['rat', 'chicken', 'smallBird'].includes(species)) {
+                    personality = sim.rng() > 0.5 ? 'cautious' : 'curious';
+                } else if (['cat', 'dog', 'wolf', 'hawk', 'fox'].includes(species)) {
+                    personality = sim.rng() > 0.5 ? 'brave' : 'curious';
+                }
+
+                spawnEntity(sim, species, `${species}_${i}`, personality, {
+                    tx: tx,
+                    ty: ty
+                });
+            }
+        }
+    }
+
+    private getRandomName(species: string, sim: SimulationState): string {
+        const names: Record<string, string[]> = {
+            cat: ['Tiger', 'Shadow', 'Luna', 'Simba', 'Oreo', 'Whiskers', 'Felix', 'Mittens'],
+            rat: ['Squeaky', 'Pip', 'Cheese', 'Scurry', 'Nibbles', 'Dusty', 'Scout', 'Rustle'],
+            chicken: ['Cluck', 'Peck', 'Feathers', 'Nugget', 'Eggbert', 'Henny'],
+            smallBird: ['Tweety', 'Chirp', 'Sky', 'Blue', 'Robin', 'Pip'],
+            raccoon: ['Bandit', 'Rocket', 'Sly', 'Meeko', 'Rascal', 'Swiper'],
+            crow: ['Edgar', 'Poe', 'Odin', 'Raven', 'Shadow', 'Midnight'],
+            dog: ['Buddy', 'Rex', 'Spot', 'Max', 'Bella', 'Charlie', 'Daisy'],
+            fox: ['Foxy', 'Rusty', 'Vixey', 'Swift', 'Red', 'Tod'],
+            hawk: ['Sky', 'Talon', 'Soar', 'Hunter', 'Swift', 'Eye'],
+            wolf: ['Alpha', 'Fang', 'Luna', 'Ghost', 'Shadow', 'Winter'],
+            snake: ['Sly', 'Hiss', 'Nagini', 'Ka', 'Fang', 'Coil'],
+        };
+        const nameList = names[species] || ['Unknown'];
+        const name = nameList[Math.floor(sim.rng() * nameList.length)];
+        return `${name}${Math.floor(sim.rng() * 99)}`;
+    }
+
+    /**
+     * Update LOD based on camera position and zoom
+     * SIMPLIFIED: Keep all chunks active at all times for a finite world
+     */
+    updateLOD(sim: SimulationState) {
+        // For a finite 8x8 world, keep ALL chunks active
+        // No virtualization - all animals remain in memory and fully simulated
+        if (this.activeChunks.size < 64) {
+            for (let cy = 0; cy < 8; cy++) {
+                for (let cx = 0; cx < 8; cx++) {
+                    const id = this.getChunkId(cx, cy);
+                    if (!this.chunks.has(id)) {
+                        this.generateChunk(id, sim);
+                        const chunk = this.chunks.get(id)!;
+                        this.generateObjects(chunk, sim);
+                    }
+                    this.activeChunks.add(id);
+                }
+            }
+        }
+        // No virtualization - entities persist across the entire map
+    }
+
+    /**
+     * Far -> Active/Semi (Generate or Restore)
+     */
+    realizeChunk(id: ChunkId, sim: SimulationState) {
+        if (this.activeChunks.has(id) || this.semiActiveChunks.has(id)) return;
+
+        let chunk = this.chunks.get(id);
+
+        if (!chunk) {
+            this.generateChunk(id, sim);
+            chunk = this.chunks.get(id)!;
+            this.generateObjects(chunk, sim);
+
+            // For infinite world generation, we might want to spawn some "wild" animals
+            // based on the chunk's resource/danger levels.
+            this.spawnWildAnimals(chunk, sim);
+        } else {
+            // Restore from stats (Ship of Theseus)
+            this.restoreFromStats(chunk, sim);
+        }
+    }
+
+    private spawnWildAnimals(chunk: ChunkData, sim: SimulationState) {
+        const [cx, cy] = chunk.id.split(',').map(Number);
+        const startTx = cx * CHUNK_SIZE_TILES;
+        const startTy = cy * CHUNK_SIZE_TILES;
+
+        // Resource-based spawns (Prey/Foragers)
+        const resourceRoll = sim.rng();
+        if (chunk.stats.resourceLevel > 0.3) {
+            // Rats (Common)
+            if (resourceRoll < 0.5) {
+                this.spawnGroup(sim, 'rat', 1, 3, startTx, startTy, 'cautious');
+            }
+            // Chickens (Occasional)
+            else if (resourceRoll < 0.7) {
+                this.spawnGroup(sim, 'chicken', 1, 2, startTx, startTy, 'cautious');
+            }
+            // Small Birds (Common)
+            else if (resourceRoll < 0.9) {
+                this.spawnGroup(sim, 'smallBird', 2, 4, startTx, startTy, 'cautious');
+            }
+        }
+
+        // Danger-based spawns (Predators)
+        const dangerRoll = sim.rng();
+        if (chunk.stats.dangerLevel > 0.4) {
+            // Cats (Common)
+            if (dangerRoll < 0.4) {
+                this.spawnGroup(sim, 'cat', 1, 1, startTx, startTy, 'brave');
+            }
+            // Foxes (Uncommon)
+            else if (dangerRoll < 0.6) {
+                this.spawnGroup(sim, 'fox', 1, 1, startTx, startTy, 'brave');
+            }
+            // Dogs (Rare)
+            else if (dangerRoll < 0.7) {
+                this.spawnGroup(sim, 'dog', 1, 1, startTx, startTy, 'brave');
+            }
+            // Wolf/Hawk (Very Rare)
+            else if (dangerRoll < 0.75) {
+                const predator = sim.rng() > 0.5 ? 'wolf' : 'hawk';
+                this.spawnGroup(sim, predator, 1, 1, startTx, startTy, 'brave');
+            }
+        }
+
+        // Raccoons (Scavengers - Random)
+        if (sim.rng() < 0.1) {
+            this.spawnGroup(sim, 'raccoon', 1, 1, startTx, startTy, 'curious');
+        }
+    }
+
+    private spawnGroup(sim: SimulationState, species: SpeciesId, min: number, max: number, startTx: number, startTy: number, personality: 'brave' | 'cautious' | 'curious') {
+        const count = min + Math.floor(sim.rng() * (max - min + 1));
+        for (let i = 0; i < count; i++) {
+            spawnEntity(sim, species, this.getRandomName(species, sim), personality, {
+                tx: startTx + sim.rng() * CHUNK_SIZE_TILES,
+                ty: startTy + sim.rng() * CHUNK_SIZE_TILES
+            });
+        }
+    }
+
+    private restoreFromStats(chunk: ChunkData, sim: SimulationState) {
+        const [cx, cy] = chunk.id.split(',').map(Number);
+        const counts = chunk.stats.counts || {};
+
+        // Simple statistical restoration
+        for (const speciesKey in counts) {
+            const species = speciesKey as SpeciesId;
+            const count = counts[species] || 0;
+
+            for (let i = 0; i < count; i++) {
+                // Determine personality based on species (simple heuristic or random)
+                let personality: 'brave' | 'cautious' | 'curious' = 'curious';
+                if (['rat', 'chicken', 'smallBird'].includes(species)) personality = 'cautious';
+                if (['cat', 'dog', 'wolf', 'hawk', 'fox'].includes(species)) personality = 'brave';
+
+                spawnEntity(sim, species, this.getRandomName(species, sim), personality, {
+                    tx: cx * CHUNK_SIZE_TILES + sim.rng() * CHUNK_SIZE_TILES,
+                    ty: cy * CHUNK_SIZE_TILES + sim.rng() * CHUNK_SIZE_TILES
+                });
+            }
+        }
+
+        chunk.stats.counts = {};
+    }
+
+    /**
+     * Active/Semi -> Far (Virtualize)
+     */
+    virtualizeChunk(id: ChunkId, sim: SimulationState) {
+        const chunk = this.chunks.get(id);
+        if (!chunk) return;
+
+        const [cx, cy] = id.split(',').map(Number);
+        const toRemove: string[] = [];
+        const counts: Partial<Record<SpeciesId, number>> = {};
+
+        for (const entity of sim.entities.values()) {
+            const coords = this.getChunkCoords(entity.pos);
+            if (coords.x === cx && coords.y === cy) {
+                const s = entity.species;
+                counts[s] = (counts[s] || 0) + 1;
+                toRemove.push(entity.id);
+            }
+        }
+
+        chunk.stats.counts = counts;
+        chunk.stats.lastTick = sim.tick;
+
+        for (const sid of toRemove) {
+            sim.entities.delete(sid);
+        }
     }
 
     /**
      * Zone types for resource distribution
      * Based on 8x8 chunk grid (256 tiles / 32 tiles per chunk = 8 chunks)
      */
-    public getZoneForChunk(cx: number, cy: number): 'wild' | 'brush' | 'forestEdge' | 'grove' | 'urbanFringe' | 'urban' | 'pond' {
+    private getZoneForChunk(cx: number, cy: number): 'wild' | 'brush' | 'forestEdge' | 'grove' | 'urbanFringe' | 'urban' | 'pond' {
         // Wild: outer edges
         if (cx === 0 || cy === 0 || cx === 7 || cy === 7) {
             return 'wild';
@@ -178,7 +412,7 @@ export class ChunkManager {
                 }
                 break;
 
-            case 'brush': // Ring / Corners
+            case 'brush': { // Ring / Corners
                 // Second ring - 1 water at corners, 2 bushes (reduced from 4 to create open space)
                 const isCorner = (cx === 1 || cx === 6) && (cy === 1 || cy === 6);
                 if (isCorner) {
@@ -188,6 +422,7 @@ export class ChunkManager {
                     this.spawnObject(sim, 'bush', startTx, startTy);
                 }
                 break;
+            }
 
             case 'wild': // Outer
                 // Sparse - only occasional bushes (30% chance)
@@ -222,109 +457,12 @@ export class ChunkManager {
             obj.data!.regenRate = OBJECT_CONFIGS.trash.regenRatePerTick;
             obj.data!.indestructible = OBJECT_CONFIGS.trash.indestructible;
         } else if (type === 'bush') {
-            obj.data!.strength01 = OBJECT_CONFIGS.bush.strengthDefault;
+            obj.data!.strength01 = OBJECT_CONFIGS.bush.strengthDefault || 1;
         } else if (type === 'perch') {
-            obj.data!.strength01 = OBJECT_CONFIGS.perch.strengthDefault;
+            obj.data!.strength01 = OBJECT_CONFIGS.perch.strengthDefault || 1;
         }
 
         sim.objects.set(obj.id, obj);
-    }
-
-    spawnInitialAnimals(sim: SimulationState) {
-        // Decentralized Spawning: Place animals in their relevant zones
-        // Pond (3,3) - Water Hub
-        // Urban (4,4) - Trash Hub
-        // Forest/Grove (2,3; 2,4 etc) - Trees
-
-        const mapW = V1.defaultMapWidth;
-        const mapH = V1.defaultMapHeight;
-        const chunkSize = CHUNK_SIZE_TILES; // 32
-
-        // Helper to get random tile in a specific chunk
-        const getPosInChunk = (cx: number, cy: number) => {
-            return {
-                x: cx * chunkSize + Math.floor(sim.rng() * chunkSize),
-                y: cy * chunkSize + Math.floor(sim.rng() * chunkSize)
-            };
-        };
-
-        // 1. Urban Dwellers (Rat, Raccoon, Crow) -> Spawn near Urban (4,4)
-        // 2. Water Dependent / Predators (Cat, Dog, Fox) -> Spawn near Pond (3,3)
-        // 3. Birds / Forest Dwellers (smallBird, Hawk, Chicken, Snake) -> Spawn in Grove (2,3) or Forest Edge
-        // 4. Pack / Wild (Wolf) -> Spawn in Wild/Brush (1,1)
-
-        const spawnList: { species: SpeciesId, count: number, zoneCx: number, zoneCy: number }[] = [
-            // Urban
-            { species: 'rat', count: V1.defaultSpawns.rat, zoneCx: 4, zoneCy: 4 },
-            { species: 'raccoon', count: V1.defaultSpawns.raccoon, zoneCx: 4, zoneCy: 4 },
-            { species: 'crow', count: V1.defaultSpawns.crow, zoneCx: 3, zoneCy: 4 }, // Fringe
-
-            // Pond / Central
-            { species: 'cat', count: V1.defaultSpawns.cat, zoneCx: 3, zoneCy: 3 },
-            { species: 'dog', count: V1.defaultSpawns.dog, zoneCx: 3, zoneCy: 3 },
-            { species: 'fox', count: V1.defaultSpawns.fox, zoneCx: 3, zoneCy: 3 },
-
-            // Grove / Forest
-            { species: 'smallBird', count: V1.defaultSpawns.smallBird, zoneCx: 2, zoneCy: 3 },
-            { species: 'chicken', count: V1.defaultSpawns.chicken, zoneCx: 2, zoneCy: 4 },
-            { species: 'hawk', count: V1.defaultSpawns.hawk, zoneCx: 2, zoneCy: 3 },
-            { species: 'snake', count: V1.defaultSpawns.snake, zoneCx: 6, zoneCy: 2 }, // East Forest
-
-            // Wild / Brush
-            { species: 'wolf', count: V1.defaultSpawns.wolf, zoneCx: 1, zoneCy: 1 },
-        ];
-
-        for (const entry of spawnList) {
-            for (let i = 0; i < entry.count; i++) {
-                const pos = getPosInChunk(entry.zoneCx, entry.zoneCy);
-                const speciesConfig = getSpeciesConfig(entry.species);
-
-                // Determine personality
-                let personality: 'curious' | 'cautious' | 'brave' = 'curious';
-                const pRoll = sim.rng();
-                if (pRoll < 0.33) personality = 'cautious';
-                else if (pRoll < 0.66) personality = 'brave';
-
-                // Basic default personalities based on species type
-                if (['rat', 'chicken', 'smallBird'].includes(entry.species)) {
-                    personality = sim.rng() > 0.5 ? 'cautious' : 'curious';
-                } else if (['cat', 'dog', 'wolf', 'hawk', 'fox'].includes(entry.species)) {
-                    personality = sim.rng() > 0.5 ? 'brave' : 'curious';
-                }
-
-                const entity: EntityRuntime = {
-                    id: uuid(),
-                    species: entry.species,
-                    name: `${entry.species}_${i}`,
-                    personality,
-                    pos: { x: pos.x, y: pos.y },
-                    vel: { x: 0, y: 0 },
-                    facing: 's',
-                    vitals: {
-                        hunger01: 0.8 + sim.rng() * 0.2,
-                        thirst01: 0.8 + sim.rng() * 0.2,
-                        fatigue01: 1.0,
-                        health01: 1.0
-                    },
-                    ageTicks: 0,
-                    state: 'idle',
-                    ai: {
-                        lastPerceptionTick: 0,
-                        lastDecisionTick: 0,
-                        currentGoal: 'wander',
-                        lastUtilityScores: {},
-                        recentStimuli: []
-                    },
-                    parents: [],
-                    children: [],
-                    generation: 1,
-                    history: [],
-                    path: []
-                };
-
-                sim.entities.set(entity.id, entity);
-            }
-        }
     }
 
     generateChunk(id: ChunkId, sim: SimulationState) {
@@ -342,8 +480,9 @@ export class ChunkManager {
             x,
             y,
             stats: {
-                ratCount: 0, // Handled by initial spawn, not per-chunk
+                ratCount: 0,
                 catCount: 0,
+                counts: {}, // Handled by initial spawn or virtualization
                 resourceLevel,
                 dangerLevel,
                 lastTick: sim.tick

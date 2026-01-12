@@ -1,5 +1,5 @@
 // ============================================
-// Ecosystem Maintainer - 生态恒温器
+// Ecosystem Maintainer
 // ============================================
 // 
 // Every 5 seconds, ensures drama happens on-screen by:

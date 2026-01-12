@@ -16,7 +16,7 @@ export function spawnEntity(
     personality: Personality,
     pos: TilePos
 ): EntityRuntime | null {
-    // 检查人口上限 (per-chunk density)
+    // Check population cap (per-chunk density)
     if (!canSpawn(species, sim, pos)) {
         return null;
     }
@@ -25,6 +25,7 @@ export function spawnEntity(
         id: uuid(),
         species,
         name,
+        sex: sim.rng() > 0.5 ? 'male' : 'female',
         personality,
         pos: { x: pos.tx * V1.tileSizePx, y: pos.ty * V1.tileSizePx },
         vel: { x: 0, y: 0 },

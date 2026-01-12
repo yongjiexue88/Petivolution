@@ -1,5 +1,5 @@
 // ============================================
-// V1 游戏状态管理 (Zustand)
+// V1 Game State Management (Zustand)
 // ============================================
 
 import { create } from 'zustand';
@@ -8,14 +8,14 @@ import { WorldObject, WorldRule } from '@shared/types';
 import { DEFAULT_WORLD_RULES } from '@shared/types';
 
 // ============================================
-// 状态类型
+// State Types
 // ============================================
 
 export interface GameState {
-    // 初始化状态
+    // Initialization State
     initialized: boolean;
 
-    // 世界状态 (从 Worker 接收)
+    // World State (Received from Worker)
     tick: number;
     seed: number; // V1.2
     entities: SnapshotEntity[];
@@ -27,7 +27,7 @@ export interface GameState {
     // World Status
     chunks: Record<string, any>; // V3
 
-    // 选中实体详情
+    // Selected Entity Detail
     selectedEntityId: string | null;
     selectedEntityDetail: EntityRuntime | null;
 
@@ -54,13 +54,13 @@ export interface GameState {
     latency: number;
     setConnectionStatus: (connected: boolean, latency: number) => void;
 
-    // UI 状态
+    // UI State
     currentTool: 'select' | 'spawn' | 'place' | 'delete';
     spawnSpecies: SpeciesId;
     spawnPersonality: Personality;
     placeObjectType: ObjectType;
 
-    // 面板显示
+    // Panel Display
     showSpawnPanel: boolean;
     showRulesPanel: boolean;
     showGraveyardPanel: boolean;
@@ -70,7 +70,7 @@ export interface GameState {
     showChallengePanel: boolean;
     showHUD: boolean; // V1.3 UI Toggle
 
-    // 世界规则
+    // World Rules
     rules: WorldRule;
 
     // Actions
@@ -81,6 +81,7 @@ export interface GameState {
         objects: WorldObject[];
         stats: SimStats;
         events: SimEvent[];
+        graveyard?: GraveyardEntry[];
     }) => void;
     addToGraveyard: (entry: GraveyardEntry) => void;
     setSelectedEntityId: (id: string | null) => void;
@@ -113,7 +114,7 @@ export interface GameState {
 }
 
 // ============================================
-// Worker 引用 (独立于 store)
+// Worker Reference (Independent of store)
 // ============================================
 
 let simWorker: Worker | null = null;
@@ -131,7 +132,7 @@ export function getSimWorker(): Worker | null {
 // ============================================
 
 export const useGameStore = create<GameState>((set, get) => ({
-    // 初始状态
+    // Initial State
     initialized: false,
     tick: 0,
     seed: 0,
@@ -220,7 +221,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     setInitialized: (initialized) => set({ initialized }),
 
     updateFromSnapshot: (data) => set((state) => {
-        // 合并新事件，只保留最近 50 条
+        // Merge new events, keep only last 50
         const newEvents = [...state.events, ...data.events].slice(-50);
 
         // V1.1 God Power Regen: 1 per 3 seconds.
@@ -240,6 +241,7 @@ export const useGameStore = create<GameState>((set, get) => ({
             stats: data.stats,
             events: newEvents,
             godPower: newGp,
+            graveyard: data.graveyard || [], // Fix: Sync graveyard from snapshot (default to [])
 
         };
     }),

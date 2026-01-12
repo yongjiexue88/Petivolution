@@ -1,5 +1,5 @@
 // ============================================
-// V1 投放动物面板
+// V1 Animal Spawn Panel
 // ============================================
 
 import { useState } from 'react';
@@ -9,18 +9,18 @@ import type { SpeciesId, TilePos } from '@shared/types';
 import { V1 } from '@shared/constants';
 import './SpawnPanel.css';
 
-// 随机名字库
-const RAT_NAMES = ['小米', '花花', '点点', '豆豆', '毛毛', '圆圆', '跳跳', '灰灰', '胖胖', '乖乖'];
-const CAT_NAMES = ['咪咪', 'Lucky', '橘子', '雪球', 'Tom', '虎子', '花卷', '布丁', '饼干', '团子'];
-const CHICKEN_NAMES = ['咯咯', '小黄', '白白', '阿花', '咕咕'];
-const BIRD_NAMES = ['啾啾', '蓝蓝', '小飞', '云云'];
-const RACCOON_NAMES = ['浣浣', '熊熊', '面具', '小偷', '班迪'];
-const CROW_NAMES = ['鸦鸦', '黑黑', '哇哇', '暗影'];
-const DOG_NAMES = ['汪汪', '旺财', '大黄', '小白', '忠犬'];
-const FOX_NAMES = ['火狐', '聪聪', '红红', '灵灵'];
-const HAWK_NAMES = ['天眼', '猎手', '飞鹰', '闪电'];
-const WOLF_NAMES = ['白狼', '灰灰', '阿尔法', '孤狼'];
-const SNAKE_NAMES = ['丝丝', '小青', '毒牙', '灵蛇'];
+// Random name pools
+const RAT_NAMES = ['Whiskers', 'Squeaky', 'Nibbles', 'Pepper', 'Dusty', 'Cookie', 'Pip', 'Ash', 'Peanut', 'Scout'];
+const CAT_NAMES = ['Mittens', 'Lucky', 'Ginger', 'Snowball', 'Tom', 'Tiger', 'Mochi', 'Biscuit', 'Cookie', 'Fluffy'];
+const CHICKEN_NAMES = ['Clucky', 'Goldie', 'Snowflake', 'Daisy', 'Gogo'];
+const BIRD_NAMES = ['Chirpy', 'Sky', 'Flyer', 'Cloud'];
+const RACCOON_NAMES = ['Bandit', 'Rocky', 'Mask', 'Rascal', 'Shadow'];
+const CROW_NAMES = ['Raven', 'Midnight', 'Caw', 'Onyx'];
+const DOG_NAMES = ['Buddy', 'Lucky', 'Max', 'Bella', 'Scout'];
+const FOX_NAMES = ['Firefox', 'Rusty', 'Scarlet', 'Swift'];
+const HAWK_NAMES = ['Eagle-Eye', 'Hunter', 'Falcon', 'Flash'];
+const WOLF_NAMES = ['Ghost', 'Ashen', 'Alpha', 'Lone'];
+const SNAKE_NAMES = ['Slither', 'Jade', 'Fang', 'Viper'];
 
 export function SpawnPanel() {
     const {
@@ -123,13 +123,13 @@ export function SpawnPanel() {
         <div className="panel spawn-panel">
             <div className="panel-header">
                 <span className="panel-icon">🐾</span>
-                <h3>投放动物</h3>
+                <h3>Spawn Animals</h3>
             </div>
 
             <div className="panel-body">
-                {/* 物种选择 */}
+                {/* Species Selection */}
                 <div className="form-group">
-                    <label>选择物种</label>
+                    <label>Select Species</label>
                     <div className="species-buttons">
                         <button
                             className={`species-btn ${spawnSpecies === 'rat' ? 'active' : ''}`}
@@ -138,7 +138,7 @@ export function SpawnPanel() {
                             style={{ opacity: canAfford('rat') ? 1 : 0.5 }}
                         >
                             <span className="species-icon">🐭</span>
-                            <span>鼠 (10GP)</span>
+                            <span>Rat (10GP)</span>
                             <span className="count">{stats.rat}/{getCap('rat')}</span>
                         </button>
                         <button
@@ -148,7 +148,7 @@ export function SpawnPanel() {
                             style={{ opacity: canAfford('cat') ? 1 : 0.5 }}
                         >
                             <span className="species-icon">🐱</span>
-                            <span>猫 (50GP)</span>
+                            <span>Cat (50GP)</span>
                             <span className="count">{stats.cat}/{getCap('cat')}</span>
                         </button>
 
@@ -159,7 +159,7 @@ export function SpawnPanel() {
                             style={{ opacity: canAfford('chicken') ? 1 : 0.5 }}
                         >
                             <span className="species-icon">🐔</span>
-                            <span>鸡 (20GP)</span>
+                            <span>Chicken (20GP)</span>
                             <span className="count">{stats.chicken}/{getCap('chicken')}</span>
                         </button>
                         <button
@@ -169,7 +169,7 @@ export function SpawnPanel() {
                             style={{ opacity: canAfford('smallBird') ? 1 : 0.5 }}
                         >
                             <span className="species-icon">🐦</span>
-                            <span>鸟 (15GP)</span>
+                            <span>Bird (15GP)</span>
                             <span className="count">{stats.smallBird}/{getCap('smallBird')}</span>
                         </button>
                         <button
@@ -179,7 +179,7 @@ export function SpawnPanel() {
                             style={{ opacity: canAfford('raccoon') ? 1 : 0.5 }}
                         >
                             <span className="species-icon">🦝</span>
-                            <span>浣熊 (35GP)</span>
+                            <span>Raccoon (35GP)</span>
                             <span className="count">{stats.raccoon}/{getCap('raccoon')}</span>
                         </button>
                         <button
@@ -189,7 +189,7 @@ export function SpawnPanel() {
                             style={{ opacity: canAfford('crow') ? 1 : 0.5 }}
                         >
                             <span className="species-icon">🐦‍⬛</span>
-                            <span>乌鸦 (15GP)</span>
+                            <span>Crow (15GP)</span>
                             <span className="count">{stats.crow}/{getCap('crow')}</span>
                         </button>
                         <button
@@ -199,7 +199,7 @@ export function SpawnPanel() {
                             style={{ opacity: canAfford('dog') ? 1 : 0.5 }}
                         >
                             <span className="species-icon">🐕</span>
-                            <span>狗 (60GP)</span>
+                            <span>Dog (60GP)</span>
                             <span className="count">{stats.dog}/{getCap('dog')}</span>
                         </button>
                         <button
@@ -209,7 +209,7 @@ export function SpawnPanel() {
                             style={{ opacity: canAfford('fox') ? 1 : 0.5 }}
                         >
                             <span className="species-icon">🦊</span>
-                            <span>狐狸 (40GP)</span>
+                            <span>Fox (40GP)</span>
                             <span className="count">{stats.fox || 0}/{getCap('fox')}</span>
                         </button>
                         <button
@@ -219,7 +219,7 @@ export function SpawnPanel() {
                             style={{ opacity: canAfford('hawk') ? 1 : 0.5 }}
                         >
                             <span className="species-icon">🦅</span>
-                            <span>鹰 (45GP)</span>
+                            <span>Hawk (45GP)</span>
                             <span className="count">{stats.hawk || 0}/{getCap('hawk')}</span>
                         </button>
                         <button
@@ -229,7 +229,7 @@ export function SpawnPanel() {
                             style={{ opacity: canAfford('wolf') ? 1 : 0.5 }}
                         >
                             <span className="species-icon">🐺</span>
-                            <span>狼 (70GP)</span>
+                            <span>Wolf (70GP)</span>
                             <span className="count">{stats.wolf || 0}/{getCap('wolf')}</span>
                         </button>
                         <button
@@ -239,15 +239,15 @@ export function SpawnPanel() {
                             style={{ opacity: canAfford('snake') ? 1 : 0.5 }}
                         >
                             <span className="species-icon">🐍</span>
-                            <span>蛇 (30GP)</span>
+                            <span>Snake (30GP)</span>
                             <span className="count">{stats.snake || 0}/{getCap('snake')}</span>
                         </button>
                     </div>
                 </div>
 
-                {/* 名字输入 */}
+                {/* Name Input */}
                 <div className="form-group">
-                    <label>名字 (可选)</label>
+                    <label>Name (Optional)</label>
                     <input
                         type="text"
                         value={customName}
@@ -257,54 +257,54 @@ export function SpawnPanel() {
                     />
                 </div>
 
-                {/* 性格选择 */}
+                {/* Personality Selection */}
                 <div className="form-group">
-                    <label>性格</label>
+                    <label>Personality</label>
                     <div className="personality-buttons">
                         <button
                             className={`personality-btn ${spawnPersonality === 'curious' ? 'active' : ''}`}
                             onClick={() => setSpawnPersonality('curious')}
-                            title="爱探索新区域，寻找资源更积极"
+                            title="Loves exploring new areas, more proactive at finding resources"
                         >
-                            🔍 好奇
+                            🔍 Curious
                         </button>
                         <button
                             className={`personality-btn ${spawnPersonality === 'cautious' ? 'active' : ''}`}
                             onClick={() => setSpawnPersonality('cautious')}
-                            title="更容易逃跑，偏好靠近庇护点"
+                            title="More likely to flee, prefers staying near shelter"
                         >
-                            🛡️ 谨慎
+                            🛡️ Cautious
                         </button>
                         <button
                             className={`personality-btn ${spawnPersonality === 'brave' ? 'active' : ''}`}
                             onClick={() => setSpawnPersonality('brave')}
-                            title="不容易逃跑，更敢于觅食"
+                            title="Less likely to flee, bolder when foraging"
                         >
-                            ⚔️ 勇敢
+                            ⚔️ Brave
                         </button>
                     </div>
                 </div>
 
-                {/* 操作按钮 */}
+                {/* Action Buttons */}
                 <div className="action-buttons">
                     <button className="btn-primary" onClick={handleQuickSpawn}>
-                        ✨ 快速投放
+                        ✨ Quick Spawn
                     </button>
                     <button
                         className={`btn-secondary ${currentTool === 'spawn' ? 'active' : ''}`}
                         onClick={handleStartPlacement}
                     >
-                        📍 点击地图放置
+                        📍 Click Map to Place
                     </button>
                 </div>
 
-                {/* 提示 */}
+                {/* Tips */}
                 <div className="panel-tips">
-                    <p>💡 提示：</p>
+                    <p>💡 Tips:</p>
                     <ul>
-                        <li>鼠会从垃圾堆觅食，遇猫会逃</li>
-                        <li>猫会追捕猎鼠，需要喝水</li>
-                        <li>每种动物有数量上限</li>
+                        <li>Rats forage from trash piles, flee from cats</li>
+                        <li>Cats hunt rats, need water to drink</li>
+                        <li>Each species has a population cap</li>
                     </ul>
                 </div>
             </div>

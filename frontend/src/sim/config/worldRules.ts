@@ -1,11 +1,11 @@
 // ============================================
-// V1 世界规则配置
+// V1 World Rules Configuration
 // ============================================
 
 import type { WorldRule } from '../../shared/types';
 
 // ============================================
-// 默认规则
+// Default Rules
 // ============================================
 
 export const DEFAULT_RULES: WorldRule = {
@@ -54,14 +54,14 @@ export const DEFAULT_RULES: WorldRule = {
 };
 
 // ============================================
-// 预设规则（三档生态系统）
+// Preset Rules (Ecosystem Tiers)
 // ============================================
 
 export const RULE_PRESETS: Record<'balanced' | 'wild' | 'abundant' | 'chaos' | 'challenge_backyard', WorldRule> = {
-    // 平衡模式：默认设置
+    // Balanced Mode: Default settings
     balanced: { ...DEFAULT_RULES },
 
-    // 狂野模式：更多老鼠，更多猫
+    // Wild Mode: More rats, more cats
     wild: {
         ...DEFAULT_RULES,
         ratSpawn: {
@@ -83,7 +83,7 @@ export const RULE_PRESETS: Record<'balanced' | 'wild' | 'abundant' | 'chaos' | '
         },
     },
 
-    // 丰饶模式：更少老鼠繁殖，更稳定
+    // Abundant Mode: Fewer rat spawns, more stable
     abundant: {
         ...DEFAULT_RULES,
         ratSpawn: {
@@ -105,14 +105,14 @@ export const RULE_PRESETS: Record<'balanced' | 'wild' | 'abundant' | 'chaos' | '
         },
     },
 
-    // 混沌模式：大量老鼠，大量猫，高繁殖率
+    // Chaos Mode: Lots of rats, lots of cats, high reproduction rate
     chaos: {
         ...DEFAULT_RULES,
         ratSpawn: {
             ...DEFAULT_RULES.ratSpawn,
-            probability: 0.75, // 更高的繁殖概率
-            minRatsNearbyToStop: 15, // 更多老鼠才会停止繁殖
-            maxRatsNearby: 20, // 允许更多老鼠
+            probability: 0.75, // Higher reproduction probability
+            minRatsNearbyToStop: 15, // More rats needed to stop spawning
+            maxRatsNearby: 20, // Allows more rats
         },
         capPerChunk: {
             rat: 50,
@@ -127,14 +127,14 @@ export const RULE_PRESETS: Record<'balanced' | 'wild' | 'abundant' | 'chaos' | '
             wolf: 8,
             snake: 10
         },
-        timeScale: 2, // 加快时间流逝
+        timeScale: 2, // Faster time flow
         ai: {
             ...DEFAULT_RULES.ai,
-            chaseTimeoutTicks: 60, // 疯狂追逐
+            chaseTimeoutTicks: 60, // Crazy chase
         },
     },
 
-    // 挑战：庭院平衡 (Backyard Balance)
+    // Challenge: Backyard Balance
     challenge_backyard: {
         ...DEFAULT_RULES,
         trashSpawnsRats: true,
@@ -172,7 +172,7 @@ export const RULE_PRESETS: Record<'balanced' | 'wild' | 'abundant' | 'chaos' | '
 };
 
 // ============================================
-// 辅助函数
+// Helper Functions
 // ============================================
 
 export function getRulePreset(preset: keyof typeof RULE_PRESETS): WorldRule {

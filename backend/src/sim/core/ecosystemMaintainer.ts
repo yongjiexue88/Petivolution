@@ -1,5 +1,5 @@
 // ============================================
-// Ecosystem Maintainer - 生态恒温器
+// Ecosystem Maintainer
 // ============================================
 // 
 // Every 5 seconds, ensures drama happens on-screen by:
@@ -9,7 +9,7 @@
 //
 
 import { SimulationState } from './tick';
-import { spawnEntity, SpawnOptions } from './spawner';
+import { spawnEntity } from './spawner';
 import { V1 } from '@shared/constants';
 import type { SpeciesId } from '@shared/types';
 
@@ -93,38 +93,18 @@ function spawnNearResource(
     const resource = findResourceInZone(sim, resourceType);
 
     if (!resource) {
-        // No resource found - spawn on ring edge (60%-100% radius)
-        // This creates a "migration" feel instead of appearing at camera center
-        const angle = sim.rng() * Math.PI * 2;
-        const radiusMin = V1.activeZoneRadiusTiles * 0.6;
-        const radiusMax = V1.activeZoneRadiusTiles * 1.0;
-        const radius = radiusMin + sim.rng() * (radiusMax - radiusMin);
+        // No resource found, spawn near camera center
+        const centerTx = Math.floor(sim.cameraCenter.x / TILE_PX);
+        const centerTy = Math.floor(sim.cameraCenter.y / TILE_PX);
 
-        const spawnX = sim.cameraCenter.x + Math.cos(angle) * radius * TILE_PX;
-        const spawnY = sim.cameraCenter.y + Math.sin(angle) * radius * TILE_PX;
-
-        // Clamp to world bounds
-        const worldMaxPx = V1.defaultMapWidth * TILE_PX;
-        const clampedX = Math.max(TILE_PX, Math.min(spawnX, worldMaxPx - TILE_PX));
-        const clampedY = Math.max(TILE_PX, Math.min(spawnY, worldMaxPx - TILE_PX));
-
-        // Calculate direction toward camera center (migration direction)
-        const dirX = sim.cameraCenter.x - clampedX;
-        const dirY = sim.cameraCenter.y - clampedY;
-        const dirLen = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
-        const spawnOptions: SpawnOptions = {
-            spawnReason: 'ring_fallback',
-            spawnDirection: { x: dirX / dirLen, y: dirY / dirLen },
-        };
+        // Offset randomly within a small radius
+        const offsetX = Math.floor((sim.rng() - 0.5) * 20);
+        const offsetY = Math.floor((sim.rng() - 0.5) * 20);
 
         const entity = spawnEntity(sim, species, getRandomName(species, sim), 'cautious', {
-            tx: Math.floor(clampedX / TILE_PX),
-            ty: Math.floor(clampedY / TILE_PX),
-        }, spawnOptions);
-
-        if (entity) {
-            console.log(`🔄 Spawn: ${species} via ring_fallback at (${Math.floor(clampedX)}, ${Math.floor(clampedY)}) → toward center`);
-        }
+            tx: centerTx + offsetX,
+            ty: centerTy + offsetY,
+        });
 
         return entity !== null;
     }
@@ -136,7 +116,7 @@ function spawnNearResource(
     const entity = spawnEntity(sim, species, getRandomName(species, sim), 'cautious', {
         tx: resource.tx + offsetX,
         ty: resource.ty + offsetY,
-    }, { spawnReason: 'near_resource' });
+    });
 
     return entity !== null;
 }
@@ -152,30 +132,14 @@ function spawnAtEdge(sim: SimulationState, species: SpeciesId): boolean {
     const edgeX = zone.centerX + Math.cos(angle) * zone.radiusPx * 0.9;
     const edgeY = zone.centerY + Math.sin(angle) * zone.radiusPx * 0.9;
 
-    // Clamp to world bounds
-    const worldMaxPx = V1.defaultMapWidth * TILE_PX;
-    const clampedX = Math.max(TILE_PX, Math.min(edgeX, worldMaxPx - TILE_PX));
-    const clampedY = Math.max(TILE_PX, Math.min(edgeY, worldMaxPx - TILE_PX));
-    const tx = Math.floor(clampedX / TILE_PX);
-    const ty = Math.floor(clampedY / TILE_PX);
-
-    // Calculate direction toward camera center (migration direction)
-    const dirX = zone.centerX - clampedX;
-    const dirY = zone.centerY - clampedY;
-    const dirLen = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
-    const spawnOptions: SpawnOptions = {
-        spawnReason: 'migration',
-        spawnDirection: { x: dirX / dirLen, y: dirY / dirLen },
-    };
+    // For infinite world, we don't clamp to hard bounds.
+    const tx = Math.floor(edgeX / TILE_PX);
+    const ty = Math.floor(edgeY / TILE_PX);
 
     const entity = spawnEntity(sim, species, getRandomName(species, sim), 'brave', {
         tx,
         ty,
-    }, spawnOptions);
-
-    if (entity) {
-        console.log(`🐾 Migration: ${species} entered from edge at (${tx * TILE_PX}, ${ty * TILE_PX}) → toward center`);
-    }
+    });
 
     return entity !== null;
 }
@@ -184,18 +148,11 @@ function spawnAtEdge(sim: SimulationState, species: SpeciesId): boolean {
  * Generate a random name for an entity
  */
 function getRandomName(species: SpeciesId, sim: SimulationState): string {
-    const names = {
-        cat: ['Tiger', 'Shadow', 'Luna', 'Simba', 'Oreo', 'Whiskers', 'Felix', 'Mittens'],
-        rat: ['Squeaky', 'Pip', 'Cheese', 'Scurry', 'Nibbles', 'Dusty', 'Scout', 'Rustle'],
-        chicken: ['Clucky', 'Nugget', 'Peckers', 'Eggbert', 'Scratchy', 'Feathers'],
-        smallBird: ['Tweety', 'Sky', 'Blue', 'Chirp', 'Sunny', 'Cloud'],
-        raccoon: ['Bandit', 'Rocket', 'Sly', 'Meeko', 'Ziggy', 'Rigby'],
-        crow: ['Raven', 'Poe', 'Odin', 'Midnight', 'Onyx', 'Blackie'],
-        dog: ['Buddy', 'Max', 'Bella', 'Charlie', 'Daisy', 'Rocky'],
-        fox: ['Rusty', 'Red', 'Sly', 'Foxy', 'Vixen', 'Shadow'],
-        wolf: ['Fang', 'Ghost', 'Luna', 'Shadow', 'Grey', 'Spirit'],
-        hawk: ['Talon', 'Soar', 'Hunter', 'Sky', 'Wind', 'Eye'],
-        snake: ['Slither', 'Hiss', 'Fang', 'Venom', 'Coil', 'Noodle'],
+    const names: Record<string, string[]> = {
+        rat: ['Ratty', 'Pip', 'Squeak', 'Nibbles', 'Whiskers'],
+        cat: ['Kitty', 'Tom', 'Luna', 'Shadow', 'Simba'],
+        chicken: ['Cluck', 'Nugget'],
+        smallBird: ['Tweet', 'Chirp'],
     };
 
     const nameList = names[species] || ['Unknown'];
@@ -262,74 +219,4 @@ export function maintainEcosystem(sim: SimulationState): void {
     const totalStress = (ratStress * 0.7 + catStress * 0.3) * 100;
 
     sim.stats.ecoStress = Math.min(100, Math.floor(totalStress));
-
-    // === Resource Maintenance (V4) ===
-    maintainResources(sim);
-}
-
-function maintainResources(sim: SimulationState): void {
-    // 1. Count Resources in critical zones
-    const counts = {
-        pondWater: 0,
-        urbanTrash: 0,
-        fringeTrash: 0,
-        cornerWater: 0,
-    };
-
-    const corners = ['1,1', '1,6', '6,1', '6,6'];
-    const fringe = ['3,4', '4,3'];
-
-    for (const obj of sim.objects.values()) {
-        const cx = Math.floor(obj.pos.tx / 32);
-        const cy = Math.floor(obj.pos.ty / 32);
-        const id = `${cx},${cy}`;
-
-        if (obj.type === 'water') {
-            if (cx === 3 && cy === 3) counts.pondWater++;
-            if (corners.includes(id)) counts.cornerWater++; // Total corners, easier check
-        } else if (obj.type === 'trash') {
-            if (cx === 4 && cy === 4) counts.urbanTrash++;
-            if (fringe.includes(id)) counts.fringeTrash++;
-        }
-    }
-
-    // 2. Enforce Minimums
-
-    // Pond (3,3): 2 Water
-    if (counts.pondWater < 2) {
-        sim.chunkManager.spawnObject(sim, 'water', 3 * 32, 3 * 32);
-        console.log('💧 Ecosystem: Restored Pond Water');
-    }
-
-    // Urban (4,4): 2 Trash
-    if (counts.urbanTrash < 2) {
-        sim.chunkManager.spawnObject(sim, 'trash', 4 * 32, 4 * 32);
-        console.log('🗑️ Ecosystem: Restored Urban Trash');
-    }
-
-    // Fringe (3,4) & (4,3): 1 Trash each (Checking individually ideally, but total check roughly works)
-    // Let's do individual checks for Fringe/Corners to be precise
-    checkAndSpawn(sim, 'trash', 3, 4, 1);
-    checkAndSpawn(sim, 'trash', 4, 3, 1);
-
-    // Corners: 1 Water each
-    checkAndSpawn(sim, 'water', 1, 1, 1);
-    checkAndSpawn(sim, 'water', 1, 6, 1);
-    checkAndSpawn(sim, 'water', 6, 1, 1);
-    checkAndSpawn(sim, 'water', 6, 6, 1);
-}
-
-function checkAndSpawn(sim: SimulationState, type: 'water' | 'trash', cx: number, cy: number, min: number) {
-    let count = 0;
-    for (const obj of sim.objects.values()) {
-        if (obj.type !== type) continue;
-        const ocx = Math.floor(obj.pos.tx / 32);
-        const ocy = Math.floor(obj.pos.ty / 32);
-        if (ocx === cx && ocy === cy) count++;
-    }
-
-    if (count < min) {
-        sim.chunkManager.spawnObject(sim, type as any, cx * 32, cy * 32); // as any to match type
-        console.log(`♻️ Ecosystem: Restored ${type} at (${cx},${cy})`);
-    }
 }

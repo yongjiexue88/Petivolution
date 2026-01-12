@@ -1,5 +1,5 @@
 // ============================================
-// V1 Web Worker - 模拟入口
+// V1 Web Worker - Simulation Entry Point
 // ============================================
 
 import {
@@ -28,7 +28,7 @@ let sim: SimulationState | null = null;
 let tickInterval: ReturnType<typeof setInterval> | null = null;
 
 // ============================================
-// 消息处理
+// Message Handling
 // ============================================
 
 self.onmessage = (e: MessageEvent<WorkerCommand>) => {
@@ -72,7 +72,7 @@ self.onmessage = (e: MessageEvent<WorkerCommand>) => {
 };
 
 // ============================================
-// 命令处理器
+// Command Handlers
 // ============================================
 
 function handleInitWorld(payload: {
@@ -83,7 +83,7 @@ function handleInitWorld(payload: {
 }) {
     sim = createSimulation(payload.seed, payload.mapId, payload.rules);
 
-    // 添加初始对象
+    // Add initial objects
     if (payload.objects) {
         for (const obj of payload.objects) {
             sim.objects.set(obj.id, obj);
@@ -103,17 +103,17 @@ function handleLoadSave(payload: { save: WorldSaveData }) {
     sim = createSimulation(save.world.seed, save.world.mapId, save.world.rules);
     sim.tick = save.world.tick;
 
-    // 恢复对象
+    // Restore objects
     for (const obj of save.objects) {
         sim.objects.set(obj.id, obj);
     }
 
-    // 恢复实体
+    // Restore entities
     for (const entity of save.entities) {
         sim.entities.set(entity.id, entity);
     }
 
-    // 恢复墓地
+    // Restore graveyard
     sim.graveyard = [...save.graveyard];
 
     startTickLoop();
@@ -142,7 +142,7 @@ function handleSpawnEntity(payload: {
         sendMessage({
             type: 'SPAWN_FAILED',
             payload: {
-                reason: `${payload.species === 'cat' ? '猫' : '鼠'}数量已达上限`,
+                reason: `${payload.species === 'cat' ? 'Cat' : 'Rat'} population limit reached`,
                 species: payload.species
             }
         });
@@ -158,7 +158,7 @@ function handleSpawnEntity(payload: {
     );
 
     if (entity) {
-        // 发送实体详情 (如果需要)
+        // Send entity detail (if needed)
         console.log(`🐣 ${entity.name} (${entity.species}) was born!`);
     }
 }
@@ -177,7 +177,7 @@ function handleSelectEntity(payload: { entityId?: string }) {
     if (!sim) return;
     sim.selectedEntityId = payload.entityId;
 
-    // 立即发送选中实体详情
+    // Immediately send selected entity detail
     if (payload.entityId) {
         const detail = getSelectedEntityDetail(sim);
         if (detail) {
@@ -241,7 +241,7 @@ function handleResetWorld(payload: { seed?: number }) {
 }
 
 // ============================================
-// Tick 循环
+// Tick Loop
 // ============================================
 
 function startTickLoop() {
@@ -255,7 +255,7 @@ function startTickLoop() {
 
         simulateTick(sim);
 
-        // 按快照频率发送
+        // Send by snapshot frequency
         const ticksSinceSnapshot = sim.tick - lastSnapshotTick;
         const snapshotInterval = V1.simTickHz / V1.snapshotHz;
 
@@ -263,7 +263,7 @@ function startTickLoop() {
             sendSnapshot();
             lastSnapshotTick = sim.tick;
 
-            // 如果有选中实体，发送详情
+            // If an entity is selected, send detail
             if (sim.selectedEntityId) {
                 const detail = getSelectedEntityDetail(sim);
                 if (detail) {
@@ -285,7 +285,5 @@ function sendMessage(msg: WorkerUpdate) {
 }
 
 // ============================================
-// 初始资源放置
+// Initial Resource Placement
 // ============================================
-
-

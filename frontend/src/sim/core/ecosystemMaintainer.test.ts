@@ -150,8 +150,8 @@ describe('EcosystemMaintainer', () => {
             const centerX = sim.cameraCenter.x;
             const centerY = sim.cameraCenter.y;
 
-            // Add too many rats (> 55)
-            for (let i = 0; i < 60; i++) {
+            // Add too many rats (> 100)
+            for (let i = 0; i < 110; i++) {
                 sim.entities.set(`rat${i}`, {
                     species: 'rat',
                     state: 'idle',

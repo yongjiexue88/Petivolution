@@ -1,5 +1,5 @@
 // ============================================
-// V1 动物详情面板 (可解释性 UI)
+// V1 Animal Detail Panel (Explainability UI)
 // ============================================
 
 import type { EntityRuntime, Goal, Stimulus } from '@shared/types';
@@ -16,10 +16,10 @@ export function AnimalDetailPanel({ entity }: Props) {
 
     const formatAge = (ticks: number): string => {
         const seconds = Math.floor(ticks / V1.simTickHz);
-        if (seconds < 60) return `${seconds}秒`;
+        if (seconds < 60) return `${seconds}s`;
         const minutes = Math.floor(seconds / 60);
-        if (minutes < 60) return `${minutes}分${seconds % 60}秒`;
-        return `${Math.floor(minutes / 60)}时${minutes % 60}分`;
+        if (minutes < 60) return `${minutes}m ${seconds % 60}s`;
+        return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
     };
 
     const getStateEmoji = (s: string): string => {
@@ -40,41 +40,42 @@ export function AnimalDetailPanel({ entity }: Props) {
 
     const getGoalLabel = (goal: Goal): string => {
         const map: Record<Goal, string> = {
-            drink: '寻找水源',
-            eat: '寻找食物',
-            hunt: '捕猎',
-            rest: '休息',
-            flee: '逃跑',
-            wander: '闲逛',
-            forage: '觅食',
-            rummage: '翻垃圾',
-            bark: '吠叫',
-            patrol: '巡逻'
+            drink: 'Find Water',
+            eat: 'Find Food',
+            hunt: 'Hunt',
+            rest: 'Rest',
+            flee: 'Flee',
+            wander: 'Wander',
+            forage: 'Forage',
+            rummage: 'Rummage',
+            bark: 'Bark',
+            patrol: 'Patrol',
+            reproduce: 'Reproduce'
         };
         return map[goal];
     };
 
     const getStimulusLabel = (s: Stimulus): string => {
         switch (s.type) {
-            case 'prey': return `🎯 猎物 (${s.dist.toFixed(0)}px)`;
-            case 'predator': return `⚠️ 捕食者 (${s.dist.toFixed(0)}px)`;
-            case 'water': return `💧 水源 (${s.dist.toFixed(0)}px)`;
-            case 'bush': return `🌿 灌木 (${s.dist.toFixed(0)}px)`;
-            case 'trash': return `🗑️ 垃圾堆 (${s.dist.toFixed(0)}px)`;
-            default: return '未知';
+            case 'prey': return `🎯 Prey (${s.dist.toFixed(0)}px)`;
+            case 'predator': return `⚠️ Predator (${s.dist.toFixed(0)}px)`;
+            case 'water': return `💧 Water (${s.dist.toFixed(0)}px)`;
+            case 'bush': return `🌿 Bush (${s.dist.toFixed(0)}px)`;
+            case 'trash': return `🗑️ Trash (${s.dist.toFixed(0)}px)`;
+            default: return 'Unknown';
         }
     };
 
     const getPersonalityLabel = (p: string): string => {
         const map: Record<string, string> = {
-            curious: '🔍 好奇',
-            cautious: '🛡️ 谨慎',
-            brave: '⚔️ 勇敢',
+            curious: '🔍 Curious',
+            cautious: '🛡️ Cautious',
+            brave: '⚔️ Brave',
         };
         return map[p] || p;
     };
 
-    // 获取 Top 3 评分
+    // Get Top 3 scores
     const topScores = Object.entries(ai.lastUtilityScores)
         .filter(([_, score]) => score !== undefined && score > -100)
         .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
@@ -105,39 +106,39 @@ export function AnimalDetailPanel({ entity }: Props) {
             </div>
 
             <div className="panel-body">
-                {/* 基本信息 */}
+                {/* Basic Info */}
                 <div className="info-row">
-                    <span className="info-label">年龄</span>
+                    <span className="info-label">Age</span>
                     <span className="info-value">{formatAge(ageTicks)}</span>
                 </div>
                 <div className="info-row">
-                    <span className="info-label">性格</span>
+                    <span className="info-label">Personality</span>
                     <span className="info-value">{getPersonalityLabel(personality)}</span>
                 </div>
                 <div className="info-row">
-                    <span className="info-label">代数</span>
+                    <span className="info-label">Generation</span>
                     <span className="info-value">Gen {generation || 1}</span>
                 </div>
                 <div className="info-row">
-                    <span className="info-label">后代</span>
+                    <span className="info-label">Offspring</span>
                     <span className="info-value">{children?.length || 0}</span>
                 </div>
 
-                {/* Vitals 条 */}
+                {/* Vitals Bars */}
                 <div className="vitals-section">
-                    <h4>生命体征</h4>
-                    <VitalBar label="🍖 饥饿" value={vitals.hunger01} color="#f97316" />
-                    <VitalBar label="💧 口渴" value={vitals.thirst01} color="#3b82f6" />
-                    <VitalBar label="😴 疲劳" value={vitals.fatigue01} color="#a855f7" />
-                    <VitalBar label="❤️ 健康" value={vitals.health01} color="#ef4444" />
+                    <h4>Vitals</h4>
+                    <VitalBar label="🍖 Hunger" value={vitals.hunger01} color="#f97316" />
+                    <VitalBar label="💧 Thirst" value={vitals.thirst01} color="#3b82f6" />
+                    <VitalBar label="😴 Fatigue" value={vitals.fatigue01} color="#a855f7" />
+                    <VitalBar label="❤️ Health" value={vitals.health01} color="#ef4444" />
                 </div>
 
-                {/* AI 决策 (可解释性核心) */}
+                {/* AI Decision (Explainability Core) */}
                 <div className="ai-section">
-                    <h4>🧠 AI 决策</h4>
+                    <h4>🧠 AI Decision</h4>
 
                     <div className="info-row">
-                        <span className="info-label">当前目标</span>
+                        <span className="info-label">Current Goal</span>
                         <span className="info-value goal-badge">{getGoalLabel(ai.currentGoal)}</span>
                     </div>
 
@@ -155,10 +156,10 @@ export function AnimalDetailPanel({ entity }: Props) {
                         </div>
                     )}
 
-                    {/* 评分表 */}
+                    {/* Scores Table */}
                     {topScores.length > 0 && (
                         <div className="scores-section">
-                            <span className="subsection-label">决策评分 (Top 3)</span>
+                            <span className="subsection-label">Decision Scores (Top 3)</span>
                             <div className="scores-list">
                                 {topScores.map(([goal, score], i) => (
                                     <div key={goal} className={`score-item ${i === 0 ? 'top' : ''}`}>
@@ -170,10 +171,10 @@ export function AnimalDetailPanel({ entity }: Props) {
                         </div>
                     )}
 
-                    {/* 最近刺激 */}
+                    {/* Recent Stimuli */}
                     {ai.recentStimuli.length > 0 && (
                         <div className="stimuli-section">
-                            <span className="subsection-label">感知刺激</span>
+                            <span className="subsection-label">Perception Stimuli</span>
                             <div className="stimuli-list">
                                 {ai.recentStimuli.slice(0, 4).map((s, i) => (
                                     <div key={i} className="stimulus-item">
@@ -184,7 +185,7 @@ export function AnimalDetailPanel({ entity }: Props) {
                         </div>
                     )}
 
-                    {/* 失败原因 */}
+                    {/* Failure Reason */}
                     {ai.lastFailReason && (
                         <div className="fail-reason">
                             ⚠️ {ai.lastFailReason}
@@ -196,7 +197,7 @@ export function AnimalDetailPanel({ entity }: Props) {
     );
 }
 
-// Vital Bar 组件
+// Vital Bar Component
 function VitalBar({ label, value, color }: { label: string; value: number; color: string }) {
     const percentage = Math.round(value * 100);
     const isLow = value < 0.3;

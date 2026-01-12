@@ -49,8 +49,8 @@ vi.mock('../store/gameStore', () => {
 describe('SpawnPanel', () => {
     it('should render species buttons', () => {
         render(<SpawnPanel />);
-        expect(screen.getByRole('button', { name: /鼠/ })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /猫/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Rat/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Cat/ })).toBeInTheDocument();
     });
 
     it('should show correct counts', () => {
@@ -61,14 +61,14 @@ describe('SpawnPanel', () => {
 
     it('should switch species on click', () => {
         render(<SpawnPanel />);
-        const catBtn = screen.getByRole('button', { name: /猫/ });
+        const catBtn = screen.getByRole('button', { name: /Cat/ });
         fireEvent.click(catBtn);
         expect(mockSetSpawnSpecies).toHaveBeenCalledWith('cat');
     });
 
     it('should trigger quick spawn', () => {
         render(<SpawnPanel />);
-        const spawnBtn = screen.getByText('✨ 快速投放');
+        const spawnBtn = screen.getByText('✨ Quick Spawn');
         fireEvent.click(spawnBtn);
 
         expect(mockPostMessage).toHaveBeenCalledWith(expect.objectContaining({

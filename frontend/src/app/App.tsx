@@ -29,14 +29,11 @@ function App() {
         showChallengePanel,
         showDebugPanel,
         // selectedEntityId,
+        // selectedEntityId,
         selectedEntityDetail,
         // entities,
-        stats,
-        tick,
         useServer, // V1.3
         setConnectionStatus, // V1.3
-        connected,
-        latency,
         showHUD,
         toggleHUD
     } = useGameStore();
@@ -52,7 +49,7 @@ function App() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [toggleHUD]);
 
-    // 初始化 Web Worker 或 连接服务器
+    // Initialize Web Worker or connect to server
     useEffect(() => {
         let worker: Worker | null = null;
         let pollInterval: any = null;
@@ -65,10 +62,6 @@ function App() {
                 const snapshot = await ServerClient.getInstance().getSnapshot();
                 if (snapshot) {
                     setConnectionStatus(true, ServerClient.getInstance().lastLatencyMs);
-                    // DEBUG: Check if we are receiving entities
-                    if (snapshot.entities.length > 0) {
-                        // console.log(`[App] Received snapshot with ${snapshot.entities.length} entities`);
-                    }
                     updateFromSnapshot(snapshot);
                     setInitialized(true);
                 } else {
@@ -86,7 +79,7 @@ function App() {
             workerRef.current = worker;
             setSimWorker(worker);
 
-            // 处理Worker消息
+            // Handle Worker messages
             worker.onmessage = (e: MessageEvent<WorkerUpdate>) => {
                 const msg = e.data;
 
@@ -100,12 +93,12 @@ function App() {
                         break;
 
                     case 'SPAWN_FAILED':
-                        console.warn(`⚠️ 投放失败: ${msg.payload.reason}`);
+                        console.warn(`⚠️ Spawn failed: ${msg.payload.reason}`);
                         break;
 
                     case 'SAVE_READY':
-                        console.log('💾 存档已生成:', msg.payload.save.meta.name);
-                        // TODO: 保存到 IndexedDB
+                        console.log('💾 Save ready:', msg.payload.save.meta.name);
+                        // TODO: Save to IndexedDB
                         break;
 
                     case 'ERROR':
@@ -114,7 +107,7 @@ function App() {
                 }
             };
 
-            // 初始化世界
+            // Initialize world
             worker.postMessage({
                 type: 'INIT_WORLD',
                 payload: {
@@ -133,20 +126,20 @@ function App() {
         };
     }, [useServer, setInitialized, updateFromSnapshot, setSelectedEntityDetail, addToGraveyard, setConnectionStatus]);
 
-    // 获取选中实体
+    // Get selected entity
     // const selectedEntity = selectedEntityId
     //     ? entities.find(e => e.id === selectedEntityId)
     //     : null;
 
     return (
         <div className="app">
-            {/* 游戏画布 */}
+            {/* Game Canvas */}
             <GameCanvas />
 
-            {/* 工具栏 */}
+            {/* Toolbar */}
             {showHUD && <Toolbar />}
 
-            {/* 左侧面板 */}
+            {/* Left Panels */}
             <div className="panels-left">
                 {showSpawnPanel && <SpawnPanel />}
                 {showRulesPanel && <WorldRulesPanel />}
@@ -154,7 +147,7 @@ function App() {
                 {showChallengePanel && <ChallengePanel />}
             </div>
 
-            {/* 右侧面板 */}
+            {/* Right Panels */}
             <div className="panels-right">
                 {showDebugPanel && <DebugPanel />}
                 {selectedEntityDetail && (
@@ -162,22 +155,6 @@ function App() {
                 )}
                 {showGraveyardPanel && <GraveyardPanel />}
             </div>
-
-            {/* 状态栏 */}
-            {showHUD && (
-                <div className="status-bar">
-                    {useServer && (
-                        <span style={{ color: connected ? '#4ade80' : '#ef4444' }}>
-                            {connected ? `🟢 Server (${latency}ms)` : '🔴 Disconnected'}
-                        </span>
-                    )}
-                    <span>🐭 鼠: {stats.rat}</span>
-                    <span>🐱 猫: {stats.cat}</span>
-                    <span>⚰️ 死亡/分: {stats.deathsLastMin}</span>
-                    <span>🐣 出生/分: {stats.birthsLastMin}</span>
-                    <span>🕐 Tick: {tick}</span>
-                </div>
-            )}
         </div>
     );
 }

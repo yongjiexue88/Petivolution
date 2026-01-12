@@ -1,5 +1,5 @@
 // ============================================
-// V1 世界规则面板
+// V1 World Rules Panel
 // ============================================
 
 import { useGameStore, getSimWorker } from '../store/gameStore';
@@ -137,16 +137,16 @@ export function WorldRulesPanel() {
 
 
     const objects: Array<{ type: ObjectType; icon: string; label: string; desc: string }> = [
-        { type: 'water', icon: '💧', label: '水源 (10GP)', desc: '动物来此喝水补充渴值' },
-        { type: 'bush', icon: '🌿', label: '灌木 (4GP)', desc: '鼠的庇护点，猫难以捕捉' },
-        { type: 'trash', icon: '🗑️', label: '垃圾堆 (6GP)', desc: '鼠的食物来源，可刷新鼠' },
+        { type: 'water', icon: '💧', label: 'Water (10GP)', desc: 'Animals drink here to restore thirst' },
+        { type: 'bush', icon: '🌿', label: 'Bush (4GP)', desc: 'Shelter for rats, harder to catch' },
+        { type: 'trash', icon: '🗑️', label: 'Trash Pile (6GP)', desc: 'Food source for rats' },
     ];
 
     return (
         <div className="panel rules-panel">
             <div className="panel-header">
                 <span className="panel-icon">🌍</span>
-                <h3>世界工具</h3>
+                <h3>World Tools</h3>
             </div>
 
             <div className="panel-body">
@@ -171,9 +171,9 @@ export function WorldRulesPanel() {
                     </div>
                 </div>
 
-                {/* 紧急救援 */}
+                {/* Emergency Aid */}
                 <div className="form-group" style={{ marginBottom: '16px' }}>
-                    <label>神力干预</label>
+                    <label>Divine Intervention</label>
                     <button
                         className="btn-primary emergency-btn"
                         onClick={handleEmergencyAid}
@@ -185,21 +185,21 @@ export function WorldRulesPanel() {
                             padding: '10px'
                         }}
                     >
-                        <span>🌧️ 紧急降雨 (15GP)</span>
+                        <span>🌧️ Emergency Rain (15GP)</span>
                         {!isCooldownReady('emergency_aid') && (
                             <span style={{ fontSize: '10px', marginLeft: '5px' }}>
-                                (冷却 {Math.ceil((useGameStore.getState().cooldowns['emergency_aid'] - Date.now()) / 1000)}s)
+                                (Cooldown {Math.ceil((useGameStore.getState().cooldowns['emergency_aid'] - Date.now()) / 1000)}s)
                             </span>
                         )}
                     </button>
                     <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px' }}>
-                        立即生成5个小型水源，冷却120秒
+                        Instantly spawns 5 small water sources, 120s cooldown
                     </div>
                 </div>
 
-                {/* 放置工具 */}
+                {/* Place Objects */}
                 <div className="form-group">
-                    <label>放置物品</label>
+                    <label>Place Objects</label>
                     <div className="object-list">
                         {objects.map(obj => (
                             <div
@@ -216,7 +216,7 @@ export function WorldRulesPanel() {
                                 <button
                                     className="quick-place-btn"
                                     onClick={() => handleQuickPlace(obj.type)}
-                                    title="快速放置"
+                                    title="Quick Place"
                                 >
                                     +
                                 </button>
@@ -226,7 +226,7 @@ export function WorldRulesPanel() {
                                         e.stopPropagation();
                                         handleQuickRemove(obj.type);
                                     }}
-                                    title="移除一个"
+                                    title="Remove One"
                                 >
                                     -
                                 </button>
@@ -235,13 +235,13 @@ export function WorldRulesPanel() {
                     </div>
                 </div>
 
-                {/* 调试选项 */}
+                {/* Debug Options */}
 
             </div>
 
             {/* V1.2 World Management */}
             <div className="form-group">
-                <label>世界管理 (V1.2)</label>
+                <label>World Management (V1.2)</label>
                 <div className="world-management">
                     <div className="seed-display">
                         <span>Seed:</span>
@@ -249,23 +249,23 @@ export function WorldRulesPanel() {
                     </div>
                     <div className="manage-buttons" style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                         <button className="tool-btn" onClick={handleExport} style={{ flex: 1, fontSize: '12px' }}>
-                            📤 导出
+                            📤 Export
                         </button>
                         <label className="tool-btn" style={{ flex: 1, fontSize: '12px', textAlign: 'center', cursor: 'pointer', margin: 0 }}>
-                            📥 导入
+                            📥 Import
                             <input type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
                         </label>
                     </div>
                 </div>
             </div>
 
-            {/* 生态提示 */}
+            {/* Ecology Tips */}
             <div className="panel-tips">
-                <p>🌱 生态平衡提示：</p>
+                <p>🌱 Ecology Balance Tips:</p>
                 <ul>
-                    <li>多放灌木 → 鼠存活率提高</li>
-                    <li>多放垃圾堆 → 鼠繁殖更快</li>
-                    <li>水源不足 → 全体渴死风险</li>
+                    <li>More bushes → Higher rat survival rate</li>
+                    <li>More trash piles → Faster rat reproduction</li>
+                    <li>Insufficient water → Risk of mass dehydration</li>
                 </ul>
             </div>
         </div>

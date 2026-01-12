@@ -156,6 +156,7 @@ export const RAT_CONFIG: SpeciesConfig = {
             rummage: 0,
             bark: -999,
             patrol: -999,
+            reproduce: 0.1,
         },
         urgency: {
             fear: 2.8,
@@ -240,6 +241,7 @@ export const CAT_CONFIG: SpeciesConfig = {
             rummage: 0,
             bark: -999,
             patrol: -999,
+            reproduce: 0.1,
         },
         urgency: {
             hunger: 1.5,
@@ -317,6 +319,7 @@ export const CHICKEN_CONFIG: SpeciesConfig = {
             rummage: 0,
             bark: -999,
             patrol: -999,
+            reproduce: 0.1,
         },
         urgency: {
             fear: 2.5,
@@ -394,6 +397,7 @@ export const SMALL_BIRD_CONFIG: SpeciesConfig = {
             rummage: 0,
             bark: -999,
             patrol: -999,
+            reproduce: 0.1,
         },
         urgency: {
             fear: 3.0,
@@ -474,7 +478,7 @@ export const RACCOON_CONFIG: SpeciesConfig = {
     },
     utility: {
         base: {
-            drink: 1.0, eat: 1.2, hunt: 0.5, rest: 0.8, flee: 5.0, wander: 0.3, forage: 0.5, rummage: 2.0, bark: -999, patrol: -999
+            drink: 1.0, eat: 1.2, hunt: 0.5, rest: 0.8, flee: 5.0, wander: 0.3, forage: 0.5, rummage: 2.0, bark: -999, patrol: -999, reproduce: 0.1
         },
         urgency: {
             hunger: 3.5, thirst: 3.0, fatigue: 2.5, fear: 4.0
@@ -540,7 +544,7 @@ export const CROW_CONFIG: SpeciesConfig = {
     },
     utility: {
         base: {
-            drink: 1.0, eat: 1.5, hunt: 0.1, rest: 0.8, flee: 6.0, wander: 0.4, forage: 0.2, rummage: 0, bark: -999, patrol: -999
+            drink: 1.0, eat: 1.5, hunt: 0.1, rest: 0.8, flee: 6.0, wander: 0.4, forage: 0.2, rummage: 0, bark: -999, patrol: -999, reproduce: 0.1
         },
         urgency: {
             hunger: 4.0, thirst: 3.0, fatigue: 3.0, fear: 5.0
@@ -606,7 +610,7 @@ export const DOG_CONFIG: SpeciesConfig = {
         probabilityPerSecond: 0,
     },
     utility: {
-        base: { drink: 1, eat: 1, hunt: 1, rest: 1, flee: 1, wander: 0.5, forage: 0, rummage: 0, bark: 0.2, patrol: 0.5 },
+        base: { drink: 1, eat: 1, hunt: 1, rest: 1, flee: 1, wander: 0.5, forage: 0, rummage: 0, bark: 0.2, patrol: 0.5, reproduce: 0 },
         urgency: { hunger: 3, thirst: 3, fatigue: 3, fear: 2 },
         bonuses: { seesPrey: 3, nearTrash: 0, nearWater: 1, nearBush: 0, nearPerch: 0, nearIntruder: 2.5 },
         distancePenalty: { water: 0.1, bush: 0, prey: 0.1, trash: 0, perch: 0 },
@@ -652,7 +656,7 @@ export const FOX_CONFIG: SpeciesConfig = {
         damagePerHit: 1.0
     },
     utility: {
-        base: { drink: 1, eat: 1, hunt: 1.5, rest: 0.8, flee: 2, wander: 0.4, forage: 0, rummage: 0, bark: -999, patrol: -999 },
+        base: { drink: 1, eat: 1, hunt: 1.5, rest: 0.8, flee: 2, wander: 0.4, forage: 0, rummage: 0, bark: -999, patrol: -999, reproduce: 0.1 },
         urgency: { hunger: 3.5, thirst: 3, fatigue: 2.5, fear: 3 },
         bonuses: { seesPrey: 4, nearTrash: 0.5, nearWater: 1, nearBush: 1.5, nearPerch: 0, nearIntruder: 0 },
         distancePenalty: { water: 0.08, bush: 0.02, prey: 0.08, trash: 0, perch: 0 },
@@ -697,7 +701,7 @@ export const HAWK_CONFIG: SpeciesConfig = {
         damagePerHit: 1.0
     },
     utility: {
-        base: { drink: 0.8, eat: 0.5, hunt: 2.0, rest: 0.6, flee: 1, wander: 0.5, forage: 0, rummage: 0, bark: -999, patrol: -999 },
+        base: { drink: 0.8, eat: 0.5, hunt: 2.0, rest: 0.6, flee: 1, wander: 0.5, forage: 0, rummage: 0, bark: -999, patrol: -999, reproduce: 0.1 },
         urgency: { hunger: 4, thirst: 2.5, fatigue: 2.5, fear: 2 },
         bonuses: { seesPrey: 5, nearTrash: 0, nearWater: 0.8, nearBush: 0, nearPerch: 2.5, nearIntruder: 0 },
         distancePenalty: { water: 0.05, bush: 0, prey: 0.03, trash: 0, perch: 0.03 },
@@ -749,7 +753,7 @@ export const WOLF_CONFIG: SpeciesConfig = {
         damagePerHit: 1.0
     },
     utility: {
-        base: { drink: 1, eat: 1, hunt: 2, rest: 0.8, flee: 0.5, wander: 0.4, forage: 0, rummage: 0, bark: -999, patrol: 0.3 },
+        base: { drink: 1, eat: 1, hunt: 2, rest: 0.8, flee: 0.5, wander: 0.4, forage: 0, rummage: 0, bark: -999, patrol: 0.3, reproduce: 0.1 },
         urgency: { hunger: 4, thirst: 3, fatigue: 2, fear: 1.5 },
         bonuses: { seesPrey: 4.5, nearTrash: 0, nearWater: 1.2, nearBush: 0.5, nearPerch: 0, nearIntruder: 1 },
         distancePenalty: { water: 0.08, bush: 0, prey: 0.06, trash: 0, perch: 0 },
@@ -794,7 +798,7 @@ export const SNAKE_CONFIG: SpeciesConfig = {
         damagePerHit: 1.0
     },
     utility: {
-        base: { drink: 0.5, eat: 0.3, hunt: 1.5, rest: 1.0, flee: 1, wander: 0.2, forage: 0, rummage: 0, bark: -999, patrol: -999 },
+        base: { drink: 0.5, eat: 0.3, hunt: 1.5, rest: 1.0, flee: 1, wander: 0.2, forage: 0, rummage: 0, bark: -999, patrol: -999, reproduce: 0.1 },
         urgency: { hunger: 3, thirst: 2, fatigue: 1.5, fear: 2.5 },
         bonuses: { seesPrey: 3, nearTrash: 0, nearWater: 0.8, nearBush: 2.0, nearPerch: 0, nearIntruder: 0 }, // Loves cover
         distancePenalty: { water: 0.1, bush: 0.02, prey: 0.15, trash: 0, perch: 0 },

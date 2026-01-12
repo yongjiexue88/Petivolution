@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "module": "esnext",
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "baseUrl": "..",
+        "paths": {
+            "@shared/*": [
+                "frontend/src/shared/*"
+            ],
+            "@app/*": [
+                "frontend/src/*"
+            ]
+        }
+    }
+}

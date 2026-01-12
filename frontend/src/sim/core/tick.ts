@@ -1,5 +1,5 @@
 // ============================================
-// V1 模拟核心 - Tick 循环
+// V1 Simulation Core - Tick Loop
 // ============================================
 
 import type {
@@ -38,7 +38,7 @@ export function recordEvent(sim: SimulationState, entity: EntityRuntime, event: 
 }
 
 // ============================================
-// 模拟状态
+// Simulation State
 // ============================================
 
 export interface SimulationState {
@@ -64,10 +64,10 @@ export interface SimulationState {
     // RNG
     rng: () => number;
 
-    // 事件缓冲
+    // Event Buffer
     pendingEvents: SimEvent[];
 
-    // 统计
+    // Stats
     stats: {
         birthsThisMinute: number;
         deathsThisMinute: number;
@@ -76,12 +76,12 @@ export interface SimulationState {
         ecoStress: number; // V1.1
     };
 
-    // 选中实体 (用于发送详情)
+    // Selected Entity (for sending details)
     selectedEntityId?: string;
 }
 
 // ============================================
-// 创建模拟
+// Create Simulation
 // ============================================
 
 export function createSimulation(
@@ -123,7 +123,7 @@ function createSeededRandom(seed: number): () => number {
 }
 
 // ============================================
-// 主循环
+// Main Loop
 // ============================================
 
 export function simulateTick(sim: SimulationState): void {
@@ -137,7 +137,7 @@ export function simulateTick(sim: SimulationState): void {
         // V3: Update LOD / Streaming
         sim.chunkManager.updateLOD(sim);
 
-        // 重置分钟统计
+        // Reset minute stats
         if (sim.tick - sim.stats.lastMinuteTick >= V1.simTickHz * 60) {
             sim.stats.birthsThisMinute = 0;
             sim.stats.deathsThisMinute = 0;
@@ -155,47 +155,19 @@ export function simulateTick(sim: SimulationState): void {
             if (entity.state === 'dead') continue;
 
             // ========================================
-            // LOD CHECK via ChunkManager
+            // DISABLED LOD: All entities get full AI updates
+            // Previously had hot/warm/cold chunk logic that froze distant animals
+            // Now all animals are always active regardless of camera position
             // ========================================
-            const chunkId = sim.chunkManager.getChunkId(
-                Math.floor(entity.pos.x / V1.tileSizePx / V1.chunkSize),
-                Math.floor(entity.pos.y / V1.tileSizePx / V1.chunkSize)
-            );
-
-            const isHot = sim.chunkManager.activeChunks.has(chunkId);
-            const isWarm = sim.chunkManager.semiActiveChunks.has(chunkId);
-
-
-            // Cold: Skip almost everything (frozen)
-            // Ideally we eventually delete them or standard "virtualize" removes them.
-            // For now, if they exist but are cold, we just don't update them to save CPU.
-            if (!isHot && !isWarm) {
-                // Occasional low-freq update or total freeze? 
-                // Let's freeze them except for age.
-                entity.ageTicks++;
-                continue;
-            }
-
-            // Warm: Simplified Update (Movement only, no AI)
-            if (isWarm) {
-                simplifiedUpdate(entity, sim); // Random wander / basic physics
-                entity.ageTicks++;
-                updateVitals(entity, sim); // Optional: keep them hungry?
-                if (entity.vitals.health01 <= 0) {
-                    handleDeath(entity, sim); // They can die off-screen
-                    deadEntities.push(id);
-                }
-                continue;
-            }
 
             // Hot: Full Update
             // ========================================
-            // 1. 每tick: 更新 vitals
+            // 1. Every tick: Update vitals
             // ========================================
             updateVitals(entity, sim);
 
             // ========================================
-            // 2. 检查死亡
+            // 2. Check Death
             // ========================================
             if (entity.vitals.health01 <= 0) {
                 handleDeath(entity, sim);
@@ -204,7 +176,7 @@ export function simulateTick(sim: SimulationState): void {
             }
 
             // ========================================
-            // 4. 感知 (每 N tick)
+            // 4. Perception (Every N ticks)
             // ========================================
             if (sim.tick % V1.perceptionEveryNTicks === 0 && sim.rules.ai.perceptionEnabled) {
                 const perception = perceive(entity, sim);
@@ -213,7 +185,7 @@ export function simulateTick(sim: SimulationState): void {
             }
 
             // ========================================
-            // 5. 决策 (每 N tick)
+            // 5. Decision (Every N ticks)
             // ========================================
             if (sim.tick % V1.decisionEveryNTicks === 0) {
                 const scores = calculateUtility(entity, sim);
@@ -229,14 +201,14 @@ export function simulateTick(sim: SimulationState): void {
             }
 
             // ========================================
-            // 6. 追逐超时检查
+            // 6. Chase Timeout Check
             // ========================================
             if (entity.state === 'chase') {
                 checkChaseTimeout(entity, sim);
             }
 
             // ========================================
-            // 7. 每tick: 执行动作
+            // 7. Every tick: Execute Action
             // ========================================
             executeAction(entity, sim);
 
@@ -259,12 +231,12 @@ export function simulateTick(sim: SimulationState): void {
             }
         }
 
-        // 移除死亡实体
+        // Remove dead entities
         for (const id of deadEntities) {
             sim.entities.delete(id);
         }
 
-        // 资源再生 (每10 tick)
+        // Resource Regeneration (Every 10 ticks)
         if (sim.tick % 10 === 0) {
             for (const obj of sim.objects.values()) {
                 if (obj.data?.resources !== undefined && obj.data?.maxResources !== undefined) {
@@ -284,30 +256,30 @@ export function simulateTick(sim: SimulationState): void {
 }
 
 // ============================================
-// Vitals 更新
+// Update Vitals
 // ============================================
 
 function updateVitals(entity: EntityRuntime, _sim: SimulationState): void {
     const config = SPECIES_CONFIGS[entity.species];
     const v = entity.vitals;
 
-    // 消耗
+    // Consumption
     v.hunger01 = clamp01(v.hunger01 - config.vitals.hungerDecayPerTick);
     v.thirst01 = clamp01(v.thirst01 - config.vitals.thirstDecayPerTick);
 
-    // 疲劳 (睡觉时恢复)
+    // Fatigue (Recovers when sleeping)
     if (entity.state === 'sleep') {
         v.fatigue01 = clamp01(v.fatigue01 + config.vitals.sleepGainPerTick);
     } else {
         v.fatigue01 = clamp01(v.fatigue01 - config.vitals.fatigueDecayPerTick);
     }
 
-    // 健康恢复 (如果状态良好)
+    // Health Recovery (If state is good)
     if (v.hunger01 > 0.3 && v.thirst01 > 0.3) {
         v.health01 = clamp01(v.health01 + 0.0002);
     }
 
-    // 饥饿/口渴掉血
+    // Hunger/Thirst Damage
     if (v.hunger01 < config.vitals.dangerThreshold01) {
         v.health01 = clamp01(v.health01 - config.vitals.healthDamageWhenHungerBelow);
     }
@@ -317,7 +289,7 @@ function updateVitals(entity: EntityRuntime, _sim: SimulationState): void {
 }
 
 // ============================================
-// 死亡处理
+// Death Handling
 // ============================================
 
 function handleDeath(entity: EntityRuntime, sim: SimulationState): void {
@@ -338,7 +310,7 @@ function handleDeath(entity: EntityRuntime, sim: SimulationState): void {
         killedBy: entity.dead?.killedBy,
     };
 
-    // 添加到墓碑
+    // Add to graveyard
     sim.graveyard.push({
         entityId: entity.id,
         species: entity.species,
@@ -350,11 +322,11 @@ function handleDeath(entity: EntityRuntime, sim: SimulationState): void {
         killedByName: entity.dead?.killedBy
             ? sim.entities.get(entity.dead.killedBy)?.name
             : undefined,
-        history: [...entity.history], // V1.1 保存生平
-        path: [...entity.path],       // V1.1 保存路径
+        history: [...entity.history], // V1.1 Save life history
+        path: [...entity.path],       // V1.1 Save path
     });
 
-    // 发送事件
+    // Send event
     const location = { x: entity.pos.x, y: entity.pos.y };
     let importance: 'S' | 'A' | 'B' | 'C' = 'B';
     if (reason === 'killed') importance = 'S';
@@ -373,33 +345,18 @@ function handleDeath(entity: EntityRuntime, sim: SimulationState): void {
     };
 
     sim.pendingEvents.push(deathEvent);
-    // 同时记录在个人历史
+    // Also record in personal history
     entity.history.push(deathEvent);
 
     sim.stats.deathsThisMinute++;
 }
 
-// ============================================
-// LOD 简化更新
-// ============================================
 
-function simplifiedUpdate(entity: EntityRuntime, sim: SimulationState): void {
-    if (entity.state !== 'sleep') {
-        entity.state = 'wander';
-        entity.ai.currentGoal = 'wander';
-    }
+// simplifiedUpdate removed - no longer used since LOD disabled
 
-    const config = SPECIES_CONFIGS[entity.species];
-    const speed = config.move.speedTilesPerTick * V1.tileSizePx * 0.5;
-
-    entity.pos.x += (sim.rng() - 0.5) * speed * 2;
-    entity.pos.y += (sim.rng() - 0.5) * speed * 2;
-
-    // No hard boundary for infinite world simplified update
-}
 
 // ============================================
-// 追逐超时
+// Chase Timeout
 // ============================================
 
 function checkChaseTimeout(entity: EntityRuntime, sim: SimulationState): void {
@@ -436,63 +393,130 @@ function checkReproduction(entity: EntityRuntime, sim: SimulationState): void {
     // 2. Check Cooldown
     if (entity.lastReproductionTick && (sim.tick - entity.lastReproductionTick) < rep.cooldownTicks) return;
 
-    // 3. Check Hunger
+    // 3. Check Hunger (must be well-fed)
     if (entity.vitals.hunger01 < rep.minHunger) return;
 
-    // 4. Check Chance (prob per second)
+    // 4. Check Thirst (must not be thirsty)
+    if (entity.vitals.thirst01 < 0.4) return;
+
+    // 5. Check Fatigue (must not be tired)
+    if (entity.vitals.fatigue01 < 0.3) return;
+
+    // 6. Find a mate (same species, opposite sex, nearby, also ready to reproduce)
+    const mate = findMate(entity, sim);
+    if (!mate) return;
+
+    // 7. Check Chance (prob per second)
     if (sim.rng() > rep.probabilityPerSecond) return;
 
-    // 5. Check Global Cap (Quick check)
-    // Detailed check is in spawnEntity, but we can quick fail here
+    // 8. Check Global Cap
     if (!canSpawn(entity.species, sim)) return;
 
-    // Apply Cost
+    // Apply Cost to both parents
     entity.vitals.hunger01 = Math.max(0, entity.vitals.hunger01 - rep.energyCost);
+    mate.vitals.hunger01 = Math.max(0, mate.vitals.hunger01 - rep.energyCost * 0.5);
     entity.lastReproductionTick = sim.tick;
+    mate.lastReproductionTick = sim.tick;
 
-    spawnOffspring(entity, sim);
+    spawnOffspring(entity, mate, sim);
 }
 
-function spawnOffspring(parent: EntityRuntime, sim: SimulationState) {
-    // Random position near parent
+/**
+ * Find a suitable mate for sexual reproduction
+ */
+function findMate(entity: EntityRuntime, sim: SimulationState): EntityRuntime | null {
+    const config = SPECIES_CONFIGS[entity.species];
+    const mateRange = config.sense.radiusTiles ?? 8;
+    const mateRangePx = mateRange * V1.tileSizePx;
+
+    let bestMate: EntityRuntime | null = null;
+    let bestDist = Infinity;
+
+    for (const other of sim.entities.values()) {
+        // Must be same species
+        if (other.species !== entity.species) continue;
+        // Must be opposite sex
+        if (other.sex === entity.sex) continue;
+        // Must not be self
+        if (other.id === entity.id) continue;
+        // Must be alive
+        if (other.state === 'dead') continue;
+
+        // Check distance
+        const dx = other.pos.x - entity.pos.x;
+        const dy = other.pos.y - entity.pos.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > mateRangePx) continue;
+
+        // Check if mate is also ready (well-fed, not tired)
+        const rep = SPECIES_CONFIGS[other.species].reproduction;
+        if (!rep?.enabled) continue;
+        if (other.ageTicks < rep.minAgeTicks) continue;
+        if (other.vitals.hunger01 < rep.minHunger) continue;
+        if (other.vitals.thirst01 < 0.4) continue;
+        if (other.vitals.fatigue01 < 0.3) continue;
+        if (other.lastReproductionTick && (sim.tick - other.lastReproductionTick) < rep.cooldownTicks) continue;
+
+        if (dist < bestDist) {
+            bestDist = dist;
+            bestMate = other;
+        }
+    }
+
+    return bestMate;
+}
+
+function spawnOffspring(parent1: EntityRuntime, parent2: EntityRuntime, sim: SimulationState) {
+    // Random position between parents
+    const midX = (parent1.pos.x + parent2.pos.x) / 2;
+    const midY = (parent1.pos.y + parent2.pos.y) / 2;
     const offset = (sim.rng() - 0.5) * V1.tileSizePx * 2;
     const spawnPos: TilePos = {
-        tx: (parent.pos.x + offset) / V1.tileSizePx,
-        ty: (parent.pos.y + offset) / V1.tileSizePx
+        tx: (midX + offset) / V1.tileSizePx,
+        ty: (midY + offset) / V1.tileSizePx
     };
 
-    // Inherit Personality (50% parent, 50% random)
+    // Inherit Personality (50% from parent1, 25% parent2, 25% random)
     const personalities: Personality[] = ['curious', 'cautious', 'brave'];
     const pRand = sim.rng();
-    const childPersonality = pRand > 0.5 ? parent.personality : personalities[Math.floor(sim.rng() * personalities.length)];
+    let childPersonality: Personality;
+    if (pRand < 0.5) {
+        childPersonality = parent1.personality;
+    } else if (pRand < 0.75) {
+        childPersonality = parent2.personality;
+    } else {
+        childPersonality = personalities[Math.floor(sim.rng() * personalities.length)];
+    }
 
-    const child = spawnEntity(sim, parent.species, `${parent.name} Jr.`, childPersonality, spawnPos);
+    const child = spawnEntity(sim, parent1.species, `${parent1.name} Jr.`, childPersonality, spawnPos);
 
     if (child) {
-        // Link Family
-        child.parents = [parent.id];
-        child.generation = parent.generation + 1;
+        // Link Family (two parents)
+        child.parents = [parent1.id, parent2.id];
+        child.generation = Math.max(parent1.generation, parent2.generation) + 1;
 
-        parent.children.push(child.id);
+        parent1.children.push(child.id);
+        parent2.children.push(child.id);
 
         // Record Event
         const birthEvent: SimEvent = {
             type: 'BIRTH',
             tick: sim.tick,
             entityId: child.id,
-            parentId: parent.id,
+            parentId: parent1.id,
             location: { x: child.pos.x, y: child.pos.y },
             importance: 'B',
             tags: ['birth', child.species],
             subjectName: child.name,
         };
         sim.pendingEvents.push(birthEvent);
-        parent.history.push(birthEvent);
+        parent1.history.push(birthEvent);
+        parent2.history.push(birthEvent);
     }
 }
 
 // ============================================
-// 刺激更新
+// Stimulus Update
 // ============================================
 
 function updateStimuli(entity: EntityRuntime, perception: PerceptionResult): void {
@@ -500,17 +524,17 @@ function updateStimuli(entity: EntityRuntime, perception: PerceptionResult): voi
 }
 
 // ============================================
-// Goal 转换
+// Goal Transition
 // ============================================
 
 function transitionToGoal(entity: EntityRuntime, goal: Goal, _sim: SimulationState): void {
-    // 重置追逐状态
+    // Reset chase state
     if (goal !== 'hunt') {
         entity.chaseTicks = undefined;
         entity.chaseStartPos = undefined;
     }
 
-    // 映射 goal -> state
+    // Map goal -> state
     const goalToState: Record<Goal, SimState> = {
         drink: 'moveTo',
         eat: 'moveTo',
@@ -521,20 +545,21 @@ function transitionToGoal(entity: EntityRuntime, goal: Goal, _sim: SimulationSta
         forage: 'peck',
         rummage: 'rummage',
         bark: 'bark',
-        patrol: 'patrol'
+        patrol: 'patrol',
+        reproduce: 'wander' // Looking for a mate uses wander state
     };
 
     entity.state = goalToState[goal];
 }
 
 // ============================================
-// 实体生成
+// Entity Spawning
 // ============================================
 
 // spawnEntity and canSpawn moved to ./spawner.ts
 
 // ============================================
-// 快照生成
+// Snapshot Generation
 // ============================================
 
 export function getSnapshot(sim: SimulationState): {
@@ -546,49 +571,27 @@ export function getSnapshot(sim: SimulationState): {
 } {
     const entities: SnapshotEntity[] = [];
 
+    // Include ALL entities - no LOD filtering
     for (const entity of sim.entities.values()) {
-        // LOD Filter: Only send Hot + Warm (optional)
-        const chunkId = sim.chunkManager.getChunkId(
-            Math.floor(entity.pos.x / V1.tileSizePx / V1.chunkSize),
-            Math.floor(entity.pos.y / V1.tileSizePx / V1.chunkSize)
-        );
-
-        const isHot = sim.chunkManager.activeChunks.has(chunkId);
-        const isWarm = sim.chunkManager.semiActiveChunks.has(chunkId);
-
-        // Include Hot + Warm.
-        // Also always include selected entity if it exists.
-        if (isHot || isWarm || entity.id === sim.selectedEntityId) {
-            entities.push({
-                id: entity.id,
-                species: entity.species,
-                name: entity.name,
-                x: entity.pos.x,
-                y: entity.pos.y,
-                facing: entity.facing,
-                anim: getAnimationName(entity),
-                state: entity.state,
-                hp01: entity.vitals.health01,
-                selected: entity.id === sim.selectedEntityId,
-                targetPos: (() => {
-
-                    return sim.rules.debug.showTargets ? getEntityTargetPos(entity, sim) : undefined;
-                })(),
-            });
-        }
+        entities.push({
+            id: entity.id,
+            species: entity.species,
+            name: entity.name,
+            x: entity.pos.x,
+            y: entity.pos.y,
+            facing: entity.facing,
+            anim: getAnimationName(entity),
+            state: entity.state,
+            hp01: entity.vitals.health01,
+            selected: entity.id === sim.selectedEntityId,
+            targetPos: (() => {
+                return sim.rules.debug.showTargets ? getEntityTargetPos(entity, sim) : undefined;
+            })(),
+        });
     }
 
-    // Filter Objects as well
-    const visibleObjects: WorldObject[] = [];
-    for (const obj of sim.objects.values()) {
-        const cx = Math.floor(obj.pos.tx / V1.chunkSize);
-        const cy = Math.floor(obj.pos.ty / V1.chunkSize);
-        const id = sim.chunkManager.getChunkId(cx, cy);
-
-        if (sim.chunkManager.activeChunks.has(id) || sim.chunkManager.semiActiveChunks.has(id)) {
-            visibleObjects.push(obj);
-        }
-    }
+    // Include ALL objects - no LOD filtering
+    const visibleObjects: WorldObject[] = [...sim.objects.values()];
 
     // Generic species counting
     const counts: Record<string, number> = {};
@@ -644,7 +647,7 @@ function getAnimationName(entity: EntityRuntime): string {
 }
 
 // ============================================
-// 获取选中实体详情
+// Get Selected Entity Detail
 // ============================================
 
 export function getSelectedEntityDetail(sim: SimulationState): EntityRuntime | null {

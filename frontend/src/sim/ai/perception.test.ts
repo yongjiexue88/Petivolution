@@ -25,7 +25,7 @@ describe('Perception System', () => {
 
     describe('perceive', () => {
         // Mock helper
-        function createEntity(id: string, species: 'rat' | 'cat', x: number): any {
+        function createEntity(id: string, species: string, x: number): any {
             return {
                 id, species, state: 'idle',
                 pos: { x, y: 0 },
@@ -94,6 +94,30 @@ describe('Perception System', () => {
             expect(result.nearestTrash).toBeDefined();
             expect(result.nearestTrash?.objectId).toBe('t2');
             expect(result.nearestTrash?.dist).toBe(50);
+        });
+
+        it('should correctly identify Fox as predator for Rat and Rat as prey for Fox', () => {
+            const rat = createEntity('rat', 'rat', 0);
+            const fox = createEntity('fox', 'fox', 50);
+
+            const entities = new Map();
+            entities.set('rat', rat);
+            entities.set('fox', fox);
+
+            const sim: any = {
+                entities,
+                objects: new Map()
+            };
+
+            // Rat Perception
+            const ratResult = perceive(rat, sim);
+            expect(ratResult.nearestPredator).toBeDefined();
+            expect(ratResult.nearestPredator?.entityId).toBe('fox');
+
+            // Fox Perception
+            const foxResult = perceive(fox, sim);
+            expect(foxResult.nearestPrey).toBeDefined();
+            expect(foxResult.nearestPrey?.entityId).toBe('rat');
         });
     });
 });

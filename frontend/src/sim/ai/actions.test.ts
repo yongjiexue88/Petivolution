@@ -8,6 +8,7 @@ function createMockEntity(id: string, species: 'rat' | 'cat'): EntityRuntime {
     return {
         id, species,
         name: 'Mock',
+        sex: 'male',
         personality: 'curious',
         pos: { x: 100, y: 100 },
         vel: { x: 0, y: 0 },

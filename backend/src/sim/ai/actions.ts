@@ -1,5 +1,5 @@
 // ============================================
-// V1 AI - 动作执行系统
+// V1 AI - Action Execution System
 // ============================================
 
 import type {
@@ -31,13 +31,13 @@ function getMoveSpeed(entity: EntityRuntime, baseSpeed: number, sim: SimulationS
 }
 
 // ============================================
-// 动作执行
+// Action Execution
 // ============================================
 
 export function executeAction(entity: EntityRuntime, sim: SimulationState): void {
     switch (entity.state) {
         case 'idle':
-            // 空闲状态
+            // Idle state
             break;
         case 'wander':
             executeWander(entity, sim);
@@ -84,7 +84,7 @@ export function executeAction(entity: EntityRuntime, sim: SimulationState): void
 }
 
 // ============================================
-// Wander - 随机游荡 (含 Flocking)
+// Wander - Random Wandering (with Flocking)
 // ============================================
 
 function executeWander(entity: EntityRuntime, sim: SimulationState): void {
@@ -92,16 +92,16 @@ function executeWander(entity: EntityRuntime, sim: SimulationState): void {
     const baseSpeed = config.move.speedTilesPerTick * V1.tileSizePx;
     const speed = getMoveSpeed(entity, baseSpeed, sim);
 
-    let wanderVec = { x: 0, y: 0 };
+    const wanderVec = { x: 0, y: 0 };
 
     // Flocking Logic
     if (config.flock && config.flock.enabled) {
         const friends = entity.ai.recentStimuli.filter(s => s.type === 'friend' && s.dist < config.flock!.radiusTiles * V1.tileSizePx);
 
         if (friends.length > 0) {
-            let cohesion = { x: 0, y: 0 };
-            let alignment = { x: 0, y: 0 };
-            let separation = { x: 0, y: 0 };
+            const cohesion = { x: 0, y: 0 };
+            const alignment = { x: 0, y: 0 };
+            const separation = { x: 0, y: 0 };
 
             let friendCount = 0;
             for (const f of friends) {
@@ -162,7 +162,7 @@ function executeWander(entity: EntityRuntime, sim: SimulationState): void {
 }
 
 // ============================================
-// MoveTo - 移动到目标
+// MoveTo - Move to Target
 // ============================================
 
 function executeMoveTo(entity: EntityRuntime, sim: SimulationState): void {
@@ -242,7 +242,7 @@ function executeMoveTo(entity: EntityRuntime, sim: SimulationState): void {
 }
 
 // ============================================
-// Rummage - 浣熊翻垃圾
+// Rummage - Raccoon Rummaging through Trash
 // ============================================
 
 function executeRummage(entity: EntityRuntime, sim: SimulationState): void {
@@ -267,18 +267,6 @@ function executeRummage(entity: EntityRuntime, sim: SimulationState): void {
         return;
     }
 
-    // Resource Consumption
-    if (trash.data) {
-        if (!trash.data.indestructible) {
-            if ((trash.data.resources || 0) <= 0) {
-                // Empty
-                entity.state = 'idle' as any;
-                return;
-            }
-            trash.data.resources = (trash.data.resources || 0) - 0.5; // Consume
-        }
-    }
-
     entity.vitals.hunger01 = Math.min(1, entity.vitals.hunger01 + 0.05);
 
     if (sim.tick % 60 === 0) {
@@ -300,26 +288,11 @@ function executeRummage(entity: EntityRuntime, sim: SimulationState): void {
 }
 
 // ============================================
-// Drink - 喝水
+// Drink - Drinking Water
 // ============================================
 
 function executeDrink(entity: EntityRuntime, sim: SimulationState): void {
     const config = SPECIES_CONFIGS[entity.species];
-
-    // Resource Consumption
-    if (entity.targetObjectId) {
-        const water = sim.objects.get(entity.targetObjectId);
-        if (water && water.data) {
-            if (!water.data.indestructible) {
-                if ((water.data.resources || 0) <= 0) {
-                    entity.state = 'idle' as any;
-                    return;
-                }
-                water.data.resources = (water.data.resources || 0) - 0.2;
-            }
-        }
-    }
-
     entity.vitals.thirst01 = clamp01(entity.vitals.thirst01 + config.vitals.drinkGainPerTick);
 
     if (entity.targetObjectId) {
@@ -346,26 +319,11 @@ function executeDrink(entity: EntityRuntime, sim: SimulationState): void {
 }
 
 // ============================================
-// Eat - 吃东西
+// Eat - Eating
 // ============================================
 
 function executeEat(entity: EntityRuntime, sim: SimulationState): void {
     const config = SPECIES_CONFIGS[entity.species];
-
-    // Resource Consumption (for Trash)
-    if (entity.targetObjectId) {
-        const obj = sim.objects.get(entity.targetObjectId);
-        if (obj && obj.type === 'trash' && obj.data) {
-            if (!obj.data.indestructible) {
-                if ((obj.data.resources || 0) <= 0) {
-                    entity.state = 'idle' as any;
-                    return;
-                }
-                obj.data.resources = (obj.data.resources || 0) - 0.5;
-            }
-        }
-    }
-
     entity.vitals.hunger01 = clamp01(entity.vitals.hunger01 + config.vitals.eatGainPerTick);
 
     if (sim.tick % 60 === 0) {
@@ -389,7 +347,7 @@ function executeEat(entity: EntityRuntime, sim: SimulationState): void {
 }
 
 // ============================================
-// Chase - 追逐
+// Chase - Chasing
 // ============================================
 
 function executeChase(entity: EntityRuntime, sim: SimulationState): void {
@@ -405,6 +363,7 @@ function executeChase(entity: EntityRuntime, sim: SimulationState): void {
         } else {
             entity.state = 'wander';
             entity.ai.currentGoal = 'wander';
+            entity.ai.lastFailReason = 'prey_lost';
             return;
         }
     }
@@ -430,7 +389,7 @@ function executeChase(entity: EntityRuntime, sim: SimulationState): void {
 }
 
 // ============================================
-// Attack - 攻击
+// Attack - Attacking
 // ============================================
 
 function executeAttack(entity: EntityRuntime, sim: SimulationState): void {
@@ -481,7 +440,7 @@ function executeAttack(entity: EntityRuntime, sim: SimulationState): void {
 }
 
 // ============================================
-// Flee - 逃跑
+// Flee - Fleeing
 // ============================================
 
 function executeFlee(entity: EntityRuntime, sim: SimulationState): void {
@@ -510,7 +469,7 @@ function executeFlee(entity: EntityRuntime, sim: SimulationState): void {
 }
 
 // ============================================
-// Sleep - 睡觉
+// Sleep - Sleeping
 // ============================================
 
 function executeSleep(entity: EntityRuntime, _sim: SimulationState): void {
@@ -521,7 +480,7 @@ function executeSleep(entity: EntityRuntime, _sim: SimulationState): void {
 }
 
 // ============================================
-// Peck - 啄食
+// Peck - Pecking
 // ============================================
 
 function executePeck(entity: EntityRuntime, sim: SimulationState): void {
@@ -536,7 +495,7 @@ function executePeck(entity: EntityRuntime, sim: SimulationState): void {
 }
 
 // ============================================
-// Perch - 栖息
+// Perch - Perching
 // ============================================
 
 function executePerch(entity: EntityRuntime, sim: SimulationState): void {
@@ -548,7 +507,7 @@ function executePerch(entity: EntityRuntime, sim: SimulationState): void {
 }
 
 // ============================================
-// Bark - 吠叫 (Dog)
+// Bark - Barking (Dog)
 // ============================================
 
 function executeBark(entity: EntityRuntime, sim: SimulationState): void {
@@ -590,7 +549,7 @@ function executeBark(entity: EntityRuntime, sim: SimulationState): void {
 }
 
 // ============================================
-// Patrol - 巡逻 (Dog)
+// Patrol - Patrolling (Dog)
 // ============================================
 
 function executePatrol(entity: EntityRuntime, sim: SimulationState): void {
@@ -610,7 +569,7 @@ function executePatrol(entity: EntityRuntime, sim: SimulationState): void {
 }
 
 // ============================================
-// 辅助函数
+// Helper Functions
 // ============================================
 
 function moveToward(entity: EntityRuntime, target: Vec2, speed: number): void {

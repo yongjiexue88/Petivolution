@@ -129,214 +129,214 @@ Successfully implemented and integrated the new V1 AI system for Petivolution. T
 
 ---
 
-## 🌍 生态系统大路线图 (Ecosystem Roadmap)
+## 🌍 Ecosystem Roadmap
 **Date Added:** 2026-01-08
 
-### 1) 产品愿景 (Vision)
+### 1) Product Vision
 
-> **一句话**: 玩家创建一个生态地图，通过投放有名字的动物与改造环境，观察食物链与行为涌现，并用可视化工具维持生态平衡、讲述动物家族的故事。
+> **One Sentence**: Players create an ecosystem map, observe food chains and emergent behaviors by spawning named animals and modifying the environment, and use visualization tools to maintain ecological balance and tell stories of animal families.
 
-**三大体验支柱**:
-| 支柱 | 描述 |
+**Three Experience Pillars**:
+| Pillar | Description |
 | :--- | :--- |
-| **生命故事** | 个体有名字、寿命、家谱、关键事件回放 |
-| **生态动力学** | 捕食/资源/栖息地让世界自己"活" |
-| **玩家干预** | 小改动就能改变走势（策略感而非纯旁观） |
+| **Life Stories** | Individuals have names, lifespans, family trees, key event replays |
+| **Eco-Dynamics** | Predation/Resources/Habitats make the world "alive" |
+| **Player Intervention** | Small changes alter the trend (Strategic rather than pure spectator) |
 
 ---
 
-### 2) 核心平台架构 (Platform Architecture)
+### 2) Core Platform Architecture
 
-#### 2.1 数据驱动内容
-- [ ] `SpeciesConfig`: 物种参数（移动/感知/vitals/繁殖/行为权重）
-- [ ] `FoodWeb`: 食物网（谁吃谁、偏好、能量收益）
-- [ ] `Habitat`: 栖息地偏好（森林/草地/水边/城市）
-- [ ] `MapRecipe`: 地图生成配方（biome分布 + 资源点密度）
+#### 2.1 Data-Driven Content
+- [ ] `SpeciesConfig`: Species parameters (movement/sensing/vitals/reproduction/behavior weights)
+- [ ] `FoodWeb`: Food web (who eats whom, preferences, energy gain)
+- [ ] `Habitat`: Habitat preferences (Forest/Grassland/Waterside/City)
+- [ ] `MapRecipe`: Map generation recipes (biome distribution + resource density)
 
-> **目标**: 新增一个物种=加配置+可选新动作，不用改核心引擎
+> **Goal**: Adding a species = config + optional new actions, no core engine changes needed
 
-#### 2.2 生态稳定器系统 (Avoid Balance Hell)
-- [ ] 承载量 cap（按 biome/chunk/资源指数动态计算）
-- [ ] 出生率/死亡率概率钳制（logistic）
-- [ ] 资源下限与再生（防全灭）
-- [ ] AI退化策略（缺资源时不发疯）
+#### 2.2 Ecosystem Stabilizer System (Avoid Balance Hell)
+- [ ] Carrying Capacity (Dynamic calculation by biome/chunk/resource index)
+- [ ] Birth/Death Rate Probability Clamping (Logistic)
+- [ ] Resource Minimums and Regeneration (Prevent total extinction)
+- [ ] AI Degradation Strategy (Don't go crazy when resources scarce)
 
 **WorldRule Presets**:
-| Preset | 描述 |
+| Preset | Description |
 | :--- | :--- |
-| `Balanced` | 推荐，稳定平衡 |
-| `Wild` | 繁殖快、死亡快 |
-| `Abundant` | 资源多、更像养成 |
+| `Balanced` | Recommended, stable balance |
+| `Wild` | Fast reproduction, fast death |
+| `Abundant` | Lots of resources, more like a pet sim |
 
-#### 2.3 可视化与调试
-- [ ] 种群曲线（每物种数量）
-- [ ] 资源指数曲线（水/食物/庇护）
-- [ ] 热力图：捕食热点 / 缺水热点 / 迁徙路线
-- [ ] 事件统计：出生、死亡、捕食、疾病
-
----
-
-### 3) V4+ 内容扩展路线
-
-#### 3.1 物种扩展阶梯 (Species Tiers)
-
-**Tier 1：非捕食链扰动者（最安全）**
-- [ ] 🐔 鸡 / 🐦 鸟 / 🦋 蝴蝶
-- 新机制：觅食、群聚、迁徙、惊飞
-- 资源交互：吃种子/虫子（"地面食物指数"）
-
-**Tier 2：清道夫 / 害兽（生态调节器）**
-- [ ] 🦝 浣熊 / 🐦‍⬛ 乌鸦 / 🦊 狐狸
-- 新机制：偷窃、争夺、夜行
-
-**Tier 3：顶级捕食者与驱赶者**
-- [ ] 🐕 狗（驱赶） / 🦅 鹰（空中捕食） / 🐍 蛇（伏击）
-- 新机制：庇护、领地、群体行为
-
-**Tier 4：群居与社会结构**
-- [ ] 🐺 狼群 / 🐦 鸟群 / 🐜 蚂蚁
-- 新机制：领袖/队形/共享感知
-
-#### 3.2 地图扩展路线 (Map Packs)
-
-| Pack | 内容 | 新机制 |
-| :--- | :--- | :--- |
-| **Pack 1: 庭院/公园** (V1~V2) | 花园、灌木、水池、垃圾点 | 现有系统 |
-| **Pack 2: 森林边缘** (V3) | 林地、河流、水边栖息地、洞穴 | `Habitat` 栖息地偏好 |
-| **Pack 3: 城市生态** (V4) | 街道、建筑、垃圾箱、排水沟 | 人类干预工具：投喂点、垃圾清理、围栏 |
-| **Pack 4: 程序生成大世界** (V5) | Biome噪声生成 | Chunk流式加载 + 地图种子分享 |
-
-#### 3.3 系统扩展路线 (Systems)
-
-| 系统 | 优先级 | 描述 |
-| :--- | :--- | :--- |
-| **System A: 昼夜节律** | 高 | 夜行性动物、资源刷新随时间变化、路灯/夜间投喂 |
-| **System B: 天气与季节** | 中 | 下雨→水源丰富；冬季→食物减少、迁徙 |
-| **System C: 疾病与寄生** | 低 | 密度高就更容易爆发（天然稳定器） |
-| **System D: 领地与巢穴** | 高 | 动物建立"家"和巡逻范围，家谱系统 |
+#### 2.3 Visualization & Debugging
+- [ ] Population Curves (Count per species)
+- [ ] Resource Index Curves (Water/Food/Shelter)
+- [ ] Heatmaps: Predation hotspots / Water shortage hotspots / Migration routes
+- [ ] Event Stats: Births, Deaths, Predation, Disease
 
 ---
 
-### 4) 游戏模式矩阵 (Game Modes)
+### 3) V4+ Content Expansion Roadmap
 
-| Mode | 描述 | 特性 |
+#### 3.1 Species Tiers
+
+**Tier 1: Non-Predatory Disturbers (Safest)**
+- [ ] 🐔 Chicken / 🐦 Bird / 🦋 Butterfly
+- New Mechanics: Foraging, Flocking, Migration, Startle
+- Resource Interaction: Eat seeds/bugs ("Ground Food Index")
+
+**Tier 2: Scavengers / Pests (Ecosystem Regulators)**
+- [ ] 🦝 Raccoon / 🐦‍⬛ Crow / 🦊 Fox
+- New Mechanics: Stealing, Scrambling, Nocturnal
+
+**Tier 3: Apex Predators & Drivers**
+- [ ] 🐕 Dog (Herding) / 🦅 Hawk (Aerial Predation) / 🐍 Snake (Ambush)
+- New Mechanics: Shelter, Territory, Group Behavior
+
+**Tier 4: Social Structures**
+- [ ] 🐺 Wolf Pack / 🐦 Bird Flock / 🐜 Ant Colony
+- New Mechanics: Leader/Formation/Shared Perception
+
+#### 3.2 Map Compansion Roadmap (Map Packs)
+
+| Pack | Content | New Mechanics |
 | :--- | :--- | :--- |
-| **Mode 1: 沙盒** | 默认，无失败 | 世界规则可调 (Balanced/Wild/Abundant) |
-| **Mode 2: 平衡挑战** | 最好做留存 | 目标：维持物种在区间内 X 天；奖励：解锁内容 |
-| **Mode 3: 生存模式** | 剧情性强 | 生态预算有限；随机事件（干旱/寒潮/垃圾暴增） |
-| **Mode 4: 情景关卡** | 可持续更新 | 固定地图 + 固定规则 + 固定目标 |
+| **Pack 1: Backyard/Park** (V1~V2) | Garden, Bushes, Pond, Trash Spots | Existing Systems |
+| **Pack 2: Forest Edge** (V3) | Woods, River, Waterside Habitat, Caves | `Habitat` Preferences |
+| **Pack 3: Urban Ecology** (V4) | Streets, Buildings, Dumpsters, Gutters | Human Intervention Tools: Feeders, Cleanup, Fences |
+| **Pack 4: Procedural World** (V5) | Biome Noise Generation | Chunk Streaming + Map Seed Sharing |
 
-**情景关卡示例**:
-- [ ] "把公园老鼠控制在合理范围"
-- [ ] "在冬季让鸟群迁徙成功"
-- [ ] "城市垃圾暴增，控制乌鸦数量"
+#### 3.3 System Expansion Roadmap
+
+| System | Priority | Description |
+| :--- | :--- | :--- |
+| **System A: Circadian Rhythm** | High | Nocturnal animals, resource refresh over time, streetlights/night feeding |
+| **System B: Weather & Seasons** | Med | Rain -> Abundant water; Winter -> Less food, Migration |
+| **System C: Disease & Parasites** | Low | High density outbreak (Natural stabilizer) |
+| **System D: Territory & Dens** | High | Animals establish "Home" and patrol range, Family Tree System |
 
 ---
 
-### 5) 三层平衡法则 (Balance Strategy)
+### 4) Game Modes Matrix
 
-| 层级 | 策略 |
+| Mode | Description | Features |
+| :--- | :--- | :--- |
+| **Mode 1: Sandbox** | Default, No fail state | Adjustable Rules (Balanced/Wild/Abundant) |
+| **Mode 2: Balance Challenge** | Best for Retention | Goal: Maintain species within range for X days; Reward: Unlocks |
+| **Mode 3: Survival Mode** | Narrative Driven | Limited Eco-Budget; Random Events (Drought/Cold Snap/Trash Spikes) |
+| **Mode 4: Scenarios** | Sustainable Updates | Fixed Map + Fixed Rules + Fixed Goal |
+
+**Scenario Examples**:
+- [ ] "Keep Park Rats within reasonable range"
+- [ ] "Ensure Bird Flock migration success in Winter"
+- [ ] "Urban Trash Spike: Control Crow population"
+
+---
+
+### 5) Three-Layer Balance Strategy
+
+| Layer | Strategy |
 | :--- | :--- |
-| **物种层** | 定义每物种"理想人口范围"；超过→出生率下降；低于→资源再生补偿 |
-| **食物网层** | 两把旋钮：`捕食成功率` + `捕食收益`（能量守恒） |
-| **世界规则层** | 把"更真实更残酷"当作模式/档位，不强制所有人体验 |
+| **Species Layer** | Define "Ideal Population Range" per species; Above -> Low Birth Rate; Below -> Resource Regen Boost |
+| **Food Web Layer** | Two Knobs: `Predation Success Rate` + `Predation Gain` (Energy Conservation) |
+| **World Rule Layer** | Treat "More Realistic/Cruel" as a Mode/Setting, don't force everyone to experience it |
 
 ---
 
-### 6) 内容更新节奏 (Update Rhythm)
+### 6) Content Update Rhythm
 
-**每 2 周：小更新**
-- 1 个新物种（配置 + 少量动作）
-- 1 个新对象（例如"鸟巢""饲料盆"）
-- 1 个新挑战关卡
+**Every 2 Weeks: Minor Update**
+- 1 New Species (Config + Few Actions)
+- 1 New Object (e.g., "Bird Nest", "Feeder")
+- 1 New Challenge Level
 
-**每 1-2 月：大更新**
-- 新地图包（森林/城市）
-- 新系统（昼夜/天气/领地）
-- 新模式玩法（生存事件）
-
----
-
-### 7) V4 落地执行顺序 (V4 Execution Order)
-
-完成 V1.2（分享）后，按以下顺序推进：
-
-1. [ ] 🐦 **鸟（非捕食）**: 加入"惊飞/群聚/栖息点"
-2. [ ] 🐕 **狗（驱赶）**: 新增"驱赶目标、领地影响"
-3. [ ] 🌙 **昼夜**: 改变行为权重（夜行、白天活跃）
-4. [ ] 🏆 **挑战模式**: 平衡挑战关卡（最能留存）
-5. [ ] 🌧️ **天气**: 先做"雨/晴"两种，影响水源与可见度
-6. [ ] 🏙️ **城市地图包**: 垃圾机制变得更有意义
+**Every 1-2 Months: Major Update**
+- New Map Pack (Forest/City)
+- New System (Day-Night/Weather/Territory)
+- New Game Mode (Survival Events)
 
 ---
 
-## 📊 生态内容矩阵表 (Ecosystem Content Matrix - V4 Extended)
+### 7) V4 Execution Order
+
+After completing V1.2 (Sharing), proceed in this order:
+
+1. [ ] 🐦 **Bird (Non-Predator)**: Add "Startle/Flock/Perch Point"
+2. [ ] 🐕 **Dog (Herding)**: Add "Drive Target, Territory Influence"
+3. [ ] 🌙 **Day/Night**: Change behavior weights (Nocturnal vs Diurnal)
+4. [ ] 🏆 **Challenge Mode**: Balance Challenge Levels (Best for retention)
+5. [ ] 🌧️ **Weather**: Implement "Rain/Sunny" first, affecting water and visibility
+6. [ ] 🏙️ **City Map Pack**: Trash mechanics become more meaningful
+
+---
+
+## 📊 Ecosystem Content Matrix (V4 Extended)
 **Date Added:** 2026-01-08
 
-> **目的**: 每加一个物种都能明确它的生态角色、食物网闭环、玩法增量、参数范围
+> **Purpose**: Every added species must have a clear ecological role, food web closure, gameplay increment, and parameter range.
 
-**默认单位**: 2D tile 世界；tiles 和 tick(15Hz)
+**Default Units**: 2D tile world; tiles and tick(15Hz)
 
 ---
 
-### 1) 生态角色分类 (Ecological Roles)
+### 1) Ecological Roles
 
-| 角色 | 描述 | 示例物种 |
+| Role | Description | Example Species |
 | :--- | :--- | :--- |
-| **Producer/Resource** | 植物、种子、浆果、昆虫 | seeds, insects |
-| **Forager** | 吃资源、不捕食 | 🐔鸡、🐦鸽子、🐰兔 |
-| **Prey** | 会逃、繁殖快 | 🐀鼠、🐰兔 |
-| **Mesopredator** | 偷食/轻捕食 | 🦝浣熊、🐦‍⬛乌鸦、🦊狐狸 |
-| **Apex Predator** | 强捕食 | 🦅鹰、🐺狼 |
-| **Guardian/Herder** | 驱赶/管理 | 🐕狗 |
-| **Decomposer/Cleaner** | 吃尸体/垃圾 | 🦅秃鹫、🐦‍⬛乌鸦 |
-| **Pollinator** | 让世界"更活" | 🦋蝴蝶、🐝蜜蜂 |
+| **Producer/Resource** | Plants, Seeds, Berries, Insects | seeds, insects |
+| **Forager** | Eats resources, does not hunt | 🐔Chicken, 🐦Pigeon, 🐰Rabbit |
+| **Prey** | Flees, Fast Reproduction | 🐀Rat, 🐰Rabbit |
+| **Mesopredator** | Thief/Light Predator | 🦝Raccoon, 🐦‍⬛Crow, 🦊Fox |
+| **Apex Predator** | Strong Predator | 🦅Hawk, 🐺Wolf |
+| **Guardian/Herder** | Drives/Manages | 🐕Dog |
+| **Decomposer/Cleaner** | Eats carcasses/trash | 🦅Vulture, 🐦‍⬛Crow |
+| **Pollinator** | Makes world "alive" | 🦋Butterfly, 🐝Bee |
 
 ---
 
-### 2) 物种矩阵表
+### 2) Species Matrix
 
-#### A. 基础链（已有 + 立即可扩）
+#### A. Basic Chain (Existing + Immediate Expansion)
 
-##### 🐀 1) Rat（鼠）
-| 属性 | 值 |
+##### 🐀 1) Rat
+| Attribute | Value |
 | :--- | :--- |
-| **生态角色** | Prey + 垃圾利用者 |
-| **食物** | trash, seeds（地面食物指数） |
-| **天敌** | cat, dog(驱赶), hawk |
-| **栖息地** | 灌木/建筑边缘/垃圾附近（Cover依赖强） |
+| **Role** | Prey + Trash User |
+| **Food** | trash, seeds (Ground Food Index) |
+| **Predators** | cat, dog(drives), hawk |
+| **Habitat** | Bushes/Building Edges/Near Trash (High Cover Dependency) |
 
-**独特动作**:
-- [ ] `FleeToCover` - 优先灌木
-- [ ] `ScavengeTrash` - 在垃圾点觅食
-- [ ] `Freeze` - 短暂停顿降低被发现概率（可选）
+**Unique Actions**:
+- [ ] `FleeToCover` - Prioritize Bushes
+- [ ] `ScavengeTrash` - Forage at Trash Points
+- [ ] `Freeze` - Brief pause to lower detection chance (Optional)
 
-**参数范围**:
-| 参数 | 范围 |
+**Parameter Ranges**:
+| Param | Range |
 | :--- | :--- |
 | speed | 0.06–0.09 tiles/tick |
 | sense | 8–12 tiles |
 | hungerDecay | 0.0005–0.0008 |
 | thirstDecay | 0.0006–0.0010 |
-| reproduction | 孕期30–90s, 胎数2–6, 密度惩罚强 |
+| reproduction | Gestation 30–90s, Litter 2–6, High Density Penalty |
 
 ---
 
-##### 🐱 2) Cat（猫）
-| 属性 | 值 |
+##### 🐱 2) Cat
+| Attribute | Value |
 | :--- | :--- |
-| **生态角色** | Mesopredator（戏剧性来源） |
-| **食物** | rat, smallBird（后期） |
-| **天敌** | dog(驱赶), wolf(可选) |
-| **栖息地** | 边缘地带/灌木旁（伏击感） |
+| **Role** | Mesopredator (Source of Drama) |
+| **Food** | rat, smallBird (Later) |
+| **Predators** | dog(drives), wolf(Optional) |
+| **Habitat** | Edge Zones/Near Bushes (Ambush feel) |
 
-**独特动作**:
-- [ ] `Stalk` - 潜行接近，缩短距离惩罚
+**Unique Actions**:
+- [ ] `Stalk` - Stealth approach, reduce distance penalty
 - [ ] `Chase + Attack`
-- [ ] `GiveUpChase` - 超时放弃（稳定器）
+- [ ] `GiveUpChase` - Timeout abandon (Stabilizer)
 
-**参数范围**:
-| 参数 | 范围 |
+**Parameter Ranges**:
+| Param | Range |
 | :--- | :--- |
 | speed | 0.05–0.07 |
 | sense | 10–14 |
@@ -346,70 +346,70 @@ Successfully implemented and integrated the new V1 AI system for Petivolution. T
 
 ---
 
-##### 🐔 3) Chicken（鸡）
-| 属性 | 值 |
+##### 🐔 3) Chicken
+| Attribute | Value |
 | :--- | :--- |
-| **生态角色** | Forager + 扰动者 |
-| **食物** | seeds, insects（地面食物） |
-| **天敌** | fox, hawk, cat(可选) |
-| **栖息地** | 开阔草地 + 靠近灌木 |
+| **Role** | Forager + Disturber |
+| **Food** | seeds, insects (Ground Food) |
+| **Predators** | fox, hawk, cat(Optional) |
+| **Habitat** | Open Grass + Near Bushes |
 
-**独特动作**:
-- [ ] `PeckGround` - 觅食动画 + 消耗地面食物
-- [ ] `Flock` - 简单群聚：靠近同类
-- [ ] `StartleRun` - 受惊短跑
+**Unique Actions**:
+- [ ] `PeckGround` - Forage anim + consume ground food
+- [ ] `Flock` - Simple flocking: stay near kin
+- [ ] `StartleRun` - Run when startled
 
-**参数范围**:
-| 参数 | 范围 |
+**Parameter Ranges**:
+| Param | Range |
 | :--- | :--- |
 | speed | 0.04–0.06 |
 | sense | 8–12 |
 | hungerDecay | 0.0004–0.0007 |
-| fear权重 | 0.8–1.6 |
+| fearWeight | 0.8–1.6 |
 | flockRadius | 3–6 tiles |
 
 ---
 
-##### 🐦 4) Small Bird（麻雀/鸽子）
-| 属性 | 值 |
+##### 🐦 4) Small Bird (Sparrow/Pigeon)
+| Attribute | Value |
 | :--- | :--- |
-| **生态角色** | Forager + Pollinator |
-| **食物** | seeds, insects |
-| **天敌** | cat, hawk |
-| **栖息地** | 树/电线/屋檐（需PerchPoint） |
+| **Role** | Forager + Pollinator |
+| **Food** | seeds, insects |
+| **Predators** | cat, hawk |
+| **Habitat** | Trees/Wires/Eaves (Requires PerchPoint) |
 
-**独特动作**:
-- [ ] `Perch` - 停在栖息点恢复疲劳
-- [ ] `Hop/FlyBurst` - 短距离飞跃
-- [ ] `FleeUp` - 逃到最近栖息点
+**Unique Actions**:
+- [ ] `Perch` - Rest at Perch Point to recover fatigue
+- [ ] `Hop/FlyBurst` - Short distance hop/fly
+- [ ] `FleeUp` - Flee to nearest Perch Point
 
-**参数范围**:
-| 参数 | 范围 |
+**Parameter Ranges**:
+| Param | Range |
 | :--- | :--- |
-| speed(地面) | 0.04–0.06 |
-| speed(飞跃) | 0.10–0.18 |
+| speed(Ground) | 0.04–0.06 |
+| speed(Flight) | 0.10–0.18 |
 | sense | 10–16 |
 | perchPreference | bonus 0.2–0.6 |
 
 ---
 
-#### B. 中级捕食者/机会主义者（V4城市生态）
+#### B. Intermediate Predators/Opportunists (V4 Urban Eco)
 
-##### 🦝 5) Raccoon（浣熊）
-| 属性 | 值 |
+##### 🦝 5) Raccoon
+| Attribute | Value |
 | :--- | :--- |
-| **生态角色** | Mesopredator + 偷食者 |
-| **食物** | trash, eggs, smallPrey(可选) |
-| **天敌** | dog, wolf(可选) |
-| **栖息地** | 城市/垃圾箱附近，夜行性强 |
+| **Role** | Mesopredator + Thief |
+| **Food** | trash, eggs, smallPrey(Optional) |
+| **Predators** | dog, wolf(Optional) |
+| **Habitat** | Urban/Near Dumpster, Highly Nocturnal |
 
-**独特动作**:
-- [ ] `StealFromTrash` - 提升垃圾点价值
-- [ ] `NightActive` - 昼夜系统价值
-- [ ] `ThreatDisplay` - 威吓驱赶
+**Unique Actions**:
+- [ ] `StealFromTrash` - Increase Trash Point value
+- [ ] `NightActive` - Value in Day/Night system
+- [ ] `ThreatDisplay` - Intimidate/Drive away
 
-**参数范围**:
-| 参数 | 范围 |
+**Parameter Ranges**:
+| Param | Range |
 | :--- | :--- |
 | speed | 0.05–0.07 |
 | sense | 10–14 |
@@ -418,169 +418,169 @@ Successfully implemented and integrated the new V1 AI system for Petivolution. T
 
 ---
 
-##### 🐦‍⬛ 6) Crow（乌鸦）
-| 属性 | 值 |
+##### 🐦‍⬛ 6) Crow
+| Attribute | Value |
 | :--- | :--- |
-| **生态角色** | Cleaner + Mesopredator |
-| **食物** | carcass(尸体), trash, eggs |
-| **天敌** | hawk(可选), dog(驱赶) |
-| **栖息地** | 城市/树（需栖息点） |
+| **Role** | Cleaner + Mesopredator |
+| **Food** | carcass, trash, eggs |
+| **Predators** | hawk(Optional), dog(drives) |
+| **Habitat** | Urban/Trees (Requires Perch) |
 
-**独特动作**:
-- [ ] `ScavengeCarcass` - 吃尸体（天然稳定器）
-- [ ] `AlarmCall` - 捕食者出现时警报
-- [ ] `FlyToPerch` - 快速撤离
+**Unique Actions**:
+- [ ] `ScavengeCarcass` - Eat carcass (Natural Stabilizer)
+- [ ] `AlarmCall` - Warn when predator appears
+- [ ] `FlyToPerch` - Quick retreat
 
-**参数范围**:
-| 参数 | 范围 |
+**Parameter Ranges**:
+| Param | Range |
 | :--- | :--- |
-| speed(地面) | 0.04–0.06 |
-| speed(飞行) | 0.12–0.20 |
+| speed(Ground) | 0.04–0.06 |
+| speed(Flight) | 0.12–0.20 |
 | sense | 14–20 |
 | carcassBonus | 0.4–0.9 |
 
 ---
 
-##### 🦊 7) Fox（狐狸）
-| 属性 | 值 |
+##### 🦊 7) Fox
+| Attribute | Value |
 | :--- | :--- |
-| **生态角色** | Mesopredator（平衡鸡/鼠） |
-| **食物** | rat, chicken |
-| **天敌** | dog, wolf |
-| **栖息地** | 森林边缘/灌木多区域 |
+| **Role** | Mesopredator (Balances Chicken/Rat) |
+| **Food** | rat, chicken |
+| **Predators** | dog, wolf |
+| **Habitat** | Forest Edge/Shrubby Areas |
 
-**独特动作**:
-- [ ] `Ambush` - 灌木附近伏击
-- [ ] `CarryPrey` - 捕获后带走
+**Unique Actions**:
+- [ ] `Ambush` - Ambush near Bushes
+- [ ] `CarryPrey` - Carry prey away after catch
 
-**参数范围**:
-| 参数 | 范围 |
+**Parameter Ranges**:
+| Param | Range |
 | :--- | :--- |
-| speed | 0.06–0.09 (冲刺0.12) |
+| speed | 0.06–0.09 (Sprint 0.12) |
 | sense | 12–16 |
 | ambushBonus | 0.2–0.6 |
 
 ---
 
-#### C. 驱赶者（玩家管理工具核心）
+#### C. Drivers (Core Player Management Tool)
 
-##### 🐕 8) Dog（狗）
-| 属性 | 值 |
+##### 🐕 8) Dog
+| Attribute | Value |
 | :--- | :--- |
-| **生态角色** | Guardian/Herder（改变分布） |
-| **食物** | 投喂点 food bowl |
-| **天敌** | 几乎没有（可选狼） |
-| **栖息地** | 城市/庭院 |
+| **Role** | Guardian/Herder (Changes Distribution) |
+| **Food** | Food Bowl (Feeder) |
+| **Predators** | Almost none (Optional Wolf) |
+| **Habitat** | City/Backyard |
 
-**独特动作**:
-- [ ] `PatrolRoute` - 巡逻路径/半径
-- [ ] `BarkChase` - 驱赶鼠/猫/浣熊
-- [ ] `GuardZone` - 玩家设定保护区
+**Unique Actions**:
+- [ ] `PatrolRoute` - Patrol Path/Radius
+- [ ] `BarkChase` - Drive away Rat/Cat/Raccoon
+- [ ] `GuardZone` - Player defined safe zone
 
-**参数范围**:
-| 参数 | 范围 |
+**Parameter Ranges**:
+| Param | Range |
 | :--- | :--- |
 | speed | 0.06–0.10 |
 | sense | 12–18 |
-| 驱赶范围 | 6–12 tiles |
-| killOnHit | false（默认） |
+| driveRange | 6–12 tiles |
+| killOnHit | false (Default) |
 | barkCooldown | 2–5s |
 
-> **重点**: 狗是"玩家可控生态工具"，让游戏从"旁观"变成"管理"
+> **Key**: Dog is a "Player Controlled Eco-Tool", turning game from "Spectator" to "Manager"
 
 ---
 
-#### D. 顶级捕食者（V5+，慎重加入）
+#### D. Apex Predators (V5+, Add with Caution)
 
-##### 🦅 9) Hawk（鹰）
-| 属性 | 值 |
+##### 🦅 9) Hawk
+| Attribute | Value |
 | :--- | :--- |
-| **生态角色** | Apex Predator（空中捕食） |
-| **食物** | rat, smallBird |
-| **天敌** | 几乎没有 |
-| **栖息地** | 开阔地/高处栖息点 |
+| **Role** | Apex Predator (Aerial) |
+| **Food** | rat, smallBird |
+| **Predators** | Almost none |
+| **Habitat** | Open Field/High Perch |
 
-**独特动作**:
-- [ ] `SoarScan` - 大范围低频扫描
-- [ ] `DiveAttack` - 俯冲捕食
+**Unique Actions**:
+- [ ] `SoarScan` - Wide range low freq scan
+- [ ] `DiveAttack` - Swoop attack
 
-**参数范围**:
-| 参数 | 范围 |
+**Parameter Ranges**:
+| Param | Range |
 | :--- | :--- |
-| sense | 20–30（低频更新） |
+| sense | 20–30 (Low freq update) |
 | attackCooldown | 5–12s |
-| 成功率 | 0.15–0.45 |
+| SuccessRate | 0.15–0.45 |
 
 ---
 
-##### 🐺 10) Wolf（狼群）
-| 属性 | 值 |
+##### 🐺 10) Wolf (Pack)
+| Attribute | Value |
 | :--- | :--- |
-| **生态角色** | Apex + Social（群体AI） |
-| **食物** | fox, cat, 大猎物 |
-| **栖息地** | 森林/山地 |
+| **Role** | Apex + Social (Group AI) |
+| **Food** | fox, cat, Large Prey |
+| **Habitat** | Forest/Mountain |
 
-**独特动作**:
-- [ ] `PackHunt` - 共享目标
-- [ ] `TerritoryMark` - 领地系统
+**Unique Actions**:
+- [ ] `PackHunt` - Shared Target
+- [ ] `TerritoryMark` - Territory System
 
-**参数范围**:
-| 参数 | 范围 |
+**Parameter Ranges**:
+| Param | Range |
 | :--- | :--- |
 | packSize | 3–6 |
 | territoryRadius | 10–20 |
 
-> ⚠️ 只有你有"领地/远区统计模拟"后再上
+> ⚠️ Only add this after you have "Territory/Long Range Stats Sim"
 
 ---
 
-### 3) 食物网与对象矩阵
+### 3) Food Web & Object Matrix
 
-#### 3.1 食物标签 (Food Tags)
+#### 3.1 Food Tags
 `trash` `seed` `insect` `carcass` `egg` `smallPrey`
 
-#### 3.2 栖息地标签 (Habitat Tags)
+#### 3.2 Habitat Tags
 `garden` `forestEdge` `urban` `waterSide` `openField` `coverDense`
 
-#### 3.3 关键世界对象 (V4配套)
-| 对象 | 用途 |
+#### 3.3 Key World Objects (V4 Compatible)
+| Object | Usage |
 | :--- | :--- |
-| `PerchPoint` | 树/电线/屋檐 - 鸟类必需 |
-| `FoodBowl` | 投喂点 - 狗/城市玩法 |
-| `Fence/Barrier` | 围栏 - 挑战模式 |
-| `TrashBin` | 城市垃圾箱 - 浣熊/乌鸦核心 |
+| `PerchPoint` | Tree/Wire/Eaves - Essential for Birds |
+| `FoodBowl` | Feeder - Dog/City Gameplay |
+| `Fence/Barrier` | Fence - Challenge Mode |
+| `TrashBin` | City Dumpster - Core for Raccoon/Crow |
 
 ---
 
-### 4) 参数旋钮表 (Balance Knobs)
+### 4) Parameter Knobs (Balance Knobs)
 
-| 旋钮 | 控制方式 |
+| Knob | Control Method |
 | :--- | :--- |
-| **捕食成功率** | attackRange、速度差、伏击加成 |
-| **捕食收益** | 吃一只恢复多少hunger |
-| **猎物刷新率** | 从垃圾刷 or 繁殖概率 |
-| **庇护强度** | 灌木对逃跑成功的提升 |
-| **驱赶强度** | 狗的范围/持续时间/冷却 |
+| **Predation Success** | attackRange, Speed Difference, Ambush Bonus |
+| **Predation Gain** | Hunger restored per kill |
+| **Prey Spawn Rate** | Spawn from Trash or Reproduction Chance |
+| **Cover Strength** | Boost to Flee Success when near Bush |
+| **Drive Strength** | Dog's Range/Duration/Cooldown |
 
-> 💡 建议做成 **Debug 面板滑条**（开发期超省命）
+> 💡 Suggest implementing as **Debug Panel Sliders** (Huge life saver during dev)
 
 ---
 
-### 5) V4 内容包路线 (Content Pack Roadmap)
+### 5) V4 Content Pack Roadmap
 
-#### 📦 Content Pack 1: Backyard Life（庭院生态）
-- [x] 🐔 鸡 + 🐦 小鸟 (Basic behaviors implemented: Peck, Perch, Forage)
-- [x] 新对象：`PerchPoint`
-- [ ] 新挑战：维持"猫不灭绝 + 鼠不爆炸 + 鸡存活" 5分钟
+#### 📦 Content Pack 1: Backyard Life
+- [x] 🐔 Chicken + 🐦 Small Bird (Basic behaviors implemented: Peck, Perch, Forage)
+- [x] New Object: `PerchPoint`
+- [ ] New Challenge: Maintain "Cats not extinct + Rats not exploding + Chickens surviving" for 5 minutes
 
-#### 📦 Content Pack 2: City Scavengers（城市清道夫）
-- [x] 🦝 浣熊 + 🐦‍⬛ 乌鸦 + 垃圾箱 (Implemented Raccoon + Rummage)
-- [x] 新系统：昼夜（夜行性显著）(REMOVED per user request)
-- [ ] 新挑战：控制垃圾导致的鼠增长
+#### 📦 Content Pack 2: City Scavengers
+- [x] 🦝 Raccoon + 🐦‍⬛ Crow + Trash Bin (Implemented Raccoon + Rummage)
+- [x] New System: Day/Night (Nocturnal behavior) (REMOVED per user request)
+- [ ] New Challenge: Control Rat growth caused by trash
 
-#### 📦 Content Pack 3: Guardian Mode（管理与驱赶）
-- [/] 🐕 狗 + 围栏 + 保护区 (Dog + Guardian Perception implemented)
-- [ ] 新模式：平衡挑战（预算限制投放/摆放）
+#### 📦 Content Pack 3: Guardian Mode
+- [/] 🐕 Dog + Fence + Safe Zone (Dog + Guardian Perception implemented)
+- [ ] New Mode: Balance Challenge (Budget limited spawning/placement)
 
 #### 🎨 Pixel Art Standards (NEW)
 - [x] Switch to **2x integer zoom** (40 tiles visible)

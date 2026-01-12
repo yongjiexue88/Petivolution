@@ -19,6 +19,7 @@ export type ObjectId = string;
 export type ChunkId = string; // "x,y" e.g. "0,0", "-1,2"
 
 export type Personality = 'curious' | 'cautious' | 'brave';
+export type Sex = 'male' | 'female';
 
 export type SimState =
     | 'idle'
@@ -40,7 +41,7 @@ export type SimState =
 
 export type Facing = 'n' | 's' | 'e' | 'w';
 
-export type Goal = 'drink' | 'eat' | 'hunt' | 'rest' | 'flee' | 'wander' | 'forage' | 'rummage' | 'bark' | 'patrol';
+export type Goal = 'drink' | 'eat' | 'hunt' | 'rest' | 'flee' | 'wander' | 'forage' | 'rummage' | 'bark' | 'patrol' | 'reproduce';
 
 // ============================================
 // Vitals (生命体征)
@@ -105,6 +106,7 @@ export type EntityRuntime = {
     id: EntityId;
     species: SpeciesId;
     name: string;
+    sex: Sex;
     personality: Personality;
 
     pos: Vec2;         // tile坐标
@@ -361,7 +363,7 @@ export type SimStats = {
 
 // Worker -> Main
 export type WorkerUpdate =
-    | { type: 'SNAPSHOT'; payload: { tick: number; entities: SnapshotEntity[]; objects: WorldObject[]; stats: SimStats; events: SimEvent[] } }
+    | { type: 'SNAPSHOT'; payload: { tick: number; entities: SnapshotEntity[]; objects: WorldObject[]; stats: SimStats; events: SimEvent[]; graveyard?: GraveyardEntry[] } }
     | { type: 'ENTITY_DETAIL'; payload: { entity: EntityRuntime } }
     | { type: 'SPAWN_FAILED'; payload: { reason: string; species: SpeciesId } }
     | { type: 'SAVE_READY'; payload: { save: WorldSaveData } }
