@@ -1,6 +1,13 @@
 # 🐾 Petivolution
 
-Ecological Simulation Sandbox Game - Observe animal behaviors, adjust ecological balance
+[![GitHub License](https://img.shields.io/github/license/yongjiexue88/Petivolution)](https://github.com/yongjiexue88/Petivolution/blob/main/LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/yongjiexue88/Petivolution?style=flat)](https://github.com/yongjiexue88/Petivolution/stargazers)
+[![Tech Stack](https://img.shields.io/badge/tech-React%20%7C%20Phaser%20%7C%20TS-blue)](https://github.com/yongjiexue88/Petivolution)
+
+**Petivolution** is an open-source **Ecological Simulation Sandbox** built with React, Phaser 3, and Utility AI. Observe artificial life evolve, adjust environmental factors, and maintain a balanced ecosystem.
+
+### 🚀 [PLAY LIVE DEMO](https://petivolution.web.app/)
+
 
 ## ✨ Core Gameplay
 
