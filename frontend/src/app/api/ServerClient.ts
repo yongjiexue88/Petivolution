@@ -17,6 +17,7 @@ interface ActionResponse {
 }
 
 const SERVER_URL = import.meta.env.VITE_API_URL || '';
+console.log('[ServerClient] Configured Server URL:', SERVER_URL || '(empty - using relative path)');
 
 export class ServerClient {
     private static instance: ServerClient;
@@ -59,10 +60,9 @@ export class ServerClient {
 
             if (res.ok) {
                 const data = await res.json();
-                // DEBUG: Trace network response
-                if (data && data.entities && data.entities.length > 0) {
-                    console.log(`[ServerClient] Fetched snapshot with ${data.entities.length} entities`);
-                }
+                // if (data && data.entities && data.entities.length > 0) {
+                //     console.log(`[ServerClient] Fetched snapshot with ${data.entities.length} entities`);
+                // }
                 return data;
             }
             return null;

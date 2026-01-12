@@ -103,11 +103,11 @@ export class WorldScene extends Phaser.Scene {
         this.load.image('bird_dead', `${spriteBase}/bird_dead.png`);
 
         this.load.image('seed', `${spriteBase}/seed.png`);
-        this.load.image('insect', `${spriteBase}/insect.png`);
-        this.load.image('egg', `${spriteBase}/egg.png`);
+        // this.load.image('insect', `${spriteBase}/insect.png`);
+        // this.load.image('egg', `${spriteBase}/egg.png`);
         this.load.image('perch', `${spriteBase}/perch.png`);
-        this.load.image('food_bowl', `${spriteBase}/food_bowl.png`);
-        this.load.image('fence', `${spriteBase}/fence.png`);
+        // this.load.image('food_bowl', `${spriteBase}/food_bowl.png`);
+        // this.load.image('fence', `${spriteBase}/fence.png`);
 
         // Tier 2 Placeholders
         this.load.image('raccoon_idle', `${spriteBase}/raccoon_idle.png`);
@@ -1160,7 +1160,7 @@ export class WorldScene extends Phaser.Scene {
 
         // DEBUG: Trace sync
         if (entities.length > 0 && Math.random() < 0.05) {
-            console.log(`[WorldScene] Syncing ${entities.length} entities. Sample:`, entities[0]);
+            // console.log(`[WorldScene] Syncing ${entities.length} entities. Sample:`, entities[0]);
         }
 
         if (!this.sys || !this.sys.isActive() || !this.add) return;

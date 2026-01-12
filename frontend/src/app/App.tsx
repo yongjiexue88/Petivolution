@@ -67,7 +67,7 @@ function App() {
                 } else {
                     setConnectionStatus(false, 0);
                 }
-            }, 200); // 5Hz Polling (Start at 200ms)
+            }, 1000); // 1Hz Polling (Reduced from 5Hz to save cost)
 
         } else {
             console.log("🧵 Starting Local Worker...");
