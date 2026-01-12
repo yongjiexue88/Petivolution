@@ -6,7 +6,7 @@
 
 **Petivolution** is an open-source **Ecological Simulation Sandbox** built with React, Phaser 3, and Utility AI. Observe artificial life evolve, adjust environmental factors, and maintain a balanced ecosystem.
 
-### 🚀 [PLAY LIVE DEMO](https://petivolution.web.app/)
+### 🚀 [PLAY LIVE DEMO](https://petivolution.com/)
 
 
 ## ✨ Core Gameplay

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://petivolution.web.app/sitemap.xml
+Sitemap: https://petivolution.com/sitemap.xml
