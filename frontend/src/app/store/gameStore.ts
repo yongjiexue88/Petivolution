@@ -57,6 +57,7 @@ export interface GameState {
     // UI State
     currentTool: 'select' | 'spawn' | 'place' | 'delete';
     spawnSpecies: SpeciesId;
+    spawnName: string; // Custom name set by user in SpawnPanel
     spawnPersonality: Personality;
     placeObjectType: ObjectType;
 
@@ -91,6 +92,7 @@ export interface GameState {
     setFollowingEntityId: (id: string | null) => void;
     setCurrentTool: (tool: 'select' | 'spawn' | 'place' | 'delete') => void;
     setSpawnSpecies: (species: SpeciesId) => void;
+    setSpawnName: (name: string) => void;
     setSpawnPersonality: (personality: Personality) => void;
     setPlaceObjectType: (type: ObjectType) => void;
     togglePanel: (panel: 'spawn' | 'rules' | 'graveyard' | 'debug' | 'eventLog' | 'challenge') => void;
@@ -152,6 +154,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     currentTool: 'select',
     spawnSpecies: 'rat',
+    spawnName: '',
     spawnPersonality: 'curious',
     placeObjectType: 'water',
 
@@ -232,6 +235,24 @@ export const useGameStore = create<GameState>((set, get) => ({
             newGp = Math.min(state.maxGodPower, newGp + 0.0666);
         }
 
+        // Live update selectedEntityDetail with latest vitals from snapshot
+        let updatedSelectedEntity = state.selectedEntityDetail;
+        if (state.selectedEntityDetail) {
+            const freshEntity = data.entities.find(e => e.id === state.selectedEntityDetail?.id);
+            if (freshEntity) {
+                // Merge fresh snapshot data into the existing detail
+                updatedSelectedEntity = {
+                    ...state.selectedEntityDetail,
+                    vitals: freshEntity.vitals || state.selectedEntityDetail.vitals,
+                    state: freshEntity.state,
+                    ageTicks: freshEntity.ageTicks ?? state.selectedEntityDetail.ageTicks,
+                    ai: freshEntity.ai || state.selectedEntityDetail.ai,
+                };
+            } else {
+                // Entity no longer exists (dead), clear selection
+                updatedSelectedEntity = null;
+            }
+        }
 
         return {
             tick: data.tick,
@@ -242,7 +263,7 @@ export const useGameStore = create<GameState>((set, get) => ({
             events: newEvents,
             godPower: newGp,
             graveyard: data.graveyard || [], // Fix: Sync graveyard from snapshot (default to [])
-
+            selectedEntityDetail: updatedSelectedEntity,
         };
     }),
 
@@ -263,6 +284,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     setCurrentTool: (tool) => set({ currentTool: tool }),
 
     setSpawnSpecies: (species) => set({ spawnSpecies: species }),
+
+    setSpawnName: (name) => set({ spawnName: name }),
 
     setSpawnPersonality: (personality) => set({ spawnPersonality: personality }),
 

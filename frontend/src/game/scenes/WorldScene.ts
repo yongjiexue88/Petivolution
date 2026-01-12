@@ -616,6 +616,9 @@ export class WorldScene extends Phaser.Scene {
                 this.cameras.main.stopFollow();
                 store.setFollowingEntityId(null);
             }
+        } else if (!store.followingEntityId) {
+            // Unfollow: stop camera from following when followingEntityId is null
+            this.cameras.main.stopFollow();
         }
 
         // Update Day/Night Overlay
@@ -1053,19 +1056,6 @@ export class WorldScene extends Phaser.Scene {
         if (store.godPower < cost) return;
         store.spendGodPower(cost);
 
-        // Server Mode Support (V1.3)
-        if (store.useServer) {
-            const res = await ServerClient.getInstance().spawnAnimal(store.spawnSpecies, pos.x, pos.y);
-            if (!res.ok) {
-                console.warn('Server Spawn Failed:', res.error);
-                // Refund GP? Technically state update makes it tricky.
-                // ideally we only spend if valid.
-            }
-            return;
-        }
-
-        const worker = getSimWorker();
-
         const names = {
             cat: ['Kitty', 'Tiger', 'Luna', 'Shadow', 'Simba', 'Oreo'],
             rat: ['Squeak', 'Jerry', 'Pip', 'Ratty', 'Cheese', 'Scabbers'],
@@ -1080,7 +1070,23 @@ export class WorldScene extends Phaser.Scene {
             snake: ['Sly', 'Hiss', 'Nagini', 'Ka', 'Fang'],
         };
         const nameList = names[store.spawnSpecies] || ['Unknown'];
-        const name = nameList[Math.floor(Math.random() * nameList.length)] + Math.floor(Math.random() * 99);
+        // Use custom name if provided, otherwise generate random one
+        const nameToUse = store.spawnName.trim() || (nameList[Math.floor(Math.random() * nameList.length)] + Math.floor(Math.random() * 99));
+
+        // Server Mode Support (V1.3)
+        if (store.useServer) {
+            const res = await ServerClient.getInstance().spawnAnimal(store.spawnSpecies, pos.x, pos.y, nameToUse);
+            if (!res.ok) {
+                console.warn('Server Spawn Failed:', res.error);
+                // Refund GP? Technically state update makes it tricky.
+                // ideally we only spend if valid.
+            }
+            // Clear custom name after use (optional UX choice, usually good to clear)
+            if (store.spawnName) store.setSpawnName('');
+            return;
+        }
+
+        const worker = getSimWorker();
 
         // Convert to Tile Coordinates
         const tilePos = {
@@ -1092,11 +1098,14 @@ export class WorldScene extends Phaser.Scene {
             type: 'SPAWN_ENTITY',
             payload: {
                 species: store.spawnSpecies,
-                name: name,
+                name: nameToUse,
                 personality: store.spawnPersonality,
                 pos: tilePos,
             },
         });
+
+        // Clear custom name after use
+        if (store.spawnName) store.setSpawnName('');
     }
 
     async placeObject(pos: { x: number; y: number }) {

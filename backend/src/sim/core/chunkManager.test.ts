@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ChunkManager } from './chunkManager';
-import { V1 } from '@shared/constants';
+import { V1 } from '../../shared/constants';
 import * as SpawnerModule from './spawner';
 
 // Mock spawner
@@ -24,6 +24,7 @@ describe('ChunkManager (Fishbowl)', () => {
             rng: () => 0.5,
             cameraCenter: { x: chunkSizePx * 8, y: chunkSizePx * 8 }, // Center of 16x16 chunk grid
             cameraZoom: 1,
+            graveyard: [],
         };
     });
 
@@ -50,12 +51,20 @@ describe('ChunkManager (Fishbowl)', () => {
             expect(cm.initialized).toBe(true);
         });
 
-        it('should spawn initial animals', () => {
+        it('should spawn initial animals using defaultSpawns', () => {
             cm.initializeWorld(sim);
 
-            // Should have called spawnEntity for rats and cats
-            const totalSpawns = V1.defaultSpawns.rat + V1.defaultSpawns.cat;
-            expect(SpawnerModule.spawnEntity).toHaveBeenCalledTimes(totalSpawns);
+            // Calculate expected total spawns from V1.defaultSpawns
+            const animalSpecies = [
+                'rat', 'cat', 'chicken', 'smallBird', 'raccoon', 'crow',
+                'dog', 'fox', 'hawk', 'wolf', 'snake'
+            ];
+            let expectedCount = 0;
+            for (const s of animalSpecies) {
+                expectedCount += (V1.defaultSpawns as any)[s] || 0;
+            }
+
+            expect(SpawnerModule.spawnEntity).toHaveBeenCalledTimes(expectedCount);
         });
 
         it('should only initialize once', () => {
@@ -67,15 +76,42 @@ describe('ChunkManager (Fishbowl)', () => {
             expect(sim.objects.size).toBe(firstObjectCount);
         });
 
-        it('should spawn objects in center chunks', () => {
+        it('should spawn resources randomly on initialization', () => {
             cm.initializeWorld(sim);
 
-            // Should have water, trash, and bushes
-            const hasWater = Array.from(sim.objects.values()).some((o: any) => o.type === 'water');
-            const hasBush = Array.from(sim.objects.values()).some((o: any) => o.type === 'bush');
+            // Should have some water, trash, and bushes from random spawn + zone generation
+            const waters = Array.from(sim.objects.values()).filter((o: any) => o.type === 'water');
+            const bushes = Array.from(sim.objects.values()).filter((o: any) => o.type === 'bush');
 
-            expect(hasWater).toBe(true);
-            expect(hasBush).toBe(true);
+            expect(waters.length).toBeGreaterThan(0);
+            expect(bushes.length).toBeGreaterThan(0);
+        });
+    });
+
+    describe('resetWorld', () => {
+        it('should clear and regenerate everything', () => {
+            cm.initializeWorld(sim);
+            const initialObjectCount = sim.objects.size;
+            const initialEntityCallCount = vi.mocked(SpawnerModule.spawnEntity).mock.calls.length;
+
+            // Add some "garbage" to verify clearing
+            sim.entities.set('garbage', {});
+            sim.objects.set('garbage', {});
+            sim.graveyard.push({});
+
+            cm.resetWorld(sim);
+
+            // Verify clearing
+            expect(sim.graveyard.length).toBe(0);
+            expect(sim.entities.has('garbage')).toBe(false);
+            expect(sim.objects.has('garbage')).toBe(false);
+
+            // Verify regeneration - should be comparable to initial
+            // Might vary slightly due to random chunk generation if logic was specialized, 
+            // but here it is deterministic given the mocks/fixed counts
+            expect(sim.objects.size).toBeGreaterThan(0);
+            // Should have called spawnEntity again relative to the reset
+            expect(vi.mocked(SpawnerModule.spawnEntity).mock.calls.length).toBeGreaterThan(initialEntityCallCount);
         });
     });
 

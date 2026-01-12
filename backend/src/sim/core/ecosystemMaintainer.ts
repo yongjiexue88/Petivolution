@@ -2,141 +2,53 @@
 // Ecosystem Maintainer
 // ============================================
 // 
-// Every 5 seconds, ensures drama happens on-screen by:
-// - Spawning rats near resources if too few
-// - Spawning cats at edges if too few
-// - Adjusting behavior if too many
+// Every 5 seconds, ensures the ecosystem is healthy by:
+// - Monitoring global population counts
+// - Spawning animals randomly across the map if populations are low (Shift+A strategy)
+// 
+// Matches the "Shift+A" initialization logic but runs continuously.
 //
 
 import { SimulationState } from './tick';
 import { spawnEntity } from './spawner';
-import { V1 } from '@shared/constants';
-import type { SpeciesId } from '@shared/types';
-
-const TILE_PX = V1.tileSizePx;
+import { V1 } from '../../shared/constants';
+import type { SpeciesId, EcoStressDetails } from '../../shared/types';
 
 /**
- * Get the active zone boundaries based on camera position
+ * Count entities globally
  */
-export function getActiveZone(sim: SimulationState): {
-    centerX: number;
-    centerY: number;
-    radiusPx: number;
-} {
-    return {
-        centerX: sim.cameraCenter.x,
-        centerY: sim.cameraCenter.y,
-        radiusPx: V1.activeZoneRadiusTiles * TILE_PX,
-    };
-}
-
-/**
- * Count entities within the active zone
- */
-export function countEntitiesInZone(sim: SimulationState): { rat: number; cat: number } {
-    const zone = getActiveZone(sim);
-    const counts = { rat: 0, cat: 0 };
+export function countEntitiesGlobal(sim: SimulationState): Record<SpeciesId, number> {
+    // Initialize counts for all species in densityTargets
+    const counts: Record<string, number> = {};
+    for (const species of Object.keys(V1.densityTargets)) {
+        counts[species] = 0;
+    }
 
     for (const entity of sim.entities.values()) {
         if (entity.state === 'dead') continue;
-
-        const dx = entity.pos.x - zone.centerX;
-        const dy = entity.pos.y - zone.centerY;
-        const distSq = dx * dx + dy * dy;
-        const radiusSq = zone.radiusPx * zone.radiusPx;
-
-        if (distSq <= radiusSq) {
-            if (entity.species === 'rat') counts.rat++;
-            else if (entity.species === 'cat') counts.cat++;
+        if (counts[entity.species] !== undefined) {
+            counts[entity.species]++;
+        } else {
+            counts[entity.species] = (counts[entity.species] || 0) + 1;
         }
     }
 
-    return counts;
+    return counts as Record<SpeciesId, number>;
 }
 
 /**
- * Find a resource object (trash, water, bush) in the active zone
+ * Spawn an entity randomly across the entire map
+ * (Same strategy as Shift+A / ChunkManager.spawnInitialAnimals)
  */
-function findResourceInZone(
-    sim: SimulationState,
-    resourceType: 'trash' | 'water' | 'bush'
-): { tx: number; ty: number } | null {
-    const zone = getActiveZone(sim);
+function spawnRandomlyGlobal(sim: SimulationState, species: SpeciesId): boolean {
+    // Random position across the entire map
+    const tx = Math.floor(sim.rng() * V1.defaultMapWidth);
+    const ty = Math.floor(sim.rng() * V1.defaultMapHeight);
 
-    for (const obj of sim.objects.values()) {
-        if (obj.type !== resourceType) continue;
+    const name = getRandomName(species, sim);
+    const personality = getRandomPersonality(species, sim);
 
-        const objX = obj.pos.tx * TILE_PX;
-        const objY = obj.pos.ty * TILE_PX;
-
-        const dx = objX - zone.centerX;
-        const dy = objY - zone.centerY;
-        const distSq = dx * dx + dy * dy;
-        const radiusSq = zone.radiusPx * zone.radiusPx;
-
-        if (distSq <= radiusSq) {
-            return obj.pos;
-        }
-    }
-
-    return null;
-}
-
-/**
- * Spawn an entity near a resource (for rats attracted to trash)
- */
-function spawnNearResource(
-    sim: SimulationState,
-    species: SpeciesId,
-    resourceType: 'trash' | 'water' | 'bush'
-): boolean {
-    const resource = findResourceInZone(sim, resourceType);
-
-    if (!resource) {
-        // No resource found, spawn near camera center
-        const centerTx = Math.floor(sim.cameraCenter.x / TILE_PX);
-        const centerTy = Math.floor(sim.cameraCenter.y / TILE_PX);
-
-        // Offset randomly within a small radius
-        const offsetX = Math.floor((sim.rng() - 0.5) * 20);
-        const offsetY = Math.floor((sim.rng() - 0.5) * 20);
-
-        const entity = spawnEntity(sim, species, getRandomName(species, sim), 'cautious', {
-            tx: centerTx + offsetX,
-            ty: centerTy + offsetY,
-        });
-
-        return entity !== null;
-    }
-
-    // Spawn within 5 tiles of the resource
-    const offsetX = Math.floor((sim.rng() - 0.5) * 10);
-    const offsetY = Math.floor((sim.rng() - 0.5) * 10);
-
-    const entity = spawnEntity(sim, species, getRandomName(species, sim), 'cautious', {
-        tx: resource.tx + offsetX,
-        ty: resource.ty + offsetY,
-    });
-
-    return entity !== null;
-}
-
-/**
- * Spawn an entity at the edge of the active zone (walks in naturally)
- */
-function spawnAtEdge(sim: SimulationState, species: SpeciesId): boolean {
-    const zone = getActiveZone(sim);
-
-    // Random angle around the edge
-    const angle = sim.rng() * Math.PI * 2;
-    const edgeX = zone.centerX + Math.cos(angle) * zone.radiusPx * 0.9;
-    const edgeY = zone.centerY + Math.sin(angle) * zone.radiusPx * 0.9;
-
-    // For infinite world, we don't clamp to hard bounds.
-    const tx = Math.floor(edgeX / TILE_PX);
-    const ty = Math.floor(edgeY / TILE_PX);
-
-    const entity = spawnEntity(sim, species, getRandomName(species, sim), 'brave', {
+    const entity = spawnEntity(sim, species, name, personality, {
         tx,
         ty,
     });
@@ -145,78 +57,157 @@ function spawnAtEdge(sim: SimulationState, species: SpeciesId): boolean {
 }
 
 /**
+ * Determine personality based on species (matching ChunkManager logic)
+ */
+function getRandomPersonality(species: SpeciesId, sim: SimulationState): 'curious' | 'cautious' | 'brave' {
+    // Default weighted roll
+    let personality: 'curious' | 'cautious' | 'brave' = 'curious';
+    const pRoll = sim.rng();
+    if (pRoll < 0.33) personality = 'cautious';
+    else if (pRoll < 0.66) personality = 'brave';
+
+    // Species specific overrides (matching ChunkManager)
+    if (['rat', 'chicken', 'smallBird'].includes(species)) {
+        personality = sim.rng() > 0.5 ? 'cautious' : 'curious';
+    } else if (['cat', 'dog', 'wolf', 'hawk', 'fox'].includes(species)) {
+        personality = sim.rng() > 0.5 ? 'brave' : 'curious';
+    }
+
+    return personality;
+}
+
+/**
  * Generate a random name for an entity
  */
 function getRandomName(species: SpeciesId, sim: SimulationState): string {
     const names: Record<string, string[]> = {
-        rat: ['Ratty', 'Pip', 'Squeak', 'Nibbles', 'Whiskers'],
-        cat: ['Kitty', 'Tom', 'Luna', 'Shadow', 'Simba'],
-        chicken: ['Cluck', 'Nugget'],
-        smallBird: ['Tweet', 'Chirp'],
+        rat: ['Ratty', 'Pip', 'Squeak', 'Nibbles', 'Whiskers', 'Remi', 'Scabbers', 'Twitch'],
+        cat: ['Kitty', 'Tom', 'Luna', 'Shadow', 'Simba', 'Felix', 'Garfield', 'Nala'],
+        chicken: ['Cluck', 'Nugget', 'Peck', 'Feathers', 'Eggbert', 'Henny'],
+        smallBird: ['Tweet', 'Chirp', 'Sky', 'Blue', 'Robin', 'Pip'],
+        raccoon: ['Bandit', 'Rocket', 'Sly', 'Meeko', 'Rascal'],
+        crow: ['Poe', 'Odin', 'Midnight', 'Raven', 'Caw'],
+        dog: ['Rex', 'Buddy', 'Max', 'Spot', 'Rover', 'Bolt'],
+        fox: ['Foxy', 'Red', 'Sly', 'Vixey', 'Todd'],
+        hawk: ['Talon', 'Soar', 'Hunter', 'Sky', 'Sharp'],
+        wolf: ['Fang', 'Ghost', 'Alpha', 'Luna', 'Howl'],
+        snake: ['Slither', 'Hiss', 'Nagini', 'Ka', 'Coil'],
     };
 
     const nameList = names[species] || ['Unknown'];
     const name = nameList[Math.floor(sim.rng() * nameList.length)];
-    const suffix = Math.floor(sim.rng() * 99);
+    const suffix = Math.floor(sim.rng() * 999);
 
     return `${name}${suffix}`;
 }
 
 /**
  * Main ecosystem maintenance function - called every 5 seconds
- * Acts as a "thermostat" to keep drama happening on-screen
+ * Acts as a "thermostat" to keep global population healthy
  */
 export function maintainEcosystem(sim: SimulationState): void {
-    const counts = countEntitiesInZone(sim);
+    const counts = countEntitiesGlobal(sim);
     const targets = V1.densityTargets;
 
-    // === RAT MAINTENANCE ===
-    if (counts.rat < targets.rat.min) {
-        // Too few rats - spawn near trash/food sources
-        // Spawn 1-3 rats to gradually restore population
-        const deficit = targets.rat.min - counts.rat;
-        const toSpawn = Math.min(deficit, 3);
+    for (const [speciesKey, target] of Object.entries(targets)) {
+        const species = speciesKey as SpeciesId;
+        const currentCount = counts[species] || 0;
 
-        for (let i = 0; i < toSpawn; i++) {
-            spawnNearResource(sim, 'rat', 'trash');
+        // === MIN POPULATION CHECK ===
+        if (currentCount < target.min) {
+            // Need to spawn more
+            const deficit = target.min - currentCount;
+            // Spawn a batch, but cap to avoid lag spikes
+            const toSpawn = Math.min(deficit, 2);
+
+            if (toSpawn > 0) {
+                let successCount = 0;
+
+                for (let i = 0; i < toSpawn; i++) {
+                    // Use Global Random Spawn (Shift+A strategy)
+                    const success = spawnRandomlyGlobal(sim, species);
+                    if (success) successCount++;
+                }
+
+                if (successCount > 0) {
+                    console.log(`🌿 Ecosystem: Added ${successCount} ${species} (current: ${currentCount + successCount}, target: ${target.min}+)`);
+                }
+            }
+        }
+    }
+
+    // === V1.1 EcoStress Calculation (Improved) ===
+    // Goals:
+    // - Target ~60% stress when balanced
+    // - Reward species diversity (all species meeting minimum)
+    // - Penalize underpopulation more than overpopulation
+    let totalPopulationStress = 0;
+    let speciesCount = 0;
+    let speciesWithMinPopulation = 0;
+
+    // Prepare details for UI
+    const speciesStatusList: EcoStressDetails['speciesStatus'] = [];
+
+    for (const [speciesKey, target] of Object.entries(targets)) {
+        const species = speciesKey as SpeciesId;
+        const currentCount = counts[species] || 0;
+        const ideal = (target.min + target.max) / 2;
+
+        let status: EcoStressDetails['speciesStatus'][0]['status'] = 'ok';
+        let speciesStress = 0;
+
+        // Track species meeting minimum population requirement
+        if (currentCount >= target.min) {
+            speciesWithMinPopulation++;
         }
 
-        console.log(`🐭 Ecosystem: Added ${toSpawn} rats (was ${counts.rat}, target ${targets.rat.min}+)`);
+        if (ideal > 0) {
+            if (currentCount < target.min) {
+                // Critical: below minimum, high stress (1.0 - 2.0)
+                speciesStress = 1.0 + (target.min - currentCount) / target.min;
+                status = 'critical_low';
+            } else if (currentCount > target.max) {
+                // Overpopulation: moderate stress (0.5 - 1.0)
+                speciesStress = 0.5 + (currentCount - target.max) / target.max * 0.5;
+                status = currentCount > target.max * 1.5 ? 'critical_high' : 'high';
+            } else {
+                // Within range: low stress based on distance from ideal (0 - 0.5)
+                speciesStress = Math.abs(currentCount - ideal) / ideal * 0.5;
+                if (speciesStress > 0.25) status = currentCount < ideal ? 'low' : 'high';
+            }
+            totalPopulationStress += speciesStress;
+            speciesCount++;
+        }
+
+        speciesStatusList.push({
+            id: species,
+            count: currentCount,
+            min: target.min,
+            max: target.max,
+            stress: Math.floor(speciesStress * 100),
+            status: status
+        });
     }
 
-    // === CAT MAINTENANCE ===
-    if (counts.cat < targets.cat.min) {
-        // Too few cats - spawn at edge (cat "migrates in")
-        spawnAtEdge(sim, 'cat');
-        console.log(`🐱 Ecosystem: Cat migrated in (was ${counts.cat}, target ${targets.cat.min}+)`);
+    if (speciesCount > 0) {
+        // Diversity ratio: what percentage of species have min population
+        const diversityRatio = speciesWithMinPopulation / speciesCount;
+        // Base stress from population deviation (scale to ~30-40 when balanced)
+        const rawStress = (totalPopulationStress / speciesCount) * 40;
+        // Diversity penalty: if species are missing, add stress (up to 30)
+        const diversityPenalty = (1 - diversityRatio) * 30;
+
+        // Final stress: raw + diversity penalty, clamped to 0-100
+        const finalStress = Math.min(100, Math.max(0, Math.floor(rawStress + diversityPenalty)));
+        sim.stats.ecoStress = finalStress;
+
+        // Populate details for UI
+        sim.stats.ecoStressDetails = {
+            speciesStatus: speciesStatusList,
+            diversityScore: Math.floor(diversityRatio * 100),
+            diversityPenalty: Math.floor(diversityPenalty),
+            populationStress: Math.floor(rawStress)
+        };
     }
-
-    // === OVERPOPULATION HANDLING ===
-    // Note: We don't forcibly kill animals, but the AI system handles:
-    // - Rats die naturally from predation, starvation, thirst
-    // - Cats leave the area if game is scarce (patrol expands)
-    // - High-density areas have faster resource depletion
-
-    if (counts.rat > targets.rat.max) {
-        // Log warning but let natural causes handle it
-        console.log(`⚠️ Ecosystem: Rat overpopulation (${counts.rat}/${targets.rat.max})`);
-    }
-
-    if (counts.cat > targets.cat.max) {
-        console.log(`⚠️ Ecosystem: Cat surplus (${counts.cat}/${targets.cat.max})`);
-    }
-
-    // === V1.1 EcoStress Calculation ===
-    // Stress = Abs(Current - Ideal) / Ideal * 100 (Average of species)
-    // Ideal is average of min/max.
-    const ratIdeal = (targets.rat.min + targets.rat.max) / 2;
-    const catIdeal = (targets.cat.min + targets.cat.max) / 2;
-
-    const ratStress = Math.abs(counts.rat - ratIdeal) / ratIdeal;
-    const catStress = Math.abs(counts.cat - catIdeal) / catIdeal;
-
-    // Combine: 70% Rat (main pop), 30% Cat
-    const totalStress = (ratStress * 0.7 + catStress * 0.3) * 100;
-
-    sim.stats.ecoStress = Math.min(100, Math.floor(totalStress));
 }
+

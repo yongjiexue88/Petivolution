@@ -109,14 +109,13 @@ export type SpeciesConfig = {
 export const RAT_CONFIG: SpeciesConfig = {
     id: 'rat',
     move: {
-        speedTilesPerTick: 0.07,
+        speedTilesPerTick: 0.08,
         wanderJitter: 0.6,
         turnSmooth: 0.35,
     },
     sense: {
-        radiusTiles: 6, // Small prey, survives by hiding
+        radiusTiles: 6,
     },
-    // Colony behavior - rats stay loosely grouped
     flock: {
         enabled: true,
         cohesionWeight: 0.3,
@@ -125,12 +124,12 @@ export const RAT_CONFIG: SpeciesConfig = {
         radiusTiles: 5,
     },
     vitals: {
-        hungerDecayPerTick: 0.0006,
-        thirstDecayPerTick: 0.0008,
-        fatigueDecayPerTick: 0.0005,
-        drinkGainPerTick: 0.01,
-        eatGainPerTick: 0.008,
-        sleepGainPerTick: 0.006,
+        hungerDecayPerTick: 0.0002, // ~2.7 mins
+        thirstDecayPerTick: 0.00025, // Thirsty faster
+        fatigueDecayPerTick: 0.0001,
+        drinkGainPerTick: 0.03, // Fast drinker
+        eatGainPerTick: 0.20, // 5 bites to full
+        sleepGainPerTick: 0.01,
         dangerThreshold01: 0.15,
         healthDamageWhenHungerBelow: 0.0008,
         healthDamageWhenThirstBelow: 0.0012,
@@ -152,7 +151,7 @@ export const RAT_CONFIG: SpeciesConfig = {
             rest: 0.02,
             wander: 0.01,
             hunt: -999,
-            forage: 0.1, // V4
+            forage: 0.1,
             rummage: 0,
             bark: -999,
             patrol: -999,
@@ -180,9 +179,9 @@ export const RAT_CONFIG: SpeciesConfig = {
             perch: 0,
         },
         personality: {
-            cautious: { fear: 1.0, nearBush: 0.4, flee: 0.3 }, // Hides more, very fearful
-            brave: { fear: -0.6, nearTrash: 0.25, eat: 0.15 }, // Ventures out boldly
-            curious: { nearTrash: 0.2, nearWater: 0.15, wander: 0.2 }, // Explores more
+            cautious: { fear: 1.0, nearBush: 0.4, flee: 0.3 },
+            brave: { fear: -0.6, nearTrash: 0.25, eat: 0.15 },
+            curious: { nearTrash: 0.2, nearWater: 0.15, wander: 0.2 },
         },
     },
     spriteKey: 'rat',
@@ -196,12 +195,11 @@ export const RAT_CONFIG: SpeciesConfig = {
 export const CAT_CONFIG: SpeciesConfig = {
     id: 'cat',
     move: {
-        speedTilesPerTick: 0.05,
+        speedTilesPerTick: 0.12,
         wanderJitter: 0.4,
         turnSmooth: 0.1,
         moveStyle: 'run',
     },
-    // Chickens flock together
     flock: {
         enabled: false,
         cohesionWeight: 0,
@@ -210,15 +208,15 @@ export const CAT_CONFIG: SpeciesConfig = {
         radiusTiles: 0,
     },
     sense: {
-        radiusTiles: 10, // Ambush predator, stalks close
+        radiusTiles: 10,
     },
     vitals: {
-        hungerDecayPerTick: 0.0007,
-        thirstDecayPerTick: 0.0007,
-        fatigueDecayPerTick: 0.00045,
-        drinkGainPerTick: 0.010,
-        eatGainPerTick: 0.014,
-        sleepGainPerTick: 0.006,
+        hungerDecayPerTick: 0.00025, // ~2.2 mins
+        thirstDecayPerTick: 0.00025,
+        fatigueDecayPerTick: 0.00015,
+        drinkGainPerTick: 0.03,
+        eatGainPerTick: 0.25, // 4 bites to full
+        sleepGainPerTick: 0.01,
         dangerThreshold01: 0.15,
         healthDamageWhenHungerBelow: 0.0009,
         healthDamageWhenThirstBelow: 0.0010,
@@ -265,9 +263,9 @@ export const CAT_CONFIG: SpeciesConfig = {
             perch: 0,
         },
         personality: {
-            brave: { seesPrey: 0.4, hunger: 0.25, hunt: 0.3 }, // Aggressive hunter
-            cautious: { seesPrey: -0.2, thirst: 0.1, rest: 0.15 }, // Careful, stalking approach
-            curious: { nearTrash: 0.15, wander: 0.2 }, // Investigates areas
+            brave: { seesPrey: 0.4, hunger: 0.25, hunt: 0.3 },
+            cautious: { seesPrey: -0.2, thirst: 0.1, rest: 0.15 },
+            curious: { nearTrash: 0.15, wander: 0.2 },
         },
     },
     spriteKey: 'cat',
@@ -281,14 +279,13 @@ export const CAT_CONFIG: SpeciesConfig = {
 export const CHICKEN_CONFIG: SpeciesConfig = {
     id: 'chicken',
     move: {
-        speedTilesPerTick: 0.05,
+        speedTilesPerTick: 0.06,
         wanderJitter: 0.5,
         turnSmooth: 0.25,
     },
     sense: {
-        radiusTiles: 8, // Ground-bound, limited vision
+        radiusTiles: 8,
     },
-    // Chickens flock together
     flock: {
         enabled: true,
         cohesionWeight: 0.4,
@@ -297,12 +294,12 @@ export const CHICKEN_CONFIG: SpeciesConfig = {
         radiusTiles: 6,
     },
     vitals: {
-        hungerDecayPerTick: 0.0005,
-        thirstDecayPerTick: 0.0006,
-        fatigueDecayPerTick: 0.0004,
-        drinkGainPerTick: 0.015,
-        eatGainPerTick: 0.02,
-        sleepGainPerTick: 0.006,
+        hungerDecayPerTick: 0.00018, // ~3.0 mins
+        thirstDecayPerTick: 0.0002,
+        fatigueDecayPerTick: 0.0001,
+        drinkGainPerTick: 0.03,
+        eatGainPerTick: 0.15, // Forages often
+        sleepGainPerTick: 0.008,
         dangerThreshold01: 0.2,
         healthDamageWhenHungerBelow: 0.0008,
         healthDamageWhenThirstBelow: 0.001,
@@ -343,13 +340,13 @@ export const CHICKEN_CONFIG: SpeciesConfig = {
             perch: 0,
         },
         personality: {
-            brave: { fear: -0.8, forage: 0.25, flee: -0.3 }, // Stands ground briefly
-            cautious: { fear: 1.0, nearBush: 0.4, flee: 0.4 }, // Runs from everything
-            curious: { wander: 0.25, forage: 0.15 }, // Wanders further foraging
+            brave: { fear: -0.8, forage: 0.25, flee: -0.3 },
+            cautious: { fear: 1.0, nearBush: 0.4, flee: 0.4 },
+            curious: { wander: 0.25, forage: 0.15 },
         },
     },
     spriteKey: 'chicken',
-    spriteColor: 0xFFA07A, // Light Salmon
+    spriteColor: 0xFFA07A,
 };
 
 // ============================================
@@ -359,13 +356,13 @@ export const CHICKEN_CONFIG: SpeciesConfig = {
 export const SMALL_BIRD_CONFIG: SpeciesConfig = {
     id: 'smallBird',
     move: {
-        speedTilesPerTick: 0.06,
+        speedTilesPerTick: 0.14,
         wanderJitter: 0.8,
         turnSmooth: 0.5,
         moveStyle: 'hop',
     },
     sense: {
-        radiusTiles: 12, // Good vision, flocking extends awareness
+        radiusTiles: 12,
     },
     flock: {
         enabled: true,
@@ -375,12 +372,12 @@ export const SMALL_BIRD_CONFIG: SpeciesConfig = {
         radiusTiles: 8,
     },
     vitals: {
-        hungerDecayPerTick: 0.0004,
-        thirstDecayPerTick: 0.0005,
-        fatigueDecayPerTick: 0.0004,
-        drinkGainPerTick: 0.02,
-        eatGainPerTick: 0.025,
-        sleepGainPerTick: 0.008,
+        hungerDecayPerTick: 0.00025, // High metabolism relative to size
+        thirstDecayPerTick: 0.0003,
+        fatigueDecayPerTick: 0.00015,
+        drinkGainPerTick: 0.04,
+        eatGainPerTick: 0.20,
+        sleepGainPerTick: 0.01,
         dangerThreshold01: 0.25,
         healthDamageWhenHungerBelow: 0.001,
         healthDamageWhenThirstBelow: 0.0012,
@@ -410,7 +407,7 @@ export const SMALL_BIRD_CONFIG: SpeciesConfig = {
             nearWater: 0.1,
             nearTrash: 0.0,
             seesPrey: 0,
-            nearPerch: 0.4, // Likes perching
+            nearPerch: 0.4,
             nearIntruder: 0,
         },
         distancePenalty: {
@@ -421,13 +418,13 @@ export const SMALL_BIRD_CONFIG: SpeciesConfig = {
             perch: 0.02,
         },
         personality: {
-            brave: { fear: -0.5, forage: 0.2 }, // Less fearful, forages more
-            cautious: { fear: 1.0, rest: 0.25, nearPerch: 0.3 }, // Stays perched, very fearful
-            curious: { wander: 0.3, forage: 0.15 }, // Explores actively
+            brave: { fear: -0.5, forage: 0.2 },
+            cautious: { fear: 1.0, rest: 0.25, nearPerch: 0.3 },
+            curious: { wander: 0.3, forage: 0.15 },
         },
     },
     spriteKey: 'smallBird',
-    spriteColor: 0x87CEEB, // Sky Blue
+    spriteColor: 0x87CEEB,
 };
 
 // ============================================
@@ -441,22 +438,22 @@ export const SMALL_BIRD_CONFIG: SpeciesConfig = {
 export const RACCOON_CONFIG: SpeciesConfig = {
     id: 'raccoon',
     move: {
-        speedTilesPerTick: 0.16,
+        speedTilesPerTick: 0.14,
         wanderJitter: 0.6,
         turnSmooth: 0.3,
         moveStyle: 'run'
     },
-    sense: { radiusTiles: 8 }, // Nocturnal, relies on smell IRL
+    sense: { radiusTiles: 8 },
 
     flock: { enabled: false, cohesionWeight: 0, alignmentWeight: 0, separationWeight: 0, radiusTiles: 0 },
 
     vitals: {
-        hungerDecayPerTick: 0.0007,
-        thirstDecayPerTick: 0.0007,
-        fatigueDecayPerTick: 0.0004, // Resilient
-        drinkGainPerTick: 0.012,
-        eatGainPerTick: 0.01,
-        sleepGainPerTick: 0.008,
+        hungerDecayPerTick: 0.00022,
+        thirstDecayPerTick: 0.00022,
+        fatigueDecayPerTick: 0.00012,
+        drinkGainPerTick: 0.03,
+        eatGainPerTick: 0.20,
+        sleepGainPerTick: 0.01,
         dangerThreshold01: 0.25,
         healthDamageWhenHungerBelow: 0.001,
         healthDamageWhenThirstBelow: 0.001,
@@ -495,9 +492,9 @@ export const RACCOON_CONFIG: SpeciesConfig = {
             water: 0.1, bush: 0.0, prey: 0.2, trash: 0.05, perch: 0.0
         },
         personality: {
-            curious: { nearTrash: 6.0, wander: 1.0, rummage: 1.5 }, // Trash-obsessed explorer
-            cautious: { fear: 6.0, flee: 7.0, rest: 2.0 }, // Very careful, hides more
-            brave: { hunt: 2.0, fear: 1.0, rummage: 1.0 } // Predatory, less afraid
+            curious: { nearTrash: 6.0, wander: 1.0, rummage: 1.5 },
+            cautious: { fear: 6.0, flee: 7.0, rest: 2.0 },
+            brave: { hunt: 2.0, fear: 1.0, rummage: 1.0 }
         }
     },
     spriteKey: 'raccoon_idle',
@@ -512,19 +509,19 @@ export const CROW_CONFIG: SpeciesConfig = {
         turnSmooth: 0.5,
         moveStyle: 'fly'
     },
-    sense: { radiusTiles: 16 }, // Flying, excellent vision
+    sense: { radiusTiles: 16 },
 
     flock: { enabled: true, cohesionWeight: 0.4, alignmentWeight: 0.3, separationWeight: 0.5, radiusTiles: 10 },
 
     vitals: {
-        hungerDecayPerTick: 0.0009, // High metabolism
-        thirstDecayPerTick: 0.0008,
-        fatigueDecayPerTick: 0.0006,
-        drinkGainPerTick: 0.01,
-        eatGainPerTick: 0.015,
-        sleepGainPerTick: 0.007,
+        hungerDecayPerTick: 0.0003, // Highest
+        thirstDecayPerTick: 0.00025,
+        fatigueDecayPerTick: 0.0002,
+        drinkGainPerTick: 0.03,
+        eatGainPerTick: 0.25,
+        sleepGainPerTick: 0.01,
         dangerThreshold01: 0.2,
-        healthDamageWhenHungerBelow: 0.002, // Fragile
+        healthDamageWhenHungerBelow: 0.002,
         healthDamageWhenThirstBelow: 0.002,
     },
     combat: {
@@ -561,9 +558,9 @@ export const CROW_CONFIG: SpeciesConfig = {
             water: 0.05, bush: 0.05, prey: 0.1, trash: 0.1, perch: 0.05
         },
         personality: {
-            curious: { wander: 1.0, nearTrash: 1.5 }, // Investigates everything
-            cautious: { fear: 7.0, flee: 5.0 }, // Very skittish
-            brave: { hunt: 0.5, nearTrash: 1.0 } // Opportunistic
+            curious: { wander: 1.0, nearTrash: 1.5 },
+            cautious: { fear: 7.0, flee: 5.0 },
+            brave: { hunt: 0.5, nearTrash: 1.0 }
         }
     },
     spriteKey: 'crow_idle',
@@ -580,16 +577,15 @@ export const DOG_CONFIG: SpeciesConfig = {
     },
     sense: { radiusTiles: 12 },
 
-    // Dogs are social, mild pack behavior
     flock: { enabled: true, cohesionWeight: 0.3, alignmentWeight: 0.2, separationWeight: 0.3, radiusTiles: 8 },
 
     vitals: {
-        hungerDecayPerTick: 0.0005,
-        thirstDecayPerTick: 0.0006,
-        fatigueDecayPerTick: 0.0003,
-        drinkGainPerTick: 0.015,
-        eatGainPerTick: 0.015,
-        sleepGainPerTick: 0.008,
+        hungerDecayPerTick: 0.0002,
+        thirstDecayPerTick: 0.00025,
+        fatigueDecayPerTick: 0.0001,
+        drinkGainPerTick: 0.04,
+        eatGainPerTick: 0.25,
+        sleepGainPerTick: 0.01,
         dangerThreshold01: 0.2,
         healthDamageWhenHungerBelow: 0.0005,
         healthDamageWhenThirstBelow: 0.0005,
@@ -601,7 +597,7 @@ export const DOG_CONFIG: SpeciesConfig = {
         damagePerHit: 0.25
     },
     reproduction: {
-        enabled: false, // Dogs spawned manually mostly
+        enabled: false,
         minHunger: 1.1,
         minAgeTicks: 99999,
         cooldownTicks: 99999,
@@ -615,9 +611,9 @@ export const DOG_CONFIG: SpeciesConfig = {
         bonuses: { seesPrey: 3, nearTrash: 0, nearWater: 1, nearBush: 0, nearPerch: 0, nearIntruder: 2.5 },
         distancePenalty: { water: 0.1, bush: 0, prey: 0.1, trash: 0, perch: 0 },
         personality: {
-            curious: { wander: 0.5, nearIntruder: 1.0 }, // Investigates intruders
-            cautious: { patrol: 0.8, bark: 0.3 }, // Patrols cautiously
-            brave: { hunt: 1.5, bark: 1.0, nearIntruder: 2.0 } // Aggressive guardian
+            curious: { wander: 0.5, nearIntruder: 1.0 },
+            cautious: { patrol: 0.8, bark: 0.3 },
+            brave: { hunt: 1.5, bark: 1.0, nearIntruder: 2.0 }
         }
     },
     spriteKey: 'dog_idle',
@@ -637,14 +633,14 @@ export const FOX_CONFIG: SpeciesConfig = {
         moveStyle: 'run'
     },
     sense: { radiusTiles: 12 },
-    flock: { enabled: false, cohesionWeight: 0, alignmentWeight: 0, separationWeight: 0, radiusTiles: 0 }, // Solitary
+    flock: { enabled: false, cohesionWeight: 0, alignmentWeight: 0, separationWeight: 0, radiusTiles: 0 },
     vitals: {
-        hungerDecayPerTick: 0.0006,
-        thirstDecayPerTick: 0.0006,
-        fatigueDecayPerTick: 0.0004,
-        drinkGainPerTick: 0.012,
-        eatGainPerTick: 0.015,
-        sleepGainPerTick: 0.007,
+        hungerDecayPerTick: 0.00025,
+        thirstDecayPerTick: 0.00025,
+        fatigueDecayPerTick: 0.00015,
+        drinkGainPerTick: 0.03,
+        eatGainPerTick: 0.30, // Eats chunks
+        sleepGainPerTick: 0.01,
         dangerThreshold01: 0.2,
         healthDamageWhenHungerBelow: 0.0008,
         healthDamageWhenThirstBelow: 0.0008,
@@ -661,9 +657,9 @@ export const FOX_CONFIG: SpeciesConfig = {
         bonuses: { seesPrey: 4, nearTrash: 0.5, nearWater: 1, nearBush: 1.5, nearPerch: 0, nearIntruder: 0 },
         distancePenalty: { water: 0.08, bush: 0.02, prey: 0.08, trash: 0, perch: 0 },
         personality: {
-            curious: { wander: 0.5, nearBush: 0.5 }, // Explores cover
-            cautious: { fear: 2.0, flee: 1.5, nearBush: 1.0 }, // Uses cover to hide
-            brave: { hunt: 2.0, seesPrey: 1.5 } // Aggressive hunter
+            curious: { wander: 0.5, nearBush: 0.5 },
+            cautious: { fear: 2.0, flee: 1.5, nearBush: 1.0 },
+            brave: { hunt: 2.0, seesPrey: 1.5 }
         }
     },
     spriteKey: 'fox_idle',
@@ -681,15 +677,15 @@ export const HAWK_CONFIG: SpeciesConfig = {
         turnSmooth: 0.4,
         moveStyle: 'fly'
     },
-    sense: { radiusTiles: 20 }, // Best eyesight of all
-    flock: { enabled: false, cohesionWeight: 0, alignmentWeight: 0, separationWeight: 0, radiusTiles: 0 }, // Solitary hunter
+    sense: { radiusTiles: 20 },
+    flock: { enabled: false, cohesionWeight: 0, alignmentWeight: 0, separationWeight: 0, radiusTiles: 0 },
     vitals: {
-        hungerDecayPerTick: 0.0008,
-        thirstDecayPerTick: 0.0006,
-        fatigueDecayPerTick: 0.0005,
-        drinkGainPerTick: 0.012,
-        eatGainPerTick: 0.02,
-        sleepGainPerTick: 0.008,
+        hungerDecayPerTick: 0.0003,
+        thirstDecayPerTick: 0.0003,
+        fatigueDecayPerTick: 0.0002,
+        drinkGainPerTick: 0.03,
+        eatGainPerTick: 0.35,
+        sleepGainPerTick: 0.012,
         dangerThreshold01: 0.15,
         healthDamageWhenHungerBelow: 0.0015,
         healthDamageWhenThirstBelow: 0.0012,
@@ -706,9 +702,9 @@ export const HAWK_CONFIG: SpeciesConfig = {
         bonuses: { seesPrey: 5, nearTrash: 0, nearWater: 0.8, nearBush: 0, nearPerch: 2.5, nearIntruder: 0 },
         distancePenalty: { water: 0.05, bush: 0, prey: 0.03, trash: 0, perch: 0.03 },
         personality: {
-            curious: { wander: 0.8, seesPrey: 1.0 }, // Scouts for prey
-            cautious: { rest: 0.5, nearPerch: 1.0 }, // Waits on perch
-            brave: { hunt: 2.5, seesPrey: 2.0 } // Aggressive diver
+            curious: { wander: 0.8, seesPrey: 1.0 },
+            cautious: { rest: 0.5, nearPerch: 1.0 },
+            brave: { hunt: 2.5, seesPrey: 2.0 }
         }
     },
     spriteKey: 'hawk_idle',
@@ -726,8 +722,7 @@ export const WOLF_CONFIG: SpeciesConfig = {
         turnSmooth: 0.2,
         moveStyle: 'run'
     },
-    sense: { radiusTiles: 14 }, // Good senses, pack coordination helps
-    // Pack hunter - strong flocking
+    sense: { radiusTiles: 14 },
     flock: {
         enabled: true,
         cohesionWeight: 0.6,
@@ -736,12 +731,12 @@ export const WOLF_CONFIG: SpeciesConfig = {
         radiusTiles: 12
     },
     vitals: {
-        hungerDecayPerTick: 0.0006,
-        thirstDecayPerTick: 0.0005,
-        fatigueDecayPerTick: 0.0003,
-        drinkGainPerTick: 0.015,
-        eatGainPerTick: 0.02,
-        sleepGainPerTick: 0.008,
+        hungerDecayPerTick: 0.00022,
+        thirstDecayPerTick: 0.0002,
+        fatigueDecayPerTick: 0.0001,
+        drinkGainPerTick: 0.04,
+        eatGainPerTick: 0.30,
+        sleepGainPerTick: 0.01,
         dangerThreshold01: 0.1,
         healthDamageWhenHungerBelow: 0.0006,
         healthDamageWhenThirstBelow: 0.0006,
@@ -758,9 +753,9 @@ export const WOLF_CONFIG: SpeciesConfig = {
         bonuses: { seesPrey: 4.5, nearTrash: 0, nearWater: 1.2, nearBush: 0.5, nearPerch: 0, nearIntruder: 1 },
         distancePenalty: { water: 0.08, bush: 0, prey: 0.06, trash: 0, perch: 0 },
         personality: {
-            curious: { wander: 0.6, hunt: 0.5 }, // Scouts for pack
-            cautious: { hunt: -0.5, rest: 0.8 }, // Follows pack lead
-            brave: { hunt: 2.5, seesPrey: 2.0, flee: -0.5 } // Alpha behavior, leads hunts
+            curious: { wander: 0.6, hunt: 0.5 },
+            cautious: { hunt: -0.5, rest: 0.8 },
+            brave: { hunt: 2.5, seesPrey: 2.0, flee: -0.5 }
         }
     },
     spriteKey: 'wolf_idle',
@@ -773,26 +768,26 @@ export const WOLF_CONFIG: SpeciesConfig = {
 export const SNAKE_CONFIG: SpeciesConfig = {
     id: 'snake',
     move: {
-        speedTilesPerTick: 0.04, // Very slow
+        speedTilesPerTick: 0.09,
         wanderJitter: 0.3,
         turnSmooth: 0.15,
-        moveStyle: 'run' // Slither animation handled separately
+        moveStyle: 'run'
     },
-    sense: { radiusTiles: 4 }, // Poor vision, relies on vibrations
-    flock: { enabled: false, cohesionWeight: 0, alignmentWeight: 0, separationWeight: 0, radiusTiles: 0 }, // Solitary
+    sense: { radiusTiles: 8 },
+    flock: { enabled: false, cohesionWeight: 0, alignmentWeight: 0, separationWeight: 0, radiusTiles: 0 },
     vitals: {
-        hungerDecayPerTick: 0.0003, // Slow metabolism
-        thirstDecayPerTick: 0.0004,
-        fatigueDecayPerTick: 0.0002,
-        drinkGainPerTick: 0.015,
-        eatGainPerTick: 0.03, // Eats big meals infrequently
+        hungerDecayPerTick: 0.0001, // Very slow ~5.5 mins
+        thirstDecayPerTick: 0.0001,
+        fatigueDecayPerTick: 0.00005,
+        drinkGainPerTick: 0.04,
+        eatGainPerTick: 0.50, // One meal lasts a long time
         sleepGainPerTick: 0.01,
         dangerThreshold01: 0.3,
         healthDamageWhenHungerBelow: 0.0004,
         healthDamageWhenThirstBelow: 0.0006,
     },
     combat: {
-        attackRangeTiles: 0.8, // Strike range
+        attackRangeTiles: 0.8,
         attackCooldownTicks: 30,
         killOnHit: true,
         damagePerHit: 1.0

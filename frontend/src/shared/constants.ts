@@ -31,20 +31,21 @@ export const V1 = {
     // 活跃区 (摄像机中心为圆心的"戏剧区")
     activeZoneRadiusTiles: 50,  // 玩家主要观察的区域
 
-    // 生态密度目标 (活跃区内)
+    // Ecosystem density targets (balanced for ~60% stress)
+    // All species have min: 2 to ensure mating pairs exist
+    // Prey species have higher max than predators
     densityTargets: {
-        rat: { min: 25, max: 100 },
-        cat: { min: 2, max: 100 },
-        chicken: { min: 5, max: 100 },
-        smallBird: { min: 10, max: 100 },
-        raccoon: { min: 2, max: 100 },
-        crow: { min: 5, max: 100 },
-        dog: { min: 1, max: 100 },
-        fox: { min: 1, max: 100 },
-        hawk: { min: 1, max: 100 },
-        wolf: { min: 1, max: 100 },
-        snake: { min: 2, max: 100 },
-
+        rat: { min: 2, max: 30 },        // prey, abundant
+        cat: { min: 2, max: 20 },        // predator
+        chicken: { min: 2, max: 25 },    // prey
+        smallBird: { min: 2, max: 25 },  // prey
+        raccoon: { min: 2, max: 15 },    // omnivore
+        crow: { min: 2, max: 20 },       // scavenger
+        dog: { min: 2, max: 10 },        // apex predator (guardian)
+        fox: { min: 2, max: 15 },        // predator
+        hawk: { min: 2, max: 10 },       // apex predator
+        wolf: { min: 2, max: 10 },       // apex predator
+        snake: { min: 2, max: 15 },      // predator
     },
 
     // 每个chunk的密度上限 (防止局部过密)
@@ -62,23 +63,24 @@ export const V1 = {
         snake: 6,
     },
 
-    // 默认初始生成 (2 of each for mating pairs)
+    // Default initial spawns (balanced prey/predator ratio)
+    // Prey species: 6-8, Predators: 3-4, Apex: 2
     defaultSpawns: {
-        rat: 2,
-        cat: 2,
-        chicken: 2,
-        smallBird: 2,
-        raccoon: 2,
-        crow: 2,
-        dog: 2,
-        fox: 2,
-        hawk: 2,
-        wolf: 2,
-        snake: 2,
-        water: 4,
-        trash: 3,
-        bush: 18,
-        perch: 10,
+        rat: 8,        // prey base
+        cat: 4,        // predator
+        chicken: 6,    // prey
+        smallBird: 6,  // prey
+        raccoon: 3,    // omnivore
+        crow: 4,       // scavenger
+        dog: 2,        // guardian (rare)
+        fox: 3,        // predator
+        hawk: 2,       // apex (rare)
+        wolf: 2,       // apex (rare)
+        snake: 3,      // predator
+        water: 6,      // increased for more drinking spots
+        trash: 4,      // increased for food sources
+        bush: 20,      // shelter/foraging
+        perch: 10,     // bird rest spots
     },
 
     // 生态维护器

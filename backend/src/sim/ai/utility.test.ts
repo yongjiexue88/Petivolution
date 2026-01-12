@@ -1,5 +1,5 @@
 
-import { describe, it, expect } from 'vitest';
+// import { describe, it, expect } from 'vitest';
 import { calculateUtility, selectGoal } from './utility';
 import type { EntityRuntime, SpeciesId } from '@shared/types';
 
@@ -12,6 +12,7 @@ function createMockEntity(species: SpeciesId = 'rat'): EntityRuntime {
         pos: { x: 100, y: 100 },
         vel: { x: 0, y: 0 },
         facing: 'n',
+        sex: 'female',
         vitals: {
             hunger01: 1.0, // Full
             thirst01: 1.0, // Full
@@ -100,7 +101,23 @@ describe('Utility System', () => {
 
             const scores = calculateUtility(cat, mockSim);
             expect(scores.hunt).toBeDefined();
+            expect(scores.hunt).toBeDefined();
             expect(scores.hunt).toBeGreaterThan(scores.wander || 0);
+        });
+
+        it('should NOT rest when starving even if tired (Starvation Override)', () => {
+            const rat = createMockEntity('rat');
+            rat.vitals.hunger01 = 0.10; // Starving (urgency > 0.6)
+            rat.vitals.fatigue01 = 0.10; // Tired (urgency high)
+            // No food seen (so wander/forage score is low base)
+            rat.ai.recentStimuli = [];
+
+            const scores = calculateUtility(rat, mockSim);
+            // Rest should be penalized heavily (-5.0)
+            // Expected rest base ~0.6 -> -4.4
+            expect(scores.rest).toBeLessThan(-1.0);
+            // Should result in Wander (0.01) beating Rest
+            expect(scores.wander).toBeGreaterThan(scores.rest!);
         });
     });
 

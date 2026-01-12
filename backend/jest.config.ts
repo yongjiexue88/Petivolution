@@ -6,7 +6,7 @@ module.exports = {
         '^@shared/(.*)$': '<rootDir>/src/shared/$1',
         '^@sim/(.*)$': '<rootDir>/src/sim/$1',
     },
-    testMatch: ['**/test/**/*.test.ts'],
+    testMatch: ['**/test/**/*.test.ts', '**/src/**/*.test.ts'],
     coverageThreshold: {
         global: {
             branches: 95,

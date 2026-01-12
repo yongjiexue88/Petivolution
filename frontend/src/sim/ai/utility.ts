@@ -53,7 +53,8 @@ export function calculateUtility(
     const scores: Partial<Record<Goal, number>> = {};
 
     // -------- Flee --------
-    if (entity.species === 'rat' || entity.species === 'chicken' || entity.species === 'smallBird') {
+    // Generic flee logic for all species if fear is high or they are prey-like
+    if (uFear > 0) {
         let fleeScore = uw.base.flee;
         fleeScore += uw.urgency.fear * uFear;
 
@@ -67,12 +68,12 @@ export function calculateUtility(
         if (personalityMod.fear) fleeScore += personalityMod.fear * uFear;
         if (personalityMod.nearBush) fleeScore += personalityMod.nearBush;
 
-        scores.flee = fleeScore;
-
-        // Force flee rule: Flee when fear > 0.2
-        if (uFear > 0.2) {
-            scores.flee = 100; // Highest priority
+        // Force flee rule: Flee when fear > 0.4 (increased threshold to avoid jitters)
+        if (uFear > 0.4) {
+            fleeScore += 10;
         }
+
+        scores.flee = fleeScore;
     }
 
     // -------- Drink --------
@@ -144,7 +145,7 @@ export function calculateUtility(
     }
 
     // -------- Eat (Prey/Carrion) --------
-    if (entity.species === 'cat' || entity.species === 'fox' || entity.species === 'wolf' || entity.species === 'hawk' || entity.species === 'snake') {
+    if (entity.species === 'cat' || entity.species === 'fox' || entity.species === 'wolf' || entity.species === 'hawk' || entity.species === 'snake' || entity.species === 'dog') {
         let huntScore = uw.base.hunt;
         huntScore += uw.urgency.hunger * uHunger;
 
@@ -152,7 +153,9 @@ export function calculateUtility(
             huntScore += uw.bonuses.seesPrey;
             huntScore -= uw.distancePenalty.prey * (nearestPrey.dist / V1.tileSizePx);
         } else {
-            huntScore -= 0.8;
+            // CRITICAL FIX: If no prey is distinctively seen, do NOT hunt.
+            // Previously -0.8 was not enough to prevent "Hunt" > "Wander" (0.5).
+            huntScore = -10;
         }
 
         const personalityMod = uw.personality[entity.personality];
@@ -208,6 +211,13 @@ export function calculateUtility(
                 restScore += 0.3 + uFatigue * 0.2;
                 restScore -= (uw.distancePenalty.bush * 0.5) * (nearestPerch.dist / V1.tileSizePx);
             }
+        }
+
+        // V4.2 Fix: Prevent "Sleep Loop" when starving
+        // If hunger/thirst is critical (urgency > 0.6 => vital < 0.4), do not rest.
+        // This forces Wander/Forage/Hunt to be higher priority than Rest.
+        if (uHunger > 0.6 || uThirst > 0.6) {
+            restScore -= 5.0;
         }
 
         const personalityMod = uw.personality[entity.personality];

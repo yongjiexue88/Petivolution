@@ -42,6 +42,34 @@ export function perceive(entity: EntityRuntime, sim: SimulationState): Perceptio
     let nearestTrash: { objectId: string; dist: number } | null = null;
     let nearestIntruder: { entityId: string; dist: number } | null = null;
 
+    // V4.1: Centralized Maps for consistency
+    const PREY_MAP: Partial<Record<string, string[]>> = {
+        cat: ['rat', 'smallBird', 'chicken'],
+        snake: ['rat', 'smallBird', 'chicken'],
+        fox: ['rat', 'smallBird', 'chicken', 'snake'],
+        hawk: ['rat', 'smallBird', 'chicken', 'snake'],
+        wolf: ['rat', 'chicken', 'cat', 'fox', 'dog', 'raccoon', 'snake'],
+        dog: ['rat', 'chicken', 'raccoon', 'fox', 'snake'],
+        raccoon: ['rat', 'smallBird', 'chicken', 'snake']
+    };
+
+    const PREDATOR_MAP: Partial<Record<string, string[]>> = {
+        rat: ['cat', 'dog', 'raccoon', 'fox', 'wolf', 'snake', 'hawk', 'crow'],
+        chicken: ['cat', 'raccoon', 'dog', 'rat', 'wolf', 'fox', 'hawk', 'snake', 'crow'],
+        smallBird: ['cat', 'raccoon', 'dog', 'rat', 'wolf', 'fox', 'hawk', 'snake', 'crow'],
+        snake: ['hawk', 'fox', 'raccoon', 'cat', 'dog', 'wolf'],
+        crow: ['hawk', 'cat', 'fox'],
+        cat: ['dog', 'wolf', 'fox', 'raccoon'],
+        fox: ['dog', 'wolf'],
+        hawk: ['wolf', 'dog', 'fox'],
+        raccoon: ['dog', 'wolf', 'fox'],
+        dog: ['wolf'] // Dogs fear wolves
+    };
+
+    const INTRUDER_MAP: Partial<Record<string, string[]>> = {
+        dog: ['rat', 'raccoon', 'cat', 'wolf', 'fox', 'hawk', 'snake']
+    };
+
     // Detect other entities
     for (const other of sim.entities.values()) {
         if (other.id === entity.id || other.state === 'dead') continue;
@@ -54,106 +82,25 @@ export function perceive(entity: EntityRuntime, sim: SimulationState): Perceptio
             stimuli.push({ type: 'friend', entityId: other.id, dist });
         }
 
-        // Rat perspective: Cat, Dog, Raccoon, Fox, Wolf, Snake, Hawk are predators
-        if (entity.species === 'rat') {
-            if (['cat', 'dog', 'raccoon', 'fox', 'wolf', 'snake', 'hawk'].includes(other.species)) {
-                stimuli.push({ type: 'predator', entityId: other.id, dist });
-                if (!nearestPredator || dist < nearestPredator.dist) nearestPredator = { entityId: other.id, dist };
-            }
+        // Check Prey
+        const validPrey = PREY_MAP[entity.species];
+        if (validPrey && validPrey.includes(other.species)) {
+            stimuli.push({ type: 'prey', entityId: other.id, dist });
+            if (!nearestPrey || dist < nearestPrey.dist) nearestPrey = { entityId: other.id, dist };
         }
 
-        // Cat perspective: Rat, small bird, chicken are prey; Dog is predator
-        if (entity.species === 'cat') {
-            if (['rat', 'smallBird', 'chicken'].includes(other.species)) {
-                stimuli.push({ type: 'prey', entityId: other.id, dist });
-                if (!nearestPrey || dist < nearestPrey.dist) nearestPrey = { entityId: other.id, dist };
-            }
-            if (other.species === 'dog') {
-                stimuli.push({ type: 'predator', entityId: other.id, dist });
-                if (!nearestPredator || dist < nearestPredator.dist) nearestPredator = { entityId: other.id, dist };
-            }
+        // Check Predator
+        const validPredators = PREDATOR_MAP[entity.species];
+        if (validPredators && validPredators.includes(other.species)) {
+            stimuli.push({ type: 'predator', entityId: other.id, dist });
+            if (!nearestPredator || dist < nearestPredator.dist) nearestPredator = { entityId: other.id, dist };
         }
 
-        // Dog perspective: Rat, Raccoon, Fox (future) are prey/threats
-        if (entity.species === 'dog') {
-            const isIntruder = ['rat', 'raccoon', 'cat', 'wolf', 'fox', 'crow', 'hawk'].includes(other.species);
-            if (isIntruder) {
-                stimuli.push({ type: 'intruder', entityId: other.id, dist });
-                if (!nearestIntruder || dist < nearestIntruder.dist) nearestIntruder = { entityId: other.id, dist };
-            }
-
-            if (['rat', 'raccoon', 'cat', 'wolf', 'fox'].includes(other.species)) {
-                stimuli.push({ type: 'prey', entityId: other.id, dist });
-                if (!nearestPrey || dist < nearestPrey.dist) nearestPrey = { entityId: other.id, dist };
-            }
-        }
-
-        // Raccoon perspective: Chicken, eggs (future), trash are targets; Dog is threat
-        if (entity.species === 'raccoon') {
-            if (['chicken', 'smallBird', 'rat'].includes(other.species)) { // Opportunistic
-                stimuli.push({ type: 'prey', entityId: other.id, dist });
-                if (!nearestPrey || dist < nearestPrey.dist) nearestPrey = { entityId: other.id, dist };
-            }
-            if (other.species === 'dog') {
-                stimuli.push({ type: 'predator', entityId: other.id, dist });
-                if (!nearestPredator || dist < nearestPredator.dist) nearestPredator = { entityId: other.id, dist };
-            }
-        }
-
-        // Chicken/Bird perspective: Cat, Raccoon, Dog, Fox, Wolf, Hawk are threats
-        if (['chicken', 'smallBird'].includes(entity.species)) {
-            if (['cat', 'raccoon', 'dog', 'rat', 'wolf', 'fox', 'hawk', 'snake'].includes(other.species)) {
-                stimuli.push({ type: 'predator', entityId: other.id, dist });
-                if (!nearestPredator || dist < nearestPredator.dist) nearestPredator = { entityId: other.id, dist };
-            }
-        }
-
-        // 🦊 Fox perspective: Rat, Chicken, Small Bird are prey; Dog, Wolf are threats
-        if (entity.species === 'fox') {
-            if (['rat', 'chicken', 'smallBird'].includes(other.species)) {
-                stimuli.push({ type: 'prey', entityId: other.id, dist });
-                if (!nearestPrey || dist < nearestPrey.dist) nearestPrey = { entityId: other.id, dist };
-            }
-            if (['dog', 'wolf'].includes(other.species)) {
-                stimuli.push({ type: 'predator', entityId: other.id, dist });
-                if (!nearestPredator || dist < nearestPredator.dist) nearestPredator = { entityId: other.id, dist };
-            }
-        }
-
-        // 🦅 Hawk perspective: Rat, Small Bird, Chicken are prey (aerial dive predator)
-        if (entity.species === 'hawk') {
-            if (['rat', 'smallBird', 'chicken', 'snake'].includes(other.species)) {
-                stimuli.push({ type: 'prey', entityId: other.id, dist });
-                if (!nearestPrey || dist < nearestPrey.dist) nearestPrey = { entityId: other.id, dist };
-            }
-        }
-
-        // 🐺 Wolf perspective: Rat, Chicken, Raccoon, Fox are prey (pack hunter)
-        if (entity.species === 'wolf') {
-            if (['rat', 'chicken', 'raccoon', 'fox', 'smallBird'].includes(other.species)) {
-                stimuli.push({ type: 'prey', entityId: other.id, dist });
-                if (!nearestPrey || dist < nearestPrey.dist) nearestPrey = { entityId: other.id, dist };
-            }
-        }
-
-        // 🐍 Snake perspective: Rat, Small Bird are prey; Hawk is threat (ambush predator)
-        if (entity.species === 'snake') {
-            if (['rat', 'smallBird'].includes(other.species)) {
-                stimuli.push({ type: 'prey', entityId: other.id, dist });
-                if (!nearestPrey || dist < nearestPrey.dist) nearestPrey = { entityId: other.id, dist };
-            }
-            if (other.species === 'hawk') {
-                stimuli.push({ type: 'predator', entityId: other.id, dist });
-                if (!nearestPredator || dist < nearestPredator.dist) nearestPredator = { entityId: other.id, dist };
-            }
-        }
-
-        // 🐦‍⬛ Crow perspective: Scavenger - no prey, fears hawks
-        if (entity.species === 'crow') {
-            if (other.species === 'hawk') {
-                stimuli.push({ type: 'predator', entityId: other.id, dist });
-                if (!nearestPredator || dist < nearestPredator.dist) nearestPredator = { entityId: other.id, dist };
-            }
+        // Check Intruder (Dog)
+        const validIntruders = INTRUDER_MAP[entity.species];
+        if (validIntruders && validIntruders.includes(other.species)) {
+            stimuli.push({ type: 'intruder', entityId: other.id, dist });
+            if (!nearestIntruder || dist < nearestIntruder.dist) nearestIntruder = { entityId: other.id, dist };
         }
     }
 

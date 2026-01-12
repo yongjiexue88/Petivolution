@@ -84,8 +84,8 @@ export class ServerClient {
         }
     }
 
-    public async spawnAnimal(species: SpeciesId, x: number, y: number): Promise<ActionResponse> {
-        return this.postAction('/api/actions/spawn', { species, x, y });
+    public async spawnAnimal(species: SpeciesId, x: number, y: number, name?: string): Promise<ActionResponse> {
+        return this.postAction('/api/actions/spawn', { species, x, y, name });
     }
 
     public async placeObject(type: ObjectType, x: number, y: number): Promise<ActionResponse> {
@@ -96,6 +96,10 @@ export class ServerClient {
         return this.postAction('/api/world/reset', {});
     }
 
+    public async setRules(rules: any): Promise<ActionResponse> {
+        return this.postAction('/api/world/rules', rules);
+    }
+
     private async postAction(endpoint: string, payload: any): Promise<ActionResponse> {
         try {
             const res = await fetch(`${SERVER_URL}${endpoint}`, {
@@ -103,6 +107,21 @@ export class ServerClient {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
+
+
+            if (!res.ok) {
+                const text = await res.text();
+                // Try to parse JSON error if possible
+                try {
+                    const json = JSON.parse(text);
+                    return { ok: false, error: json.error || res.statusText };
+                } catch {
+                    // Fallback for non-JSON errors (e.g. 404 HTML)
+                    console.error(`Action Failed [${endpoint}] Status ${res.status}:`, text.slice(0, 100)); // Log first 100 chars
+                    return { ok: false, error: `Server Error ${res.status}` };
+                }
+            }
+
             return await res.json();
         } catch (e: any) {
             console.error(`Action Failed [${endpoint}]:`, e);

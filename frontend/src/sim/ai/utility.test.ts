@@ -81,13 +81,14 @@ describe('Utility System', () => {
         it('should NOT flee if predator is far (for rat)', () => {
             const rat = createMockEntity('rat');
             // Mock seeing a predator far away (near limit of sense)
-            // Rat sense radius is 10 tiles = 320px
+            // Rat sense radius is 6 tiles = 96px
             rat.ai.recentStimuli = [
-                { type: 'predator', entityId: 'pred1', dist: 300 }
+                { type: 'predator', entityId: 'pred1', dist: 90 }
             ];
 
             const scores = calculateUtility(rat, mockSim);
-            // Fear urgency 2.8 * (1 - 300/320) approx 2.8 * 0.06 = 0.16. Base flee 0.2. Total ~0.36
+            // Fear urgency 2.8 * (1 - 90/96) approx 2.8 * 0.06 = 0.16. Base flee 0.2. Total ~0.36
+            expect(scores.flee).toBeDefined();
             expect(scores.flee).toBeLessThan(1.0);
         });
 

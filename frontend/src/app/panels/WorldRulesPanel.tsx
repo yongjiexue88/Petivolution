@@ -14,50 +14,8 @@ export function WorldRulesPanel() {
         setPlaceObjectType,
         currentTool,
         setCurrentTool,
-        seed, // V1.2
-        exportWorld, // V1.2
-        importWorld, // V1.2
-        stats, // V1.1
+        togglePanel,
     } = useGameStore();
-
-    // V1.2 Export
-    const handleExport = () => {
-        const data = exportWorld();
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `petivolution-seed${data.world.seed}-${new Date().toISOString().slice(0, 10)}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    };
-
-    // V1.2 Import
-    const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            try {
-                const data = JSON.parse(event.target?.result as string);
-                if (data.version && data.entities) {
-                    importWorld(data);
-                    alert('World loaded successfully!');
-                } else {
-                    alert('Invalid save file format.');
-                }
-            } catch (err) {
-                console.error(err);
-                alert('Failed to parse save file.');
-            }
-        };
-        reader.readAsText(file);
-        // Reset input
-        e.target.value = '';
-    };
 
     const handlePlaceObject = (type: ObjectType) => {
         setPlaceObjectType(type);
@@ -147,30 +105,10 @@ export function WorldRulesPanel() {
             <div className="panel-header">
                 <span className="panel-icon">🌍</span>
                 <h3>World Tools</h3>
+                <button className="panel-close-btn" onClick={() => togglePanel('rules')}>×</button>
             </div>
 
             <div className="panel-body">
-                {/* V1.1 Eco Stress */}
-                <div className="form-group" style={{ marginBottom: '16px', background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '8px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <label style={{ margin: 0 }}>Eco Stress</label>
-                        <span style={{ fontSize: '12px', fontWeight: 'bold', color: (stats?.ecoStress || 0) > 80 ? '#ef4444' : (stats?.ecoStress || 0) > 50 ? '#f97316' : '#22c55e' }}>
-                            {stats?.ecoStress || 0}%
-                        </span>
-                    </div>
-                    <div style={{ height: '8px', background: '#334155', borderRadius: '4px', overflow: 'hidden' }}>
-                        <div style={{
-                            width: `${Math.min(100, stats?.ecoStress || 0)}%`,
-                            height: '100%',
-                            background: (stats?.ecoStress || 0) > 80 ? '#ef4444' : (stats?.ecoStress || 0) > 50 ? '#f97316' : '#22c55e',
-                            transition: 'width 0.5s ease-out'
-                        }} />
-                    </div>
-                    <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px' }}>
-                        {(stats?.ecoStress || 0) > 80 ? 'CRITICAL: Collapse Imminent!' : (stats?.ecoStress || 0) > 50 ? 'Warning: High Pressure' : 'Stable'}
-                    </div>
-                </div>
-
                 {/* Emergency Aid */}
                 <div className="form-group" style={{ marginBottom: '16px' }}>
                     <label>Divine Intervention</label>
@@ -237,26 +175,6 @@ export function WorldRulesPanel() {
 
                 {/* Debug Options */}
 
-            </div>
-
-            {/* V1.2 World Management */}
-            <div className="form-group">
-                <label>World Management (V1.2)</label>
-                <div className="world-management">
-                    <div className="seed-display">
-                        <span>Seed:</span>
-                        <code style={{ background: '#333', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>{seed}</code>
-                    </div>
-                    <div className="manage-buttons" style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                        <button className="tool-btn" onClick={handleExport} style={{ flex: 1, fontSize: '12px' }}>
-                            📤 Export
-                        </button>
-                        <label className="tool-btn" style={{ flex: 1, fontSize: '12px', textAlign: 'center', cursor: 'pointer', margin: 0 }}>
-                            📥 Import
-                            <input type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
-                        </label>
-                    </div>
-                </div>
             </div>
 
             {/* Ecology Tips */}

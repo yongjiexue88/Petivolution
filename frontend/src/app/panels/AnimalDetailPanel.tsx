@@ -12,7 +12,10 @@ interface Props {
 }
 
 export function AnimalDetailPanel({ entity }: Props) {
-    const { vitals, ai, personality, species, name, ageTicks, state, generation, children } = entity;
+    const { ai, personality, species, name, ageTicks, state, generation, children } = entity;
+
+    // Defensive check for vitals (may be undefined during snapshot sync)
+    const vitals = entity.vitals || { hunger01: 0, thirst01: 0, fatigue01: 0, health01: 0 };
 
     const formatAge = (ticks: number): string => {
         const seconds = Math.floor(ticks / V1.simTickHz);
@@ -62,6 +65,9 @@ export function AnimalDetailPanel({ entity }: Props) {
             case 'water': return `💧 Water (${s.dist.toFixed(0)}px)`;
             case 'bush': return `🌿 Bush (${s.dist.toFixed(0)}px)`;
             case 'trash': return `🗑️ Trash (${s.dist.toFixed(0)}px)`;
+            case 'friend': return `👋 Friend (${s.dist.toFixed(0)}px)`;
+            case 'intruder': return `🚫 Intruder (${s.dist.toFixed(0)}px)`;
+            case 'perch': return `🪵 Perch (${s.dist.toFixed(0)}px)`;
             default: return 'Unknown';
         }
     };
@@ -75,6 +81,23 @@ export function AnimalDetailPanel({ entity }: Props) {
         return map[p] || p;
     };
 
+    const getSpeciesIcon = (s: string): string => {
+        const map: Record<string, string> = {
+            rat: '🐭',
+            cat: '🐱',
+            chicken: '🐔',
+            smallBird: '🐦',
+            raccoon: '🦝',
+            crow: '🐦‍⬛',
+            dog: '🐶',
+            fox: '🦊',
+            hawk: '🦅',
+            wolf: '🐺',
+            snake: '🐍',
+        };
+        return map[s] || '❓';
+    };
+
     // Get Top 3 scores
     const topScores = Object.entries(ai.lastUtilityScores)
         .filter(([_, score]) => score !== undefined && score > -100)
@@ -84,7 +107,7 @@ export function AnimalDetailPanel({ entity }: Props) {
     return (
         <div className="panel detail-panel">
             <div className="panel-header">
-                <span className="panel-icon">{species === 'cat' ? '🐱' : '🐭'}</span>
+                <span className="panel-icon">{getSpeciesIcon(species)}</span>
                 <h3>{name}</h3>
                 <span className="entity-state">{getStateEmoji(state)} {state}</span>
                 <button
@@ -135,12 +158,7 @@ export function AnimalDetailPanel({ entity }: Props) {
 
                 {/* AI Decision (Explainability Core) */}
                 <div className="ai-section">
-                    <h4>🧠 AI Decision</h4>
 
-                    <div className="info-row">
-                        <span className="info-label">Current Goal</span>
-                        <span className="info-value goal-badge">{getGoalLabel(ai.currentGoal)}</span>
-                    </div>
 
                     {/* Decision Reasoning */}
                     {ai.decisionContext && (
@@ -157,33 +175,39 @@ export function AnimalDetailPanel({ entity }: Props) {
                     )}
 
                     {/* Scores Table */}
-                    {topScores.length > 0 && (
-                        <div className="scores-section">
-                            <span className="subsection-label">Decision Scores (Top 3)</span>
-                            <div className="scores-list">
-                                {topScores.map(([goal, score], i) => (
+                    <div className="scores-section">
+                        <h4>Decision Scores (Top 3)</h4>
+                        <div className="scores-list">
+                            {topScores.length > 0 ? (
+                                topScores.map(([goal, score], i) => (
                                     <div key={goal} className={`score-item ${i === 0 ? 'top' : ''}`}>
                                         <span className="score-label">{getGoalLabel(goal as Goal)}</span>
                                         <span className="score-value">{score?.toFixed(2)}</span>
                                     </div>
-                                ))}
-                            </div>
+                                ))
+                            ) : (
+                                <div className="score-item" style={{ fontStyle: 'italic', opacity: 0.7 }}>
+                                    <span className="score-label">None</span>
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
 
                     {/* Recent Stimuli */}
-                    {ai.recentStimuli.length > 0 && (
-                        <div className="stimuli-section">
-                            <span className="subsection-label">Perception Stimuli</span>
-                            <div className="stimuli-list">
-                                {ai.recentStimuli.slice(0, 4).map((s, i) => (
+                    <div className="stimuli-section">
+                        <span className="subsection-label">Perception Stimuli</span>
+                        <div className="stimuli-list">
+                            {ai.recentStimuli.length > 0 ? (
+                                ai.recentStimuli.slice(0, 4).map((s, i) => (
                                     <div key={i} className="stimulus-item">
                                         {getStimulusLabel(s)}
                                     </div>
-                                ))}
-                            </div>
+                                ))
+                            ) : (
+                                <div className="stimulus-item" style={{ fontStyle: 'italic', opacity: 0.7 }}>None</div>
+                            )}
                         </div>
-                    )}
+                    </div>
 
                     {/* Failure Reason */}
                     {ai.lastFailReason && (

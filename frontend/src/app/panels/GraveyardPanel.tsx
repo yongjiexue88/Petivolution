@@ -31,7 +31,20 @@ export function GraveyardPanel() {
     };
 
     const getSpeciesEmoji = (species: string): string => {
-        return species === 'cat' ? '🐱' : '🐭';
+        const map: Record<string, string> = {
+            rat: '🐭',
+            cat: '🐱',
+            chicken: '🐔',
+            smallBird: '🐦',
+            raccoon: '🦝',
+            crow: '🐦‍⬛',
+            dog: '🐶',
+            fox: '🦊',
+            hawk: '🦅',
+            wolf: '🐺',
+            snake: '🐍',
+        };
+        return map[species] || '❓';
     };
 
     // Sort by death time (newest first)

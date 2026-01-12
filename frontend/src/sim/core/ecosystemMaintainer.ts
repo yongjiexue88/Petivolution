@@ -11,7 +11,7 @@
 import { SimulationState } from './tick';
 import { spawnEntity } from './spawner';
 import { V1 } from '@shared/constants';
-import type { SpeciesId } from '@shared/types';
+import type { SpeciesId, EcoStressDetails } from '@shared/types';
 
 const TILE_PX = V1.tileSizePx;
 
@@ -206,17 +206,90 @@ export function maintainEcosystem(sim: SimulationState): void {
         console.log(`⚠️ Ecosystem: Cat surplus (${counts.cat}/${targets.cat.max})`);
     }
 
-    // === V1.1 EcoStress Calculation ===
-    // Stress = Abs(Current - Ideal) / Ideal * 100 (Average of species)
-    // Ideal is average of min/max.
-    const ratIdeal = (targets.rat.min + targets.rat.max) / 2;
-    const catIdeal = (targets.cat.min + targets.cat.max) / 2;
+    // === V1.1 EcoStress Calculation (Improved) ===
+    // Uses global counts for all species, not just zone-based rat/cat
+    // Goals:
+    // - Target ~60% stress when balanced
+    // - Reward species diversity (all species meeting minimum)
+    // - Penalize underpopulation more than overpopulation
 
-    const ratStress = Math.abs(counts.rat - ratIdeal) / ratIdeal;
-    const catStress = Math.abs(counts.cat - catIdeal) / catIdeal;
+    // Count all species globally
+    const allCounts: Record<string, number> = {};
+    for (const species of Object.keys(targets)) {
+        allCounts[species] = 0;
+    }
+    for (const entity of sim.entities.values()) {
+        if (entity.state === 'dead') continue;
+        if (allCounts[entity.species] !== undefined) {
+            allCounts[entity.species]++;
+        }
+    }
 
-    // Combine: 70% Rat (main pop), 30% Cat
-    const totalStress = (ratStress * 0.7 + catStress * 0.3) * 100;
+    let totalPopulationStress = 0;
+    let speciesCount = 0;
+    let speciesWithMinPopulation = 0;
 
-    sim.stats.ecoStress = Math.min(100, Math.floor(totalStress));
+    // Prepare details for UI
+    const speciesStatusList: EcoStressDetails['speciesStatus'] = [];
+
+    for (const [speciesKey, target] of Object.entries(targets)) {
+        const currentCount = allCounts[speciesKey] || 0;
+        const ideal = (target.min + target.max) / 2;
+
+        let status: EcoStressDetails['speciesStatus'][0]['status'] = 'ok';
+        let speciesStress = 0;
+
+        // Track species meeting minimum population requirement
+        if (currentCount >= target.min) {
+            speciesWithMinPopulation++;
+        }
+
+        if (ideal > 0) {
+            if (currentCount < target.min) {
+                // Critical: below minimum, high stress (1.0 - 2.0)
+                speciesStress = 1.0 + (target.min - currentCount) / target.min;
+                status = 'critical_low';
+            } else if (currentCount > target.max) {
+                // Overpopulation: moderate stress (0.5 - 1.0)
+                speciesStress = 0.5 + (currentCount - target.max) / target.max * 0.5;
+                status = currentCount > target.max * 1.5 ? 'critical_high' : 'high';
+            } else {
+                // Within range: low stress based on distance from ideal (0 - 0.5)
+                speciesStress = Math.abs(currentCount - ideal) / ideal * 0.5;
+                if (speciesStress > 0.25) status = currentCount < ideal ? 'low' : 'high';
+            }
+            totalPopulationStress += speciesStress;
+            speciesCount++;
+        }
+
+        speciesStatusList.push({
+            id: speciesKey as SpeciesId,
+            count: currentCount,
+            min: target.min,
+            max: target.max,
+            stress: Math.floor(speciesStress * 100),
+            status: status
+        });
+    }
+
+    if (speciesCount > 0) {
+        // Diversity ratio: what percentage of species have min population
+        const diversityRatio = speciesWithMinPopulation / speciesCount;
+        // Base stress from population deviation (scale to ~30-40 when balanced)
+        const rawStress = (totalPopulationStress / speciesCount) * 40;
+        // Diversity penalty: if species are missing, add stress (up to 30)
+        const diversityPenalty = (1 - diversityRatio) * 30;
+
+        // Final stress: raw + diversity penalty, clamped to 0-100
+        const finalStress = Math.min(100, Math.max(0, Math.floor(rawStress + diversityPenalty)));
+        sim.stats.ecoStress = finalStress;
+
+        // Populate details for UI
+        sim.stats.ecoStressDetails = {
+            speciesStatus: speciesStatusList,
+            diversityScore: Math.floor(diversityRatio * 100),
+            diversityPenalty: Math.floor(diversityPenalty),
+            populationStress: Math.floor(rawStress)
+        };
+    }
 }

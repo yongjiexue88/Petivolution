@@ -2,10 +2,9 @@
 // V1 Animal Spawn Panel
 // ============================================
 
-import { useState } from 'react';
-import { useGameStore, getSimWorker } from '../store/gameStore';
-import { ServerClient } from '../api/ServerClient';
-import type { SpeciesId, TilePos } from '@shared/types';
+import { useMemo } from 'react';
+import { useGameStore } from '../store/gameStore';
+import type { SpeciesId } from '@shared/types';
 import { V1 } from '@shared/constants';
 import './SpawnPanel.css';
 
@@ -22,18 +21,48 @@ const HAWK_NAMES = ['Eagle-Eye', 'Hunter', 'Falcon', 'Flash'];
 const WOLF_NAMES = ['Ghost', 'Ashen', 'Alpha', 'Lone'];
 const SNAKE_NAMES = ['Slither', 'Jade', 'Fang', 'Viper'];
 
+// All tips pool - rotates randomly each time panel opens
+const ALL_TIPS = [
+    // Gameplay tips
+    "🐭 Rats forage from trash piles and flee from cats",
+    "🐱 Cats hunt rats and small birds, need water to drink",
+    "🦝 Raccoons are nocturnal scavengers, raid trash at night",
+    "🐔 Chickens forage from bushes and are hunted by foxes",
+    "🐍 Snakes ambush small prey like rats and birds",
+    "🦅 Hawks dive-bomb from above, hunt rats and small birds",
+    "🐺 Wolves hunt in packs and target larger prey",
+    "🦊 Foxes are opportunistic hunters of chickens and rats",
+    "🐕 Dogs patrol territory and bark at intruders",
+    "🐦 Small birds forage from bushes and perch on trees",
+    // Personality explanations
+    "🔍 Curious pets explore more and find resources faster",
+    "🛡️ Cautious pets flee earlier and stay near shelter",
+    "⚔️ Brave pets are bolder and less likely to run",
+    // Game mechanics
+    "💡 Each species has a population cap to balance ecosystem",
+    "💡 Animals reproduce naturally when well-fed and rested",
+    "💡 Predators keep prey populations in check",
+    "💡 Water and food sources regenerate over time",
+    "💡 Animals get random personalities when spawned",
+];
+
 export function SpawnPanel() {
     const {
         spawnSpecies,
         setSpawnSpecies,
-        spawnPersonality,
-        setSpawnPersonality,
+        spawnName,
+        setSpawnName,
         currentTool,
         setCurrentTool,
         stats,
+        togglePanel,
     } = useGameStore();
 
-    const [customName, setCustomName] = useState('');
+    // Select 2 random tips each time the component mounts
+    const randomTips = useMemo(() => {
+        const shuffled = [...ALL_TIPS].sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, 2);
+    }, []);
 
     const getRandomName = (species: SpeciesId): string => {
         let names = RAT_NAMES;
@@ -53,49 +82,9 @@ export function SpawnPanel() {
         return `${baseName}${Math.floor(Math.random() * 100)}`;
     };
 
-    const handleQuickSpawn = async () => {
-        const { godPower, spendGodPower, useServer } = useGameStore.getState();
-
-        const name = customName || getRandomName(spawnSpecies);
-        const pos: TilePos = {
-            tx: Math.floor(50 + Math.random() * 100),
-            ty: Math.floor(50 + Math.random() * 100),
-        };
-
-        const cost = COSTS[spawnSpecies];
-
-        if (godPower < cost) {
-            return;
-        }
-
-        spendGodPower(cost);
-
-        if (useServer) {
-            // Convert tile pos back to pixels or just send tile pos?
-            // The server API expects x, y in pixels (based on WorldServer.ts: Math.floor(x / V1.tileSizePx))
-            const res = await ServerClient.getInstance().spawnAnimal(
-                spawnSpecies,
-                pos.tx * V1.tileSizePx,
-                pos.ty * V1.tileSizePx
-            );
-            if (!res.ok) {
-                console.warn('Server Quick Spawn Failed:', res.error);
-            }
-        } else {
-            const worker = getSimWorker();
-            if (!worker) return;
-
-            worker.postMessage({
-                type: 'SPAWN_ENTITY',
-                payload: { species: spawnSpecies, name, personality: spawnPersonality, pos },
-            });
-        }
-
-        setCustomName('');
-    };
-
-    const handleStartPlacement = () => {
-        setCurrentTool('spawn');
+    const handleTogglePlacement = () => {
+        // Toggle: if already in spawn mode, go back to select; otherwise enter spawn mode
+        setCurrentTool(currentTool === 'spawn' ? 'select' : 'spawn');
     };
 
     // V1.1 Costs
@@ -124,6 +113,7 @@ export function SpawnPanel() {
             <div className="panel-header">
                 <span className="panel-icon">🐾</span>
                 <h3>Spawn Animals</h3>
+                <button className="panel-close-btn" onClick={() => togglePanel('spawn')}>×</button>
             </div>
 
             <div className="panel-body">
@@ -250,61 +240,37 @@ export function SpawnPanel() {
                     <label>Name (Optional)</label>
                     <input
                         type="text"
-                        value={customName}
-                        onChange={(e) => setCustomName(e.target.value)}
+                        value={spawnName}
+                        onChange={(e) => setSpawnName(e.target.value)}
                         placeholder={getRandomName(spawnSpecies)}
                         maxLength={12}
                     />
                 </div>
 
-                {/* Personality Selection */}
-                <div className="form-group">
-                    <label>Personality</label>
-                    <div className="personality-buttons">
-                        <button
-                            className={`personality-btn ${spawnPersonality === 'curious' ? 'active' : ''}`}
-                            onClick={() => setSpawnPersonality('curious')}
-                            title="Loves exploring new areas, more proactive at finding resources"
-                        >
-                            🔍 Curious
-                        </button>
-                        <button
-                            className={`personality-btn ${spawnPersonality === 'cautious' ? 'active' : ''}`}
-                            onClick={() => setSpawnPersonality('cautious')}
-                            title="More likely to flee, prefers staying near shelter"
-                        >
-                            🛡️ Cautious
-                        </button>
-                        <button
-                            className={`personality-btn ${spawnPersonality === 'brave' ? 'active' : ''}`}
-                            onClick={() => setSpawnPersonality('brave')}
-                            title="Less likely to flee, bolder when foraging"
-                        >
-                            ⚔️ Brave
-                        </button>
-                    </div>
-                </div>
-
-                {/* Action Buttons */}
+                {/* Action Buttons - Simplified UX */}
                 <div className="action-buttons">
-                    <button className="btn-primary" onClick={handleQuickSpawn}>
-                        ✨ Quick Spawn
-                    </button>
                     <button
-                        className={`btn-secondary ${currentTool === 'spawn' ? 'active' : ''}`}
-                        onClick={handleStartPlacement}
+                        className={`btn-placement ${currentTool === 'spawn' ? 'active' : ''}`}
+                        onClick={handleTogglePlacement}
                     >
-                        📍 Click Map to Place
+                        {currentTool === 'spawn' ? (
+                            <>🎯 Placing Mode ON - Click map to spawn</>
+                        ) : (
+                            <>📍 Enable Place Mode</>
+                        )}
                     </button>
+                    {currentTool === 'spawn' && (
+                        <p className="placement-hint">Click anywhere on the map to spawn. Press ESC or click again to exit.</p>
+                    )}
                 </div>
 
-                {/* Tips */}
+                {/* Rotating Tips */}
                 <div className="panel-tips">
-                    <p>💡 Tips:</p>
+                    <p>💡 Did you know?</p>
                     <ul>
-                        <li>Rats forage from trash piles, flee from cats</li>
-                        <li>Cats hunt rats, need water to drink</li>
-                        <li>Each species has a population cap</li>
+                        {randomTips.map((tip, i) => (
+                            <li key={i}>{tip}</li>
+                        ))}
                     </ul>
                 </div>
             </div>

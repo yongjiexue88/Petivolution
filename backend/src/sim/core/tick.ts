@@ -14,6 +14,7 @@ import type {
     TilePos,
     SimState,
     Goal,
+    EcoStressDetails, // Added V1.4
     GraveyardEntry, // Added import
 } from '@shared/types';
 import { V1 } from '@shared/constants';
@@ -74,6 +75,7 @@ export interface SimulationState {
         lastMinuteTick: number;
         warning?: boolean; // V1.1
         ecoStress: number; // V1.1
+        ecoStressDetails?: EcoStressDetails; // V1.4
     };
 
     // Selected Entity (for sending details)
@@ -528,6 +530,9 @@ function updateStimuli(entity: EntityRuntime, perception: PerceptionResult): voi
 // ============================================
 
 function transitionToGoal(entity: EntityRuntime, goal: Goal, _sim: SimulationState): void {
+    // Clear stale fail reason when starting a new goal
+    entity.ai.lastFailReason = undefined;
+
     // Reset chase state
     if (goal !== 'hunt') {
         entity.chaseTicks = undefined;
@@ -587,6 +592,10 @@ export function getSnapshot(sim: SimulationState): {
             targetPos: (() => {
                 return sim.rules.debug.showTargets ? getEntityTargetPos(entity, sim) : undefined;
             })(),
+            // V1.4: Include live vitals/AI for detail panel
+            vitals: entity.vitals,
+            ageTicks: entity.ageTicks,
+            ai: entity.ai,
         });
     }
 

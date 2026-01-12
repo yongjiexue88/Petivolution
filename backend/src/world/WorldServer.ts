@@ -67,6 +67,12 @@ export class WorldServer {
                     this.sim.graveyard = snapshot.graveyard;
                 }
 
+                // Restore rules if present (V1.3 Persistence)
+                if (snapshot.rules) {
+                    this.sim.rules = snapshot.rules;
+                    console.log(`✅ Restored rules. TimeScale: ${this.sim.rules.timeScale}`);
+                }
+
                 console.log(`✅ Restored from snapshot: tick ${snapshot.tick}, ${snapshot.entities.length} entities, ${snapshot.objects?.length || 0} objects, ${snapshot.graveyard?.length || 0} graveyard`);
             } else {
                 console.log('📦 No snapshot found, starting fresh simulation');
@@ -180,6 +186,7 @@ export class WorldServer {
                 objects: snapshot.objects || [],
                 chunks: {},
                 graveyard: this.sim.graveyard, // Persist graveyard
+                rules: this.sim.rules, // Persist rules
             };
 
             await SnapshotService.saveSnapshot(worldData);
@@ -225,11 +232,12 @@ export class WorldServer {
         return getSnapshot(this.sim);
     }
 
-    public spawnEntity(species: SpeciesId, x: number, y: number) {
+    public spawnEntity(species: SpeciesId, x: number, y: number, name?: string) {
         // Use V1 constant for tile size instead of hardcoded 32
         const spawnPos = { tx: Math.floor(x / V1.tileSizePx), ty: Math.floor(y / V1.tileSizePx) };
         console.log(`[Spawn] Request: ${species} at ${x},${y} -> Tile ${spawnPos.tx},${spawnPos.ty}`);
-        const newEntity = spawnEntity(this.sim, species, 'Player Spawned', 'curious', spawnPos);
+        const nameToUse = name || 'Player Spawned';
+        const newEntity = spawnEntity(this.sim, species, nameToUse, 'curious', spawnPos);
 
         if (newEntity) {
             console.log(`[Spawn] Success: ${newEntity.name} (${newEntity.species}) at tile ${spawnPos.tx},${spawnPos.ty}`);
@@ -304,6 +312,7 @@ export class WorldServer {
                 objects: snapshot.objects || [],
                 chunks: {},
                 graveyard: this.sim.graveyard, // Persist graveyard
+                rules: this.sim.rules, // Persist rules
             };
 
             const path = await SnapshotService.saveSnapshot(worldData);
@@ -353,5 +362,13 @@ export class WorldServer {
             console.error('Reset failed:', error);
             return { success: false, error: error.message };
         }
+    }
+    public updateRules(rules: Partial<typeof DEFAULT_WORLD_RULES>) {
+        this.sim.rules = { ...this.sim.rules, ...rules };
+        console.log(`[Rules] Updated:`, rules);
+    }
+
+    public getRules() {
+        return this.sim.rules;
     }
 }

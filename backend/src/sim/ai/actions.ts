@@ -610,10 +610,25 @@ function findNearestObjectOfType(entity: EntityRuntime, sim: SimulationState, ty
 function findNearestPrey(entity: EntityRuntime, sim: SimulationState): EntityRuntime | null {
     const config = SPECIES_CONFIGS[entity.species];
     const radius = config.sense.radiusTiles * V1.tileSizePx;
+
+    // V4.1: Explicit prey definitions prevents 'hunting everything' and 'prey_lost' on invalid targets
+    const PREY_MAP: Partial<Record<string, string[]>> = {
+        cat: ['rat', 'smallBird', 'chicken'],
+        snake: ['rat', 'smallBird', 'chicken'],
+        fox: ['rat', 'smallBird', 'chicken', 'snake'],
+        hawk: ['rat', 'smallBird', 'chicken', 'snake'],
+        wolf: ['rat', 'chicken', 'cat', 'fox', 'dog', 'raccoon', 'snake'],
+        dog: ['rat', 'chicken', 'raccoon', 'fox', 'snake'],
+        raccoon: ['rat', 'smallBird', 'chicken', 'snake'] // Raccoons are opportunistic
+    };
+
     let nearest: { e: EntityRuntime, d: number } | null = null;
     for (const other of sim.entities.values()) {
         if (other.id === entity.id || other.state === 'dead') continue;
-        if (entity.species === 'cat' && !['rat', 'smallBird', 'chicken'].includes(other.species)) continue;
+
+        const validTargets = PREY_MAP[entity.species];
+        if (validTargets && !validTargets.includes(other.species)) continue;
+
         const d = distance(entity.pos, other.pos);
         if (d > radius) continue;
         if (!nearest || d < nearest.d) nearest = { e: other, d };

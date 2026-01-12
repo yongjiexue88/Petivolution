@@ -322,6 +322,10 @@ export type SnapshotEntity = {
     hp01: number;
     selected?: boolean;
     targetPos?: Vec2; // V1.2 Debug: For showing target lines
+    // V1.4: Add live vitals/AI for detail panel
+    vitals?: Vitals;
+    ageTicks?: number;
+    ai?: EntityAI;
 };
 
 // Simulation Events
@@ -358,7 +362,23 @@ export type SimStats = {
     // V1.1 God Mode State (Synced from Worker or calculated)
     // Actually God Power is likely Main Thread state, but EcoStress is Simulation state.
     ecoStress?: number;
+    ecoStressDetails?: EcoStressDetails; // V1.4
 
+};
+
+// V1.4 Eco Stress Details
+export type EcoStressDetails = {
+    speciesStatus: {
+        id: SpeciesId;
+        count: number;
+        min: number;
+        max: number;
+        stress: number; // Contribution to total stress
+        status: 'critical_low' | 'low' | 'ok' | 'high' | 'critical_high';
+    }[];
+    diversityScore: number; // 0-100
+    diversityPenalty: number;
+    populationStress: number; // 0-100
 };
 
 // Worker -> Main

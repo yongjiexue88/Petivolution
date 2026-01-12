@@ -70,6 +70,9 @@ export class ChunkManager {
         // Spawn initial animals across the map
         this.spawnInitialAnimals(sim);
 
+        // Spawn initial resources randomly across the map (Global Scatter)
+        this.spawnInitialResources(sim);
+
         this.initialized = true;
     }
 
@@ -101,6 +104,9 @@ export class ChunkManager {
 
         // 4. Respawn initial animals
         this.spawnInitialAnimals(sim);
+
+        // 5. Respawn initial resources
+        this.spawnInitialResources(sim);
 
         console.log('🌍 World Reset Complete - All 64 chunks regenerated');
     }
@@ -139,6 +145,22 @@ export class ChunkManager {
                     tx: tx,
                     ty: ty
                 });
+            }
+        }
+    }
+
+    private spawnInitialResources(sim: SimulationState) {
+        console.log('🌍 Spawning resources randomly across the map');
+
+        const resourceTypes: ('water' | 'trash' | 'bush' | 'perch')[] = ['water', 'trash', 'bush', 'perch'];
+
+        for (const type of resourceTypes) {
+            const count = (V1.defaultSpawns as any)[type] || 0;
+
+            for (let i = 0; i < count; i++) {
+                const tx = Math.floor(sim.rng() * V1.defaultMapWidth);
+                const ty = Math.floor(sim.rng() * V1.defaultMapHeight);
+                this.createObject(sim, type, tx, ty);
             }
         }
     }
@@ -439,6 +461,10 @@ export class ChunkManager {
         const tx = startTx + offsetX;
         const ty = startTy + offsetY;
 
+        this.createObject(sim, type, tx, ty);
+    }
+
+    private createObject(sim: SimulationState, type: 'water' | 'bush' | 'trash' | 'perch', tx: number, ty: number) {
         const obj: WorldObject = {
             id: uuid(),
             type,

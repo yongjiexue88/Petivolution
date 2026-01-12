@@ -2,6 +2,7 @@ import { gzip, gunzip } from 'zlib';
 import { promisify } from 'util';
 import { getStorageBucket, getBucketName } from '../config/storageConfig';
 import { WorldService } from './WorldService';
+import { WorldRule } from '../shared/types'; // Added import
 
 const gzipAsync = promisify(gzip);
 const gunzipAsync = promisify(gunzip);
@@ -17,6 +18,7 @@ export interface WorldSnapshot {
     objects: any[];
     chunks: Record<string, any>;
     graveyard: any[];
+    rules: WorldRule; // Added rules
     metadata?: {
         savedAt: number;
         serverVersion: string;

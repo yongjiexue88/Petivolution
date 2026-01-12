@@ -52,9 +52,9 @@ app.get('/api/world/summary', (req, res) => {
 
 // API: Actions (Spawn)
 app.post('/api/actions/spawn', (req, res) => {
-    const { species, x, y } = req.body;
+    const { species, x, y, name } = req.body;
     // TODO: Validate GP, Quota
-    const result = world.spawnEntity(species, x, y);
+    const result = world.spawnEntity(species, x, y, name);
     if (result.success) {
         res.json({ ok: true, entityId: result.entityId });
     } else {
@@ -82,6 +82,13 @@ app.post('/api/world/reset', async (req, res) => {
     } else {
         res.status(500).json({ ok: false, error: result.error });
     }
+});
+
+// API: Update World Rules (Speed, AI, etc.)
+app.post('/api/world/rules', (req, res) => {
+    const rules = req.body;
+    world.updateRules(rules);
+    res.json({ ok: true });
 });
 
 // API: Entity Detail (Selection)
@@ -379,6 +386,7 @@ app.post('/api/world/snapshot', async (req, res) => {
             objects: snapshot.objects || [],
             chunks: {},
             graveyard: [],
+            rules: world.getRules(),
         };
         const gsPath = await SnapshotService.saveSnapshot(worldData);
         res.json({ ok: true, path: gsPath, tick: worldData.tick });

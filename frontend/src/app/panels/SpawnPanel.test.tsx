@@ -66,16 +66,10 @@ describe('SpawnPanel', () => {
         expect(mockSetSpawnSpecies).toHaveBeenCalledWith('cat');
     });
 
-    it('should trigger quick spawn', () => {
+    it('should toggle placement mode', () => {
         render(<SpawnPanel />);
-        const spawnBtn = screen.getByText('✨ Quick Spawn');
-        fireEvent.click(spawnBtn);
-
-        expect(mockPostMessage).toHaveBeenCalledWith(expect.objectContaining({
-            type: 'SPAWN_ENTITY',
-            payload: expect.objectContaining({
-                species: 'rat'
-            })
-        }));
+        const placeBtn = screen.getByText(/Enable Place Mode/i);
+        fireEvent.click(placeBtn);
+        expect(mockSetCurrentTool).toHaveBeenCalledWith('spawn');
     });
 });

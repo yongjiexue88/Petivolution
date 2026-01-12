@@ -2,10 +2,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
     maintainEcosystem,
-    getActiveZone,
-    countEntitiesInZone
+    countEntitiesGlobal
 } from './ecosystemMaintainer';
-import { V1 } from '@shared/constants';
+import { V1 } from '../../shared/constants';
 import * as SpawnerModule from './spawner';
 
 // Mock spawner
@@ -23,8 +22,9 @@ describe('EcosystemMaintainer', () => {
             ['trash1', { id: 'trash1', type: 'trash', pos: { tx: 128, ty: 128 } }],
             ['water1', { id: 'water1', type: 'water', pos: { tx: 132, ty: 132 } }],
         ]),
-        cameraCenter: { x: 128 * TILE_PX, y: 128 * TILE_PX }, // Center of 256x256 map
+        cameraCenter: { x: 128 * TILE_PX, y: 128 * TILE_PX },
         cameraZoom: 1,
+        stats: { ecoStress: 0 },
         rng: () => 0.5,
     });
 
@@ -32,143 +32,78 @@ describe('EcosystemMaintainer', () => {
         vi.clearAllMocks();
     });
 
-    describe('getActiveZone', () => {
-        it('should return zone centered on camera', () => {
-            const sim = createMockSim();
-            const zone = getActiveZone(sim as any);
-
-            expect(zone.centerX).toBe(sim.cameraCenter.x);
-            expect(zone.centerY).toBe(sim.cameraCenter.y);
-            expect(zone.radiusPx).toBe(V1.activeZoneRadiusTiles * TILE_PX);
-        });
-    });
-
-    describe('countEntitiesInZone', () => {
-        it('should count entities within active zone radius', () => {
+    describe('countEntitiesGlobal', () => {
+        it('should count all living entities on map', () => {
             const sim = createMockSim();
             const centerX = sim.cameraCenter.x;
             const centerY = sim.cameraCenter.y;
 
-            // Add entities: some inside zone, some outside
+            // Add entities at various positions
             sim.entities.set('rat1', { species: 'rat', state: 'idle', pos: { x: centerX, y: centerY } });
-            sim.entities.set('rat2', { species: 'rat', state: 'idle', pos: { x: centerX + 100, y: centerY } });
+            sim.entities.set('rat2', { species: 'rat', state: 'idle', pos: { x: 0, y: 0 } }); // Far away
             sim.entities.set('cat1', { species: 'cat', state: 'idle', pos: { x: centerX, y: centerY + 50 } });
-            // This one is far outside
-            sim.entities.set('rat3', { species: 'rat', state: 'idle', pos: { x: 0, y: 0 } });
 
-            const counts = countEntitiesInZone(sim as any);
+            const counts = countEntitiesGlobal(sim as any);
 
-            // rat1, rat2 inside; cat1 inside; rat3 outside
             expect(counts.rat).toBe(2);
             expect(counts.cat).toBe(1);
         });
 
         it('should ignore dead entities', () => {
             const sim = createMockSim();
-            const centerX = sim.cameraCenter.x;
-            const centerY = sim.cameraCenter.y;
+            sim.entities.set('rat1', { species: 'rat', state: 'dead', pos: { x: 0, y: 0 } });
+            sim.entities.set('rat2', { species: 'rat', state: 'idle', pos: { x: 0, y: 0 } });
 
-            sim.entities.set('rat1', { species: 'rat', state: 'dead', pos: { x: centerX, y: centerY } });
-            sim.entities.set('rat2', { species: 'rat', state: 'idle', pos: { x: centerX, y: centerY } });
-
-            const counts = countEntitiesInZone(sim as any);
+            const counts = countEntitiesGlobal(sim as any);
 
             expect(counts.rat).toBe(1);
         });
     });
 
     describe('maintainEcosystem', () => {
-        it('should spawn rats when below minimum', () => {
+        it('should spawn rats globally when below minimum', () => {
             const sim = createMockSim();
-            // No rats in zone = below minimum (25)
+            // No rats = below minimum
 
             maintainEcosystem(sim as any);
 
-            // Should spawn up to 3 rats
+            // Should spawn
             expect(SpawnerModule.spawnEntity).toHaveBeenCalled();
             const calls = (SpawnerModule.spawnEntity as any).mock.calls;
             const ratCalls = calls.filter((c: any) => c[1] === 'rat');
             expect(ratCalls.length).toBeGreaterThan(0);
-            expect(ratCalls.length).toBeLessThanOrEqual(3);
         });
 
-        it('should spawn cats when below minimum', () => {
+        it('should spawn cats globally when below minimum', () => {
             const sim = createMockSim();
-            const centerX = sim.cameraCenter.x;
-            const centerY = sim.cameraCenter.y;
-
-            // Add enough rats but no cats
-            for (let i = 0; i < 30; i++) {
-                sim.entities.set(`rat${i}`, {
-                    species: 'rat',
-                    state: 'idle',
-                    pos: { x: centerX + i, y: centerY }
-                });
-            }
-
             maintainEcosystem(sim as any);
 
             // Should spawn a cat
             const calls = (SpawnerModule.spawnEntity as any).mock.calls;
             const catCalls = calls.filter((c: any) => c[1] === 'cat');
-            expect(catCalls.length).toBe(1);
+            expect(catCalls.length).toBeGreaterThan(0);
         });
 
-        it('should not spawn when population is healthy', () => {
+        it('should not spawn when population is globally healthy', () => {
             const sim = createMockSim();
             const centerX = sim.cameraCenter.x;
-            const centerY = sim.cameraCenter.y;
 
-            // Add healthy population: 30 rats, 3 cats
-            for (let i = 0; i < 30; i++) {
-                sim.entities.set(`rat${i}`, {
-                    species: 'rat',
-                    state: 'idle',
-                    pos: { x: centerX + i, y: centerY }
-                });
-            }
-            for (let i = 0; i < 3; i++) {
-                sim.entities.set(`cat${i}`, {
-                    species: 'cat',
-                    state: 'idle',
-                    pos: { x: centerX, y: centerY + i }
-                });
+            // Add healthy population for ALL species
+            for (const [species, targetVal] of Object.entries(V1.densityTargets)) {
+                const target = targetVal as { min: number; max: number };
+                for (let i = 0; i < target.min + 1; i++) {
+                    sim.entities.set(`${species}${i}`, {
+                        species: species,
+                        state: 'idle',
+                        pos: { x: centerX, y: centerX }
+                    });
+                }
             }
 
             maintainEcosystem(sim as any);
 
             // Should not spawn anything
             expect(SpawnerModule.spawnEntity).not.toHaveBeenCalled();
-        });
-
-        it('should handle overpopulation by logging (not killing)', () => {
-            const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => { });
-            const sim = createMockSim();
-            const centerX = sim.cameraCenter.x;
-            const centerY = sim.cameraCenter.y;
-
-            // Add too many rats (> 55)
-            for (let i = 0; i < 60; i++) {
-                sim.entities.set(`rat${i}`, {
-                    species: 'rat',
-                    state: 'idle',
-                    pos: { x: centerX + i % 100, y: centerY }
-                });
-            }
-            // Add enough cats
-            for (let i = 0; i < 3; i++) {
-                sim.entities.set(`cat${i}`, {
-                    species: 'cat',
-                    state: 'idle',
-                    pos: { x: centerX, y: centerY + i }
-                });
-            }
-
-            maintainEcosystem(sim as any);
-
-            // Should log warning about overpopulation
-            expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('overpopulation'));
-            consoleSpy.mockRestore();
         });
     });
 });
