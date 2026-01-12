@@ -1,5 +1,5 @@
 // ============================================
-// 存档系统 - IndexedDB 存取
+// Save System - IndexedDB Access
 // ============================================
 
 import { openDB, type IDBPDatabase } from 'idb';
@@ -33,7 +33,7 @@ export interface SaveEntry {
 }
 
 /**
- * 保存游戏状态
+ * Save Game State
  */
 export async function saveGame(id: string, name: string, data: WorldSaveData): Promise<void> {
     const db = await getDB();
@@ -54,7 +54,7 @@ export async function saveGame(id: string, name: string, data: WorldSaveData): P
 }
 
 /**
- * 加载存档
+ * Load Save
  */
 export async function loadGame(id: string): Promise<WorldSaveData | null> {
     const db = await getDB();
@@ -63,7 +63,7 @@ export async function loadGame(id: string): Promise<WorldSaveData | null> {
 }
 
 /**
- * 获取所有存档列表
+ * Get All Saves
  */
 export async function listSaves(): Promise<Array<{ id: string; name: string; updatedAt: number }>> {
     const db = await getDB();
@@ -76,7 +76,7 @@ export async function listSaves(): Promise<Array<{ id: string; name: string; upd
 }
 
 /**
- * 删除存档
+ * Delete Save
  */
 export async function deleteSave(id: string): Promise<void> {
     const db = await getDB();
@@ -84,20 +84,20 @@ export async function deleteSave(id: string): Promise<void> {
 }
 
 /**
- * 自动存档ID
+ * Auto Save ID
  */
 export const AUTO_SAVE_ID = 'autosave';
 
 /**
- * 获取自动存档
+ * Get Auto Save
  */
 export async function getAutoSave(): Promise<WorldSaveData | null> {
     return loadGame(AUTO_SAVE_ID);
 }
 
 /**
- * 保存自动存档
+ * Save Auto Save
  */
 export async function saveAutoSave(data: WorldSaveData): Promise<void> {
-    await saveGame(AUTO_SAVE_ID, '自动存档', data);
+    await saveGame(AUTO_SAVE_ID, 'Auto Save', data);
 }

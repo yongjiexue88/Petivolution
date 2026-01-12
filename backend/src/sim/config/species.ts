@@ -1,11 +1,11 @@
 // ============================================
-// V1 物种配置 - 完整规格
+// V1 Species Config - Complete Specification
 // ============================================
 
 import type { Personality, SpeciesId, Goal } from '../../shared/types';
 
 // ============================================
-// Utility 权重类型
+// Utility Weight Types
 // ============================================
 
 export type UtilityWeights = {
@@ -36,7 +36,7 @@ export type UtilityWeights = {
 };
 
 // ============================================
-// 物种配置类型
+// Species Config Type
 // ============================================
 
 export type SpeciesConfig = {
@@ -79,7 +79,7 @@ export type SpeciesConfig = {
 };
 
 // ============================================
-// 🐭 鼠 (Rat) 配置
+// 🐭 Rat Configuration
 // ============================================
 
 export const RAT_SPECIES: SpeciesConfig = {
@@ -116,7 +116,7 @@ export const RAT_SPECIES: SpeciesConfig = {
             eat: 0.05,
             rest: 0.02,
             wander: 0.01,
-            hunt: -999,     // 鼠永远不捕猎
+            hunt: -999,     // Rats never hunt
             rummage: -999,
             forage: -999,
             bark: -999,
@@ -154,7 +154,7 @@ export const RAT_SPECIES: SpeciesConfig = {
 };
 
 // ============================================
-// 🐱 猫 (Cat) 配置
+// 🐱 Cat Configuration
 // ============================================
 
 export const CAT_SPECIES: SpeciesConfig = {
@@ -196,8 +196,8 @@ export const CAT_SPECIES: SpeciesConfig = {
             drink: 0.06,
             rest: 0.03,
             wander: 0.01,
-            eat: 0.0,       // 猫 V1 不吃垃圾，从猎物获取食物
-            flee: -999,     // 猫永远不逃跑
+            eat: 0.0,       // Cat V1 doesn't eat trash, gets food from prey
+            flee: -999,     // Cat never flees
             rummage: -999,
             forage: -999,
             bark: -999,
@@ -235,7 +235,7 @@ export const CAT_SPECIES: SpeciesConfig = {
 };
 
 // ============================================
-// 🐔 鸡 (Chicken) 配置
+// 🐔 Chicken Configuration
 // ============================================
 export const CHICKEN_SPECIES: SpeciesConfig = {
     id: 'chicken',
@@ -261,7 +261,7 @@ export const CHICKEN_SPECIES: SpeciesConfig = {
 };
 
 // ============================================
-// 🐦 小鸟 (SmallBird) 配置
+// 🐦 Small Bird Configuration
 // ============================================
 export const SMALL_BIRD_SPECIES: SpeciesConfig = {
     id: 'smallBird',
@@ -287,7 +287,7 @@ export const SMALL_BIRD_SPECIES: SpeciesConfig = {
 };
 
 // ============================================
-// 🦝 浣熊 (Raccoon) 配置
+// 🦝 Raccoon Configuration
 // ============================================
 export const RACCOON_SPECIES: SpeciesConfig = {
     id: 'raccoon',
@@ -313,7 +313,7 @@ export const RACCOON_SPECIES: SpeciesConfig = {
 };
 
 // ============================================
-// 🦅 乌鸦 (Crow) 配置
+// 🦅 Crow Configuration
 // ============================================
 export const CROW_SPECIES: SpeciesConfig = {
     id: 'crow',
@@ -339,7 +339,7 @@ export const CROW_SPECIES: SpeciesConfig = {
 };
 
 // ============================================
-// 🐶 狗 (Dog) 配置
+// 🐶 Dog Configuration
 // ============================================
 export const DOG_SPECIES: SpeciesConfig = {
     id: 'dog',
@@ -366,7 +366,7 @@ export const DOG_SPECIES: SpeciesConfig = {
 };
 
 // ============================================
-// 🦊 狐狸 (Fox) 配置
+// 🦊 Fox Configuration
 // ============================================
 export const FOX_SPECIES: SpeciesConfig = {
     id: 'fox',
@@ -393,7 +393,7 @@ export const FOX_SPECIES: SpeciesConfig = {
 };
 
 // ============================================
-// 🐺 狼 (Wolf) 配置
+// 🐺 Wolf Configuration
 // ============================================
 export const WOLF_SPECIES: SpeciesConfig = {
     id: 'wolf',
@@ -420,7 +420,7 @@ export const WOLF_SPECIES: SpeciesConfig = {
 };
 
 // ============================================
-// 🦅 鹰 (Hawk) 配置
+// 🦅 Hawk Configuration
 // ============================================
 export const HAWK_SPECIES: SpeciesConfig = {
     id: 'hawk',
@@ -447,7 +447,7 @@ export const HAWK_SPECIES: SpeciesConfig = {
 };
 
 // ============================================
-// 🐍 蛇 (Snake) 配置
+// 🐍 Snake Configuration
 // ============================================
 export const SNAKE_SPECIES: SpeciesConfig = {
     id: 'snake',
@@ -474,7 +474,7 @@ export const SNAKE_SPECIES: SpeciesConfig = {
 };
 
 // ============================================
-// 物种配置映射
+// Species Config Mapping
 // ============================================
 
 export const SPECIES: Record<SpeciesId, SpeciesConfig> = {
@@ -492,7 +492,7 @@ export const SPECIES: Record<SpeciesId, SpeciesConfig> = {
 } as const;
 
 // ============================================
-// 辅助函数
+// Helper Functions
 // ============================================
 
 export function getSpeciesConfig(species: SpeciesId): SpeciesConfig {

@@ -1,5 +1,5 @@
 // ============================================
-// WorldScene - 主游戏场景 (V1)
+// WorldScene - Main Game Scene (V1)
 // ============================================
 
 import Phaser from 'phaser';

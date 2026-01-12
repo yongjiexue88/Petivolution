@@ -1,9 +1,9 @@
 // ============================================
-// V1 完整类型定义
+// V1 Complete Type Definitions
 // ============================================
 
 // ============================================
-// 基础类型
+// Basic Types
 // ============================================
 
 export type SpeciesId = 'rat' | 'cat' | 'chicken' | 'smallBird' | 'raccoon' | 'crow' | 'dog' | 'fox' | 'hawk' | 'wolf' | 'snake';
@@ -44,18 +44,18 @@ export type Facing = 'n' | 's' | 'e' | 'w';
 export type Goal = 'drink' | 'eat' | 'hunt' | 'rest' | 'flee' | 'wander' | 'forage' | 'rummage' | 'bark' | 'patrol' | 'reproduce';
 
 // ============================================
-// Vitals (生命体征)
+// Vitals
 // ============================================
 
 export type Vitals = {
-    hunger01: number;  // 0..1 (1=饱，0=饿死边缘)
+    hunger01: number;  // 0..1 (1=Full, 0=Starving)
     thirst01: number;  // 0..1
-    fatigue01: number; // 0..1 (1=精力充足，0=困到崩)
+    fatigue01: number; // 0..1 (1=Energized, 0=Exhausted)
     health01: number;  // 0..1
 };
 
 // ============================================
-// Stimulus (刺激)
+// Stimulus
 // ============================================
 
 export type Stimulus =
@@ -69,37 +69,37 @@ export type Stimulus =
     | { type: 'intruder'; entityId: EntityId; dist: number };
 
 // ============================================
-// Entity AI 状态 (可解释性)
+// Entity AI State (Explainability)
 // ============================================
 
 export type EntityAI = {
     lastPerceptionTick: number;
     lastDecisionTick: number;
 
-    // 最近一次决策结果（UI展示）
+    // Last decision result (UI Display)
     currentGoal: Goal;
 
-    // 最近一次打分（UI展示）
+    // Last utility scores (UI Display)
     lastUtilityScores: Partial<Record<Goal, number>>;
 
-    // 最近刺激（UI展示，限制长度）
+    // Recent stimuli (UI Display, limited length)
     recentStimuli: Stimulus[];
 
-    // 当前动作失败原因（调试&UI）
+    // Last fail reason (Debug & UI)
     lastFailReason?: string;
 
-    // 决策上下文（UI展示"为什么"）
+    // Decision context (UI Display "Why")
     decisionContext?: {
         goal: string;
-        targetId?: string; // 追逐/互动目标
-        threatId?: string; // 逃跑来源
-        distance?: number; // 距离目标/威胁
-        reason?: string;   // 文字描述 (Optional)
+        targetId?: string; // Chase/Interact Target
+        threatId?: string; // Flee Source
+        distance?: number; // Dist to Target/Threat
+        reason?: string;   // Description (Optional)
     };
 };
 
 // ============================================
-// Entity (动物实体)
+//Entity
 // ============================================
 
 export type EntityRuntime = {
@@ -109,7 +109,7 @@ export type EntityRuntime = {
     sex: Sex;
     personality: Personality;
 
-    pos: Vec2;         // tile坐标
+    pos: Vec2;         // Tile Coords
     vel: Vec2;         // tile/tick
     facing: Facing;
 
@@ -118,12 +118,12 @@ export type EntityRuntime = {
 
     state: SimState;
 
-    // 目标（当前动作执行对象）
+    // Target (Current Action Object)
     targetEntityId?: EntityId;
     targetObjectId?: ObjectId;
     targetPos?: Vec2;
 
-    // AI 可解释性（UI显示"它为什么这么做"）
+    // AI Explainability (UI shows "Why")
     ai: EntityAI;
 
     // V2 Family
@@ -136,16 +136,16 @@ export type EntityRuntime = {
     history: SimEvent[];
     path: Vec2[];
 
-    // 战斗（V1猫抓鼠可极简）
+    // Combat
     combat?: {
         attackCooldownTicks: number;
     };
 
-    // 追逐追踪
+    // Chase Tracking
     chaseTicks?: number;
     chaseStartPos?: Vec2;
 
-    // 死亡记录
+    // Death Record
     dead?: {
         atTick: number;
         reason: 'starvation' | 'dehydration' | 'killed' | 'unknown';
@@ -158,7 +158,7 @@ export type EntityRuntime = {
 };
 
 // ============================================
-// WorldObject (可放置对象)
+// WorldObject (Placeable)
 // ============================================
 
 export type WorldObject = {
@@ -167,27 +167,27 @@ export type WorldObject = {
     pos: TilePos;
 
     data?: {
-        strength01?: number;   // 0..1 (灌木庇护强度)
-        regenRate?: number;    // 每tick恢复量
-        resources?: number;    // 当前资源量
-        maxResources?: number; // 最大资源量
+        strength01?: number;   // 0..1 (Bush Shelter Strength)
+        regenRate?: number;    // Regen per tick
+        resources?: number;    // Current Resources
+        maxResources?: number; // Max Resources
         indestructible?: boolean; // V4: Resource Anchor
     };
 };
 
 // ============================================
-// WorldRule (世界规则)
+// WorldRule
 // ============================================
 
 export type WorldRule = {
-    // 时间缩放
+    // Time Scale
     timeScale: TimeScale;
 
-    // 生态稳定器
+    // Ecosystem Stabilizer
     capsEnabled: boolean;
     capPerChunk: Record<SpeciesId, number>;
 
-    // 刷新/资源
+    // Spawning/Resources
     trashSpawnsRats: boolean;
     ratSpawn: {
         enabled: boolean;
@@ -197,17 +197,17 @@ export type WorldRule = {
         maxRatsNearby: number;
     };
 
-    // 死亡与难度
+    // Death & Difficulty
     deathEnabled: boolean;
 
-    // AI 强度开关
+    // AI Intensity Toggles
     ai: {
         perceptionEnabled: boolean;
         useCoverForRats: boolean;
         chaseTimeoutTicks: number;
     };
 
-    // 调试开关（UI）
+    // Debug Toggles (UI)
     debug: {
         showSenseRadius: boolean;
         showTargets: boolean;
@@ -227,7 +227,7 @@ export type WorldRule = {
 };
 
 // ============================================
-// Save (存档格式)
+// Save (Format)
 // ============================================
 
 export type GraveyardEntry = {
@@ -292,7 +292,7 @@ export type ChunkData = {
 };
 
 // ============================================
-// Worker 通信协议
+// Worker Communication Protocol
 // ============================================
 
 // Main -> Worker
@@ -309,7 +309,7 @@ export type WorkerCommand =
     | { type: 'REQUEST_SAVE'; payload: { saveName: string } }
     | { type: 'RESET_WORLD'; payload: { seed?: number } };
 
-// Snapshot Entity (只发渲染需要的字段)
+// Snapshot Entity (Only render fields)
 export type SnapshotEntity = {
     id: EntityId;
     species: SpeciesId;
@@ -431,7 +431,7 @@ export interface ChallengeDef {
 }
 
 // ============================================
-// 默认世界规则
+// Default World Rules
 // ============================================
 
 export const DEFAULT_WORLD_RULES: WorldRule = {

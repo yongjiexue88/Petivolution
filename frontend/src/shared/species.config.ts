@@ -1,7 +1,7 @@
 import type { SpeciesId, Goal, Personality } from './types';
 
 // ============================================
-// Utility 权重类型
+// Utility Weight Types
 // ============================================
 
 export type UtilityWeights = {
@@ -31,7 +31,7 @@ export type UtilityWeights = {
 };
 
 // ============================================
-// 物种配置类型
+// Species Configuration Type
 // ============================================
 
 export type SpeciesConfig = {
@@ -60,17 +60,17 @@ export type SpeciesConfig = {
     };
 
     vitals: {
-        // 每tick下降量
+        // Decay per tick
         hungerDecayPerTick: number;
         thirstDecayPerTick: number;
         fatigueDecayPerTick: number;
 
-        // 恢复量
+        // Gain per tick
         drinkGainPerTick: number;
         eatGainPerTick: number;
         sleepGainPerTick: number;
 
-        // 伤害阈值
+        // Damage thresholds
         dangerThreshold01: number;
         healthDamageWhenHungerBelow: number;
         healthDamageWhenThirstBelow: number;
@@ -103,7 +103,7 @@ export type SpeciesConfig = {
 
 
 // ============================================
-// 🐭 鼠 (Rat) 配置
+// 🐭 Rat Configuration
 // ============================================
 
 export const RAT_CONFIG: SpeciesConfig = {
@@ -189,7 +189,7 @@ export const RAT_CONFIG: SpeciesConfig = {
 };
 
 // ============================================
-// 🐱 猫 (Cat) 配置
+// 🐱 Cat Configuration
 // ============================================
 
 export const CAT_CONFIG: SpeciesConfig = {
@@ -273,7 +273,7 @@ export const CAT_CONFIG: SpeciesConfig = {
 };
 
 // ============================================
-// 🐔 鸡 (Chicken) 配置
+// 🐔 Chicken Configuration
 // ============================================
 
 export const CHICKEN_CONFIG: SpeciesConfig = {
@@ -350,7 +350,7 @@ export const CHICKEN_CONFIG: SpeciesConfig = {
 };
 
 // ============================================
-// 🐦 小鸟 (Small Bird) 配置
+// 🐦 Small Bird Configuration
 // ============================================
 
 export const SMALL_BIRD_CONFIG: SpeciesConfig = {
@@ -428,11 +428,11 @@ export const SMALL_BIRD_CONFIG: SpeciesConfig = {
 };
 
 // ============================================
-// 对象交互配置
+// Object Interaction Config
 // ============================================
 
 // ============================================
-// 物种配置映射
+// Species Config Mapping
 // ============================================
 
 export const RACCOON_CONFIG: SpeciesConfig = {
@@ -622,7 +622,7 @@ export const DOG_CONFIG: SpeciesConfig = {
 
 
 // ============================================
-// 🦊 狐狸 (Fox) 配置 - Solitary cunning hunter
+// 🦊 Fox Configuration - Solitary cunning hunter
 // ============================================
 export const FOX_CONFIG: SpeciesConfig = {
     id: 'fox',
@@ -667,7 +667,7 @@ export const FOX_CONFIG: SpeciesConfig = {
 };
 
 // ============================================
-// 🦅 鹰 (Hawk) 配置 - Aerial predator, best vision
+// 🦅 Hawk Configuration - Aerial predator, best vision
 // ============================================
 export const HAWK_CONFIG: SpeciesConfig = {
     id: 'hawk',
@@ -712,7 +712,7 @@ export const HAWK_CONFIG: SpeciesConfig = {
 };
 
 // ============================================
-// 🐺 狼 (Wolf) 配置 - Pack hunter
+// 🐺 Wolf Configuration - Pack hunter
 // ============================================
 export const WOLF_CONFIG: SpeciesConfig = {
     id: 'wolf',
@@ -763,7 +763,7 @@ export const WOLF_CONFIG: SpeciesConfig = {
 };
 
 // ============================================
-// 🐍 蛇 (Snake) 配置 - Ambush predator, poor vision
+// 🐍 Snake Configuration - Ambush predator, poor vision
 // ============================================
 export const SNAKE_CONFIG: SpeciesConfig = {
     id: 'snake',

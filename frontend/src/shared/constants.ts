@@ -1,35 +1,35 @@
 // ============================================
-// V1 全局常量与配置 - Fishbowl Sandbox
+// V1 Global Constants & Config - Fishbowl Sandbox
 // ============================================
 
 export const V1 = {
     schemaVersion: 1,
 
-    // 时间
-    simTickHz: 15,              // 固定步长模拟 (10~20都行，推荐15)
-    snapshotHz: 10,             // worker -> main 快照频率
-    perceptionEveryNTicks: 5,   // 感知频率
-    decisionEveryNTicks: 10,    // 决策频率
+    // Time
+    simTickHz: 15,              // Fixed step simulation (15 recommended)
+    snapshotHz: 10,             // worker -> main Snapshot Hz
+    perceptionEveryNTicks: 5,   // Perception Frequency
+    decisionEveryNTicks: 10,    // Decision Frequency
 
-    // 视觉/单位（统一用 tile 为单位）
-    tileSizePx: 16,             // 像素风常见 16/32
+    // Visual/Units (Unified in tiles)
+    tileSizePx: 16,             // Pixel art standard 16/32
     worldUnits: 'tile' as const,
 
-    // 距离与惩罚
-    maxSenseRadiusTiles: 14,    // V1感知最大半径（物种可更小）
-    chaseTimeoutTicks: 15 * 10, // 最多追逐 10 秒 (tick=15 -> 150 ticks)
+    // Distance & Penalties
+    maxSenseRadiusTiles: 14,    // V1 Max Sense Radius
+    chaseTimeoutTicks: 15 * 10, // Max chase 10s
 
     // ============================================
-    // V1 Fishbowl World - 有限但"看起来很大"
+    // V1 Fishbowl World - Finite but "looks big"
     // ============================================
 
-    // 世界尺寸 (256×256 tiles = 4096×4096 px)
+    // World Size (256x256 tiles)
     defaultMapWidth: 256,
     defaultMapHeight: 256,
     chunkSize: 32,              // 32×32 tiles per chunk = 8×8 chunks total
 
-    // 活跃区 (摄像机中心为圆心的"戏剧区")
-    activeZoneRadiusTiles: 50,  // 玩家主要观察的区域
+    // Active Zone
+    activeZoneRadiusTiles: 50,  // Main player observation area
 
     // Ecosystem density targets (balanced for ~60% stress)
     // All species have min: 2 to ensure mating pairs exist
@@ -48,7 +48,7 @@ export const V1 = {
         snake: { min: 2, max: 15 },      // predator
     },
 
-    // 每个chunk的密度上限 (防止局部过密)
+    // Density cap per chunk (Prevent overcrowding)
     capPerChunk: {
         rat: 20,
         cat: 6,
@@ -83,11 +83,11 @@ export const V1 = {
         perch: 10,     // bird rest spots
     },
 
-    // 生态维护器
-    maintainerIntervalSec: 5,   // 每5秒检查一次生态平衡
+    // Ecosystem Maintainer
+    maintainerIntervalSec: 5,   // Check ecosystem balance every 5s
     maintainerIntervalTicks: 15 * 5, // 75 ticks
 
-    // 动物列表/快照限制（避免传太大）
+    // Snapshot Entity Fields (Avoid large payloads)
     snapshotEntityFields: [
         'id', 'species', 'name', 'x', 'y',
         'facing', 'anim', 'state', 'hp01', 'selected'
