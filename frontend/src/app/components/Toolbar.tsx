@@ -45,7 +45,7 @@ export function Toolbar() {
             {/* Logo */}
             <div className="toolbar-logo">
                 <span className="logo-icon">⚡</span>
-                <span className="logo-text">God Mode</span>
+                <span className="logo-text">Petivolution</span>
             </div>
 
             {/* V1.1 God Power Display */}
