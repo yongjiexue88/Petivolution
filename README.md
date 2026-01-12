@@ -4,98 +4,107 @@
 [![GitHub Stars](https://img.shields.io/github/stars/yongjiexue88/Petivolution?style=flat)](https://github.com/yongjiexue88/Petivolution/stargazers)
 [![Tech Stack](https://img.shields.io/badge/tech-React%20%7C%20Phaser%20%7C%20TS-blue)](https://github.com/yongjiexue88/Petivolution)
 
-**Petivolution** is an open-source **Ecological Simulation Sandbox** built with React, Phaser 3, and Utility AI. Observe artificial life evolve, adjust environmental factors, and maintain a balanced ecosystem.
+> **Life finds a way—under your control.** 🌿
+
+**Petivolution** is an open-source **Ecological Simulation Sandbox**. Built with React, Phaser 3, and advanced Utility AI, it allows you to observe artificial life forms as they hunt, forage, and evolve in a dynamic ecosystem. Adjust environmental factors in real-time and witness how tiny changes ripple through the food web.
 
 ### 🚀 [PLAY LIVE DEMO](https://petivolution.com/)
 
+![Petivolution Gameplay Preview](https://via.placeholder.com/800x450.png?text=Petivolution+Gameplay+Preview+Build+v0.1.0)
+*Observe emergent behaviors: Cats hunting rats, birds flocking to bushes, and a balanced ecosystem in motion.*
 
-## ✨ Core Gameplay
+---
 
-**Spawn Animals** → **Observe Behaviors** → **Identify Issues** → **Environmental Intervention** → **Ecological Stability**
+## ✨ Why Petivolution?
 
-- 🐱 **Cat**: Predator, obtains food by hunting mice
-- 🐭 **Rat**: Scavenger, forages in trash piles
+Unlike static simulations, Petivolution uses a **Utility AI** system where every animal makes autonomous decisions based on its needs (hunger, thirst, fear) and the environment around it.
 
-## 🎯 V1 Acceptance Criteria
+*   **Emergent Complexity**: Watch as simple rules lead to complex pack hunting and flocking behaviors.
+*   **Real-time Intervention**: Drop water sources, plant bushes, or introduce predators to see how the population reacts.
+*   **Developer Friendly**: Modular architecture using Web Workers for heavy lifting—easy to add new species or logic.
 
-| Criteria | Description |
-|----------|-------------|
-| **Stability** | 10 rats + 2 cats, runs continuously ≥5 minutes without crashing |
-| **Explainability** | Click on animals to see: current state, reason, needs values |
-| **Effective Intervention** | Placing water/bushes/trash visibly changes population trends |
-| **Performance** | 200-300 entities without frame drops |
+---
 
-## 🛠️ Tech Stack
+## 🎮 What Can I Do Right Now?
 
-- **Frontend Framework**: React + TypeScript + Vite
-- **Game Engine**: Phaser 3
-- **State Management**: Zustand
-- **Simulation Layer**: Web Worker (independent thread)
-- **Save System**: IndexedDB
+The current version (v0.1.0) is fully playable:
+- **Spawn & Observe**: Deploy 11+ different animal species with unique AI profiles.
+- **Manipulate Environment**: Place water, trash, and bushes to sustain (or disrupt) life.
+- **Deep Diagnostics**: Click any animal to see its "brain"—real-time utility scores and current goals.
+- **Persistent Worlds**: Save and load your ecosystem states.
 
-## 📁 Project Structure
+---
 
-```
-src/
-├── app/         # React UI (panels, toolbar)
-├── game/        # Phaser scenes and rendering
-├── sim/         # Pure logic simulation layer (AI, ecology)
-├── worker/      # Web Worker entry point
-├── storage/     # IndexedDB saves
-└── shared/      # Shared types and config
-```
+## 🌿 The Ecosystem
 
-## 🚀 Quick Start
+| Species | Type | Behavior |
+|---------|------|----------|
+| 🐱 **Cat** | Predator | Solitary hunter; hunts rats to restore hunger. |
+| 🐭 **Rat** | Scavenger | Forages in trash; flees from predators. |
+| 🐺 **Wolf** | Pack Hunter | Coordinated hunters; strong cohesion behavior. |
+| 🦅 **Hawk** | Aerial Predator | High-speed flyer with exceptional vision range. |
+| 🐍 **Snake** | Ambush Predator | Low metabolism; hides in bushes for the perfect strike. |
+| 🐦 **Bird** | Prey/Flock | Fast-moving, uses perches for safety. |
+| 🧺 **Raccoon** | Opportunist | Smart scavenger; loves rummaging through trash. |
 
+---
+
+## �️ Developer Guide
+
+### Prerequisites
+- Node.js (v18+)
+- npm (v9+)
+
+### Local Setup
 ```bash
-# Install dependencies
+# 1. Clone the repository
+git clone https://github.com/yongjiexue88/Petivolution.git
+cd Petivolution
+
+# 2. Install dependencies (Monorepo)
 npm install
 
-# Start development server
+# 3. Spin up the dev environment
+# Starts both frontend (Vite) and backend (Sim Server)
 npm run dev
-
-# Build for production
-npm run build
 ```
 
-## 🎮 Controls Guide
+### Key Scripts
+- `npm run dev`: Concurrent frontend + backend development.
+- `npm run build`: Production build for the frontend.
+- `npm test`: Run unit tests across the simulation and UI.
+- `npm run lint`: Ensure code quality with ESLint.
 
-| Control | Description |
-|---------|-------------|
-| **Drag** | Drag canvas to move viewport |
-| **Scroll** | Zoom viewport |
-| **Click Animal** | View details |
-| **Spawn Mode** | Click map to spawn animals |
-| **Place Mode** | Click map to place resources |
+### 🏗️ Architecture
+Petivolution splits the heavyweight simulation from the rendering to ensure 60FPS:
+- **`sim/`**: Pure logic layer. Handles AI, movement, and vital decay.
+- **`worker/`**: Runs the simulation in a separate thread (Web Worker).
+- **`game/`**: Phaser 3 rendering engine.
+- **`app/`**: React-based UI for toolbars and detailed panels.
 
-## 🌿 Environment Objects
+---
 
-| Object | Icon | Function |
-|--------|------|----------|
-| Water | 💧 | Animals drink to restore thirst value |
-| Bush | 🌿 | Provides shelter and resting spots |
-| Trash Pile | 🗑️ | Primary food source for rats |
+## 🗺️ Roadmap & What's Next
 
-## 🧠 AI System
+We are constantly evolving! Here is what's on the horizon:
+- [ ] **Dynamic Seasons**: Environmental changes affecting food availability.
+- [ ] **Genetic Evolution**: Subtle trait inheritance (speed, sight, hunger resistance).
+- [ ] **Advanced AI Pack 3**: Territorial behaviors and complex mating rituals.
+- [ ] **Multiplayer Observation**: Peer-to-peer world sharing.
 
-Animals use a **Utility AI** decision system:
+---
 
-1. Evaluate various needs (hunger, thirst, fatigue, threats)
-2. Calculate utility score for each action
-3. Execute the highest-scoring action
+## 🤝 Contributing
 
-### Behavior States
+We love contributors! Whether you're fixing a bug, adding a new species, or polishing the UI:
+1. **Open an Issue**: Discuss your idea beforehand.
+2. **Fork & PR**: Submit your changes for review.
+3. **Check the Docs**: See our internal dev notes in `/docs`.
 
-| State | Description |
-|-------|-------------|
-| Idle | Idle, nothing to do |
-| Wander | Wandering around |
-| Chase | Chasing prey (cat) |
-| Flee | Fleeing from threats (rat) |
-| Eat | Eating |
-| Drink | Drinking water |
-| Sleep | Resting to recover fatigue |
+**Feel like something is missing?** [Open a PR](https://github.com/yongjiexue88/Petivolution/pulls) or [Create an Issue](https://github.com/yongjiexue88/Petivolution/issues)!
+
+---
 
 ## 📄 License
 
-MIT
+MIT © [yongjiexue88]
