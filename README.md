@@ -10,7 +10,7 @@
 
 ### 🚀 [PLAY LIVE DEMO](https://petivolution.com/)
 
-![Petivolution Gameplay Preview](https://via.placeholder.com/800x450.png?text=Petivolution+Gameplay+Preview+Build+v0.1.0)
+![Petivolution Gameplay Preview](assets/preview.png)
 *Observe emergent behaviors: Cats hunting rats, birds flocking to bushes, and a balanced ecosystem in motion.*
 
 ---
