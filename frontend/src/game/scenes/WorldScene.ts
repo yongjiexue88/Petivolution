@@ -437,7 +437,7 @@ export class WorldScene extends Phaser.Scene {
         for (let x = 0; x <= worldWidth; x += spacing) {
             // Top (Aligned to 0)
             this.add.image(x, 0, 'city_tree')
-                .setOrigin(0.5, 1) // Anchor at bottom to sit on line
+                .setOrigin(0.5, 0) // Anchor at top to hang down into world
                 .setDepth(0) // Depth 0 is fine for top edge
                 .setScale(1.5);
 
